@@ -671,6 +671,24 @@ def get_nos_categories() -> list[str]:
     return get_nature_of_suit_categories()
 
 
+@app.get("/api/drafts")
+def list_drafts_endpoint() -> list[dict]:
+    """List saved filing drafts."""
+    from ecfiler.filing.drafts import list_drafts
+
+    return list_drafts()
+
+
+@app.delete("/api/drafts/{name}")
+def delete_draft_endpoint(name: str) -> dict:
+    """Delete a saved draft."""
+    from ecfiler.filing.drafts import delete_draft
+
+    if delete_draft(name):
+        return {"deleted": True, "name": name}
+    raise HTTPException(404, f"Draft '{name}' not found")
+
+
 @app.get("/api/health")
 def health() -> dict:
     """Health check."""
@@ -678,11 +696,22 @@ def health() -> dict:
     from ecfiler.courts.registry import CourtRegistry
 
     registry = CourtRegistry()
+    has_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
+
+    # List which features work without API key (offline mode)
+    offline_features = [
+        "validate", "redaction-scan", "courts", "events",
+        "nature-of-suit", "certificate-of-service", "history", "drafts",
+    ]
+    online_features = ["file", "file/multi"]
+
     return {
         "status": "ok",
         "version": "0.1.0",
         "courts_loaded": registry.count,
-        "has_api_key": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "has_api_key": has_key,
+        "offline_features": offline_features,
+        "online_features": online_features if has_key else [],
     }
 
 

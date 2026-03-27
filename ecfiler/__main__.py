@@ -448,5 +448,121 @@ def check_setup(ctx: click.Context) -> None:
         )
 
 
+@main.command("drafts")
+@click.option("--delete", "-d", "delete_name", type=str, help="Delete a draft by name")
+def manage_drafts(delete_name: str | None) -> None:
+    """List or manage saved filing drafts."""
+    from rich.console import Console
+    from rich.table import Table
+
+    from ecfiler.filing.drafts import delete_draft, list_drafts
+
+    console = Console()
+
+    if delete_name:
+        if delete_draft(delete_name):
+            console.print(f"  [green]✓[/green] Draft '{delete_name}' deleted")
+        else:
+            console.print(f"  [yellow]Draft '{delete_name}' not found[/yellow]")
+        return
+
+    drafts = list_drafts()
+    if not drafts:
+        console.print("  [dim]No saved drafts.[/dim]")
+        return
+
+    table = Table(title=f"Filing Drafts ({len(drafts)})", border_style="dim")
+    table.add_column("Name", style="bold")
+    table.add_column("Court", width=8)
+    table.add_column("Case", width=18)
+    table.add_column("Event")
+    table.add_column("Saved", width=20, style="dim")
+
+    for d in drafts:
+        table.add_row(
+            d["name"],
+            d["court"],
+            d["case"],
+            d["event"][:35],
+            d["saved_at"][:19],
+        )
+
+    console.print(table)
+
+
+@main.command("batch-validate")
+@click.argument("pdf_paths", nargs=-1, type=click.Path(exists=True))
+@click.option("--redaction/--no-redaction", default=True, help="Run redaction scan")
+def batch_validate(pdf_paths: tuple[str, ...], redaction: bool) -> None:
+    """Validate multiple PDFs at once.
+
+    Example: ecfiler batch-validate *.pdf
+    """
+    from rich.console import Console
+    from rich.table import Table
+
+    from ecfiler.pdf.validator import validate_pdf
+
+    console = Console()
+
+    if not pdf_paths:
+        console.print("[yellow]No files specified. Usage: ecfiler batch-validate *.pdf[/yellow]")
+        return
+
+    table = Table(title=f"PDF Validation ({len(pdf_paths)} files)", border_style="dim")
+    table.add_column("File")
+    table.add_column("Status", width=8)
+    table.add_column("Size", width=8)
+    table.add_column("Pages", width=6)
+    table.add_column("Issues")
+
+    passed = 0
+    failed = 0
+
+    for path in pdf_paths:
+        result = validate_pdf(path)
+        filename = path.split("/")[-1]
+
+        if result.valid:
+            status = "[green]PASS[/green]"
+            passed += 1
+        else:
+            status = "[red]FAIL[/red]"
+            failed += 1
+
+        issues = "; ".join(result.errors[:2] + result.warnings[:1])
+        table.add_row(
+            filename[:40],
+            status,
+            f"{result.file_size_mb:.1f}MB",
+            str(result.page_count),
+            issues[:60] or "[green]None[/green]",
+        )
+
+    console.print(table)
+
+    # Redaction scan on valid files
+    if redaction:
+        from ecfiler.pdf.redaction_check import scan_document
+        from ecfiler.pdf.validator import extract_text
+
+        console.print("\n  [dim]Scanning for redaction issues...[/dim]")
+        for path in pdf_paths:
+            try:
+                text = extract_text(path)
+                report = scan_document(text)
+                filename = path.split("/")[-1]
+                if report.has_issues:
+                    console.print(
+                        f"  [yellow]⚠ {filename}: {len(report.issues)} issue(s)[/yellow]"
+                    )
+                    for issue in report.issues[:3]:
+                        console.print(f"    {issue.issue_type}: {issue.text[:40]}")
+            except Exception:
+                pass
+
+    console.print(f"\n  {passed} passed, {failed} failed out of {len(pdf_paths)} files")
+
+
 if __name__ == "__main__":
     main()

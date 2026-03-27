@@ -121,9 +121,11 @@ class FilingWorkflow:
 
         except KeyboardInterrupt:
             console.print("\n[yellow]Filing cancelled by user.[/yellow]")
+            self._offer_save_draft()
             return None
         except Exception as e:
             console.print(f"\n[red]Filing error: {e}[/red]")
+            self._offer_save_draft()
             return None
 
     # --- Individual workflow steps ---
@@ -998,3 +1000,23 @@ class FilingWorkflow:
             return self._get_claude()
         except Exception:
             return None
+
+    def _offer_save_draft(self) -> None:
+        """Offer to save the current filing as a draft."""
+        if not self.filing:
+            return
+
+        try:
+            if Confirm.ask("  Save as draft for later?", default=True):
+                from ecfiler.filing.drafts import save_draft
+
+                name = Prompt.ask(
+                    "  Draft name",
+                    default=f"{self.filing.court_id}_{self.filing.case.case_number}",
+                )
+                data = self.filing.model_dump(mode="json")
+                path = save_draft(name, data)
+                console.print(f"  [green]✓[/green] Draft saved: {path}")
+                console.print(f"  [dim]Resume with: ecfiler drafts[/dim]")
+        except Exception:
+            pass  # Don't let draft save failure mask the original error
