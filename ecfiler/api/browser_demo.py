@@ -180,4 +180,21 @@ async def stream_demo_filing(
         yield f"event: browser\ndata: {json.dumps({'step': step_name, 'status': 'done', 'description': description, 'screenshot': b64})}\n\n"
         await asyncio.sleep(0.3)
 
+    # Log to filing history
+    try:
+        from datetime import datetime
+        from ecfiler.filing.models import FilingReceipt
+        from ecfiler.storage.history import FilingHistory
+        history = FilingHistory()
+        receipt = FilingReceipt(
+            court_id=court_id,
+            case_number=case_number,
+            event_description=event_description,
+            docket_number="58",
+            filed_at=datetime.now(),
+        )
+        history.log_filing(receipt)
+    except Exception:
+        pass
+
     yield f"event: browser_done\ndata: {json.dumps({'success': True, 'message': 'Filing complete. Document filed as Docket #58.'})}\n\n"
