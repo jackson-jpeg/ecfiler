@@ -675,5 +675,32 @@
     "court_type": "district",
     "ecf_url": "https://ecf.wyd.uscourts.gov",
     "quirks": []
+  },
+  {
+    "court_id": "jpml",
+    "name": "Judicial Panel on Multidistrict Litigation",
+    "court_type": "district",
+    "ecf_url": "https://ecf.jpml.uscourts.gov",
+    "quirks": [
+      "special_court"
+    ]
+  },
+  {
+    "court_id": "citd",
+    "name": "Court of International Trade",
+    "court_type": "district",
+    "ecf_url": "https://ecf.citd.uscourts.gov",
+    "quirks": [
+      "special_court"
+    ]
+  },
+  {
+    "court_id": "usfcc",
+    "name": "Court of Federal Claims",
+    "court_type": "district",
+    "ecf_url": "https://ecf.cofc.uscourts.gov",
+    "quirks": [
+      "special_court"
+    ]
   }
 ]

@@ -1,33 +1,51 @@
 [
   {
-    "court_id": "nysb",
-    "name": "Southern District of New York Bankruptcy Court",
+    "court_id": "akb",
+    "name": "District of Alaska Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.nysb.uscourts.gov",
-    "quirks": [
-      "large_case_flag",
-      "xml_case_opening"
-    ]
-  },
-  {
-    "court_id": "nyeb",
-    "name": "Eastern District of New York Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.nyeb.uscourts.gov",
+    "ecf_url": "https://ecf.akb.uscourts.gov",
     "quirks": []
   },
   {
-    "court_id": "nywb",
-    "name": "Western District of New York Bankruptcy Court",
+    "court_id": "almb",
+    "name": "Middle District of Alabama Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.nywb.uscourts.gov",
+    "ecf_url": "https://ecf.almb.uscourts.gov",
     "quirks": []
   },
   {
-    "court_id": "nynb",
-    "name": "Northern District of New York Bankruptcy Court",
+    "court_id": "alnb",
+    "name": "Northern District of Alabama Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.nynb.uscourts.gov",
+    "ecf_url": "https://ecf.alnb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "alsb",
+    "name": "Southern District of Alabama Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.alsb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "areb",
+    "name": "Eastern District of Arkansas Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.areb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "arwb",
+    "name": "Western District of Arkansas Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.arwb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "azb",
+    "name": "District of Arizona Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.azb.uscourts.gov",
     "quirks": []
   },
   {
@@ -42,17 +60,17 @@
     ]
   },
   {
-    "court_id": "canb",
-    "name": "Northern District of California Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.canb.uscourts.gov",
-    "quirks": []
-  },
-  {
     "court_id": "caeb",
     "name": "Eastern District of California Bankruptcy Court",
     "court_type": "bankruptcy",
     "ecf_url": "https://ecf.caeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "canb",
+    "name": "Northern District of California Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.canb.uscourts.gov",
     "quirks": []
   },
   {
@@ -63,33 +81,24 @@
     "quirks": []
   },
   {
-    "court_id": "txsb",
-    "name": "Southern District of Texas Bankruptcy Court",
+    "court_id": "cob",
+    "name": "District of Colorado Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.txsb.uscourts.gov",
-    "quirks": [
-      "xml_case_opening"
-    ]
-  },
-  {
-    "court_id": "txnb",
-    "name": "Northern District of Texas Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.txnb.uscourts.gov",
+    "ecf_url": "https://ecf.cob.uscourts.gov",
     "quirks": []
   },
   {
-    "court_id": "txeb",
-    "name": "Eastern District of Texas Bankruptcy Court",
+    "court_id": "ctb",
+    "name": "District of Connecticut Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.txeb.uscourts.gov",
+    "ecf_url": "https://ecf.ctb.uscourts.gov",
     "quirks": []
   },
   {
-    "court_id": "txwb",
-    "name": "Western District of Texas Bankruptcy Court",
+    "court_id": "dcb",
+    "name": "District of Columbia Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.txwb.uscourts.gov",
+    "ecf_url": "https://ecf.dcb.uscourts.gov",
     "quirks": []
   },
   {
@@ -99,40 +108,6 @@
     "ecf_url": "https://ecf.deb.uscourts.gov",
     "quirks": [
       "large_case_flag",
-      "xml_case_opening"
-    ]
-  },
-  {
-    "court_id": "njb",
-    "name": "District of New Jersey Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.njb.uscourts.gov",
-    "quirks": [
-      "xml_case_opening"
-    ]
-  },
-  {
-    "court_id": "ilnb",
-    "name": "Northern District of Illinois Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.ilnb.uscourts.gov",
-    "quirks": [
-      "xml_case_opening"
-    ]
-  },
-  {
-    "court_id": "ilsb",
-    "name": "Southern District of Illinois Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.ilsb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "flsb",
-    "name": "Southern District of Florida Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.flsb.uscourts.gov",
-    "quirks": [
       "xml_case_opening"
     ]
   },
@@ -151,6 +126,22 @@
     "quirks": []
   },
   {
+    "court_id": "flsb",
+    "name": "Southern District of Florida Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.flsb.uscourts.gov",
+    "quirks": [
+      "xml_case_opening"
+    ]
+  },
+  {
+    "court_id": "gamb",
+    "name": "Middle District of Georgia Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.gamb.uscourts.gov",
+    "quirks": []
+  },
+  {
     "court_id": "ganb",
     "name": "Northern District of Georgia Bankruptcy Court",
     "court_type": "bankruptcy",
@@ -162,6 +153,120 @@
     "name": "Southern District of Georgia Bankruptcy Court",
     "court_type": "bankruptcy",
     "ecf_url": "https://ecf.gasb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "gub",
+    "name": "District of Guam Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.gub.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "hib",
+    "name": "District of Hawaii Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.hib.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "ianb",
+    "name": "Northern District of Iowa Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ianb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "iasb",
+    "name": "Southern District of Iowa Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.iasb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "idb",
+    "name": "District of Idaho Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.idb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "ilcb",
+    "name": "Central District of Illinois Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ilcb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "ilnb",
+    "name": "Northern District of Illinois Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ilnb.uscourts.gov",
+    "quirks": [
+      "xml_case_opening"
+    ]
+  },
+  {
+    "court_id": "ilsb",
+    "name": "Southern District of Illinois Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ilsb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "innb",
+    "name": "Northern District of Indiana Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.innb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "insb",
+    "name": "Southern District of Indiana Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.insb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "ksb",
+    "name": "District of Kansas Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ksb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "kyeb",
+    "name": "Eastern District of Kentucky Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.kyeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "kywb",
+    "name": "Western District of Kentucky Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.kywb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "laeb",
+    "name": "Eastern District of Louisiana Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.laeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "lamb",
+    "name": "Middle District of Louisiana Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.lamb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "lawb",
+    "name": "Western District of Louisiana Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.lawb.uscourts.gov",
     "quirks": []
   },
   {
@@ -179,6 +284,13 @@
     "quirks": []
   },
   {
+    "court_id": "meb",
+    "name": "District of Maine Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.meb.uscourts.gov",
+    "quirks": []
+  },
+  {
     "court_id": "mieb",
     "name": "Eastern District of Michigan Bankruptcy Court",
     "court_type": "bankruptcy",
@@ -193,17 +305,148 @@
     "quirks": []
   },
   {
-    "court_id": "paeb",
-    "name": "Eastern District of Pennsylvania Bankruptcy Court",
+    "court_id": "mnb",
+    "name": "District of Minnesota Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.paeb.uscourts.gov",
+    "ecf_url": "https://ecf.mnb.uscourts.gov",
     "quirks": []
   },
   {
-    "court_id": "pawb",
-    "name": "Western District of Pennsylvania Bankruptcy Court",
+    "court_id": "moeb",
+    "name": "Eastern District of Missouri Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.pawb.uscourts.gov",
+    "ecf_url": "https://ecf.moeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "mowb",
+    "name": "Western District of Missouri Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.mowb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "msnb",
+    "name": "Northern District of Mississippi Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.msnb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "mssb",
+    "name": "Southern District of Mississippi Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.mssb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "mtb",
+    "name": "District of Montana Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.mtb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "nceb",
+    "name": "Eastern District of North Carolina Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nceb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "ncmb",
+    "name": "Middle District of North Carolina Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ncmb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "ncwb",
+    "name": "Western District of North Carolina Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ncwb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "ndb",
+    "name": "District of North Dakota Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.ndb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "neb",
+    "name": "District of Nebraska Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.neb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "nhb",
+    "name": "District of New Hampshire Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nhb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "njb",
+    "name": "District of New Jersey Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.njb.uscourts.gov",
+    "quirks": [
+      "xml_case_opening"
+    ]
+  },
+  {
+    "court_id": "nmb",
+    "name": "District of New Mexico Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nmb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "nmib",
+    "name": "District of Northern Mariana Islands Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nmib.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "nvb",
+    "name": "District of Nevada Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nvb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "nyeb",
+    "name": "Eastern District of New York Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nyeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "nynb",
+    "name": "Northern District of New York Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nynb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "nysb",
+    "name": "Southern District of New York Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nysb.uscourts.gov",
+    "quirks": [
+      "large_case_flag",
+      "xml_case_opening"
+    ]
+  },
+  {
+    "court_id": "nywb",
+    "name": "Western District of New York Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.nywb.uscourts.gov",
     "quirks": []
   },
   {
@@ -218,6 +461,141 @@
     "name": "Southern District of Ohio Bankruptcy Court",
     "court_type": "bankruptcy",
     "ecf_url": "https://ecf.ohsb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "okeb",
+    "name": "Eastern District of Oklahoma Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.okeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "oknb",
+    "name": "Northern District of Oklahoma Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.oknb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "okwb",
+    "name": "Western District of Oklahoma Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.okwb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "orb",
+    "name": "District of Oregon Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.orb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "paeb",
+    "name": "Eastern District of Pennsylvania Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.paeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "pamb",
+    "name": "Middle District of Pennsylvania Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.pamb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "pawb",
+    "name": "Western District of Pennsylvania Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.pawb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "prb",
+    "name": "District of Puerto Rico Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.prb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "rib",
+    "name": "District of Rhode Island Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.rib.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "scb",
+    "name": "District of South Carolina Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.scb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "sdb",
+    "name": "District of South Dakota Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.sdb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "tneb",
+    "name": "Eastern District of Tennessee Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.tneb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "tnmb",
+    "name": "Middle District of Tennessee Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.tnmb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "tnwb",
+    "name": "Western District of Tennessee Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.tnwb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "txeb",
+    "name": "Eastern District of Texas Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.txeb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "txnb",
+    "name": "Northern District of Texas Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.txnb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "txsb",
+    "name": "Southern District of Texas Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.txsb.uscourts.gov",
+    "quirks": [
+      "xml_case_opening"
+    ]
+  },
+  {
+    "court_id": "txwb",
+    "name": "Western District of Texas Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.txwb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "utb",
+    "name": "District of Utah Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.utb.uscourts.gov",
     "quirks": []
   },
   {
@@ -237,80 +615,24 @@
     "quirks": []
   },
   {
-    "court_id": "tnmb",
-    "name": "Middle District of Tennessee Bankruptcy Court",
+    "court_id": "vib",
+    "name": "District of Virgin Islands Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.tnmb.uscourts.gov",
+    "ecf_url": "https://ecf.vib.uscourts.gov",
     "quirks": []
   },
   {
-    "court_id": "tnwb",
-    "name": "Western District of Tennessee Bankruptcy Court",
+    "court_id": "vtb",
+    "name": "District of Vermont Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.tnwb.uscourts.gov",
+    "ecf_url": "https://ecf.vtb.uscourts.gov",
     "quirks": []
   },
   {
-    "court_id": "tneb",
-    "name": "Eastern District of Tennessee Bankruptcy Court",
+    "court_id": "waeb",
+    "name": "Eastern District of Washington Bankruptcy Court",
     "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.tneb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "azb",
-    "name": "District of Arizona Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.azb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "nvb",
-    "name": "District of Nevada Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.nvb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "cob",
-    "name": "District of Colorado Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.cob.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "mnb",
-    "name": "District of Minnesota Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.mnb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "ncmb",
-    "name": "Middle District of North Carolina Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.ncmb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "nceb",
-    "name": "Eastern District of North Carolina Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.nceb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "ctb",
-    "name": "District of Connecticut Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.ctb.uscourts.gov",
-    "quirks": []
-  },
-  {
-    "court_id": "dcb",
-    "name": "District of Columbia Bankruptcy Court",
-    "court_type": "bankruptcy",
-    "ecf_url": "https://ecf.dcb.uscourts.gov",
+    "ecf_url": "https://ecf.waeb.uscourts.gov",
     "quirks": []
   },
   {
@@ -318,6 +640,41 @@
     "name": "Western District of Washington Bankruptcy Court",
     "court_type": "bankruptcy",
     "ecf_url": "https://ecf.wawb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "wieb",
+    "name": "Eastern District of Wisconsin Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.wieb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "wiwb",
+    "name": "Western District of Wisconsin Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.wiwb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "wvnb",
+    "name": "Northern District of West Virginia Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.wvnb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "wvsb",
+    "name": "Southern District of West Virginia Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.wvsb.uscourts.gov",
+    "quirks": []
+  },
+  {
+    "court_id": "wyb",
+    "name": "District of Wyoming Bankruptcy Court",
+    "court_type": "bankruptcy",
+    "ecf_url": "https://ecf.wyb.uscourts.gov",
     "quirks": []
   }
 ]
