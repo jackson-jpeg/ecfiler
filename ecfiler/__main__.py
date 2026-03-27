@@ -404,6 +404,59 @@ def serve(host: str, port: int, do_reload: bool) -> None:
     )
 
 
+@main.command("info")
+@click.argument("court_id")
+def court_info(court_id: str) -> None:
+    """Show detailed info about a specific court.
+
+    Example: ecfiler info nysd
+    """
+    from rich.console import Console
+    from rich.table import Table
+
+    from ecfiler.courts.registry import CourtNotFoundError, CourtRegistry
+    from ecfiler.filing.events import get_common_events
+
+    console = Console()
+    registry = CourtRegistry()
+
+    try:
+        court = registry.get(court_id)
+    except CourtNotFoundError:
+        console.print(f"[red]Court '{court_id}' not found.[/red]")
+        results = registry.search(court_id)
+        if results:
+            console.print("Did you mean:")
+            for r in results[:5]:
+                console.print(f"  {r['court_id']} — {r['name']}")
+        return
+
+    p = court.profile
+    console.print(f"\n  [bold]{p.name}[/bold]")
+    console.print(f"  ID:   {p.court_id}")
+    console.print(f"  Type: {p.court_type}")
+    console.print(f"  URL:  {p.ecf_url}")
+
+    if p.quirks:
+        console.print(f"  Quirks: {', '.join(p.quirks)}")
+
+    events = get_common_events(p.court_type)
+    console.print(f"\n  [bold]Event Codes ({len(events)})[/bold]")
+
+    table = Table(border_style="dim", show_header=True)
+    table.add_column("Code", width=6)
+    table.add_column("Description")
+    table.add_column("Category", style="dim")
+
+    for e in events[:20]:
+        table.add_row(e.code, e.description, e.category)
+
+    if len(events) > 20:
+        table.add_row("...", f"({len(events) - 20} more)", "")
+
+    console.print(table)
+
+
 @main.command("check")
 @click.pass_context
 def check_setup(ctx: click.Context) -> None:

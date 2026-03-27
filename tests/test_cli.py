@@ -147,6 +147,18 @@ class TestCli:
         assert "PDF" in result.output or "pdf" in result.output
         assert "AI" in result.output or "extract" in result.output.lower()
 
+    def test_info_known_court(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["info", "nysd"])
+        assert result.exit_code == 0
+        assert "Southern District of New York" in result.output
+        assert "district" in result.output
+        assert "Event Codes" in result.output
+
+    def test_info_unknown_court(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["info", "zzz"])
+        assert result.exit_code == 0
+        assert "not found" in result.output
+
     def test_smart_nonexistent_file(self, runner: CliRunner) -> None:
         result = runner.invoke(main, ["smart", "/nonexistent/file.pdf"])
         # Click catches nonexistent file

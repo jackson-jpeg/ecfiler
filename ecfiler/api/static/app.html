@@ -218,6 +218,21 @@
                             </div>
                         </template>
 
+                        <!-- Checklist -->
+                        <template x-if="filingChecklist && filingChecklist.items.length > 0">
+                            <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+                                <div class="bg-navy text-white px-4 py-2 text-sm font-medium" x-text="filingChecklist.title"></div>
+                                <div class="p-4 space-y-1">
+                                    <template x-for="item in filingChecklist.items" :key="item.text">
+                                        <div class="text-sm flex items-start gap-2">
+                                            <span :class="item.required ? 'text-court-red font-bold' : 'text-gray-400'" x-text="item.required ? '!' : '·'"></span>
+                                            <span x-text="item.text"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
                         <!-- Confirm / Cancel -->
                         <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 text-center">
                             <div class="text-lg font-bold text-court-red mb-1">Attorney Approval Required</div>
@@ -529,6 +544,7 @@ function ecfiler() {
         savedDrafts: [],
         draftCount: 0,
         hasApiKey: true,
+        filingChecklist: null,
         valResults: [],
         valPassCount: 0,
         valLoading: false,
@@ -671,6 +687,14 @@ function ecfiler() {
                 const data = await response.json();
                 this.filing = data;
 
+                // Fetch checklist for this filing type
+                if (data.event_description) {
+                    try {
+                        const clRes = await fetch('/api/checklist/' + encodeURIComponent(data.event_description));
+                        this.filingChecklist = await clRes.json();
+                    } catch (e) { this.filingChecklist = null; }
+                }
+
                 await new Promise(r => setTimeout(r, 500));
                 this.step = 'review';
 
@@ -717,6 +741,7 @@ function ecfiler() {
             this.attachments = [];
             this.showAttachments = false;
             this.sealingLevel = 'public';
+            this.filingChecklist = null;
             this.currentAnalysisStep = 0;
         },
 

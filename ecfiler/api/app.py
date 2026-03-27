@@ -671,6 +671,23 @@ def get_nos_categories() -> list[str]:
     return get_nature_of_suit_categories()
 
 
+@app.get("/api/checklist/{event_description}")
+def get_filing_checklist(event_description: str) -> dict | None:
+    """Get a filing checklist for a specific event type.
+
+    Returns checklist items tailored to the filing type, or null if none.
+    """
+    from ecfiler.filing.checklist import get_checklist
+
+    cl = get_checklist(event_description)
+    if cl is None:
+        return None
+    return {
+        "title": cl.title,
+        "items": [{"text": i.text, "required": i.required} for i in cl.items],
+    }
+
+
 @app.get("/api/drafts")
 def list_drafts_endpoint() -> list[dict]:
     """List saved filing drafts."""

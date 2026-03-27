@@ -40,8 +40,11 @@ class ValidationResult:
             f"{status}",
             f"{self.file_size_mb:.1f}MB",
             f"{self.page_count} pages",
-            "searchable" if self.has_text else "NOT searchable",
         ]
+        if self.has_text:
+            parts.append("searchable")
+        else:
+            parts.append("⚠ NOT searchable")
         return ", ".join(parts)
 
 
