@@ -2,7 +2,7 @@
 
 import pytest
 
-from ecfiler.courts.base import BaseCourt, CourtProfile, CourtSelectors
+from ecfiler.courts.base import BaseCourt, CourtProfile, CourtSelectors, ECFFormError
 from ecfiler.courts.district import DistrictCourt
 from ecfiler.courts.bankruptcy import BankruptcyCourt
 from ecfiler.courts.appellate import AppellateCourt
@@ -111,6 +111,37 @@ class TestCourtProfile:
         assert court.selectors.case_number_input == "#custom_case_input"
         # Other selectors should keep defaults
         assert court.selectors.file_upload == "input[type='file']"
+
+
+class TestCourtSelectors:
+    def test_default_selectors(self) -> None:
+        s = CourtSelectors()
+        assert s.docket_text == "textarea[name='docket_text']"
+        assert s.brief_notice == "input[name='short_title']"
+        assert s.fee_status == "select[name='fee_status']"
+        assert s.case_number_input == "input[name='case_num']"
+
+    def test_custom_selectors_from_dict(self) -> None:
+        data = {
+            "court_id": "test",
+            "name": "Test",
+            "ecf_url": "https://ecf.test.uscourts.gov",
+            "selectors": {
+                "docket_text": "#custom_docket",
+                "brief_notice": "#custom_notice",
+            },
+        }
+        court = BaseCourt.from_dict(data)
+        assert court.selectors.docket_text == "#custom_docket"
+        assert court.selectors.brief_notice == "#custom_notice"
+        # Unchanged defaults
+        assert court.selectors.fee_status == "select[name='fee_status']"
+
+
+class TestECFFormError:
+    def test_error_is_exception(self) -> None:
+        with pytest.raises(ECFFormError, match="test error"):
+            raise ECFFormError("test error")
 
 
 class TestBankruptcyCourt:

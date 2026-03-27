@@ -832,6 +832,14 @@ class FilingWorkflow:
             court.select_event(page, self.filing.event.code)
             browser.screenshot("event_selected")
 
+            # Select filing party
+            if self.filing.filing_party:
+                console.print("  [dim]Selecting filing party...[/dim]")
+                selected = court.select_parties(page, [self.filing.filing_party.party_name])
+                if selected == 0:
+                    console.print("  [yellow]⚠ Could not auto-select party — may need manual selection[/yellow]")
+                browser.screenshot("party_selected")
+
             # Upload documents
             main_doc = self.filing.main_document
             if main_doc:
@@ -845,9 +853,22 @@ class FilingWorkflow:
 
             # Related entry
             if self.filing.related_entry:
+                console.print("  [dim]Selecting related docket entry...[/dim]")
                 court.select_related_entry(
                     page, self.filing.related_entry.docket_number
                 )
+
+            # Docket text (required by most courts)
+            docket_text = self.filing.docket_text or self.filing.event.description
+            console.print("  [dim]Filling docket text...[/dim]")
+            court.fill_docket_text(page, docket_text)
+
+            # Brief notice (required for motions)
+            if "motion" in self.filing.event.description.lower():
+                court.fill_brief_notice(page, self.filing.event.description)
+
+            # Fee status
+            court.select_fee_status(page, "paid")
 
             browser.screenshot("form_filled")
 
