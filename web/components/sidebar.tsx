@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 const filing = [
   { href: "/file", label: "New Filing", icon: "M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" },
@@ -39,6 +40,17 @@ function NavItem({ href, label, icon, active }: { href: string; label: string; i
   );
 }
 
+function UserName() {
+  const { user } = useUser();
+  if (!user) return null;
+  return (
+    <div className="min-w-0">
+      <div className="text-xs text-zinc-300 font-medium truncate">{user.firstName || user.emailAddresses[0]?.emailAddress?.split("@")[0] || "User"}</div>
+      <div className="text-[10px] text-zinc-600 truncate">{user.emailAddresses[0]?.emailAddress || ""}</div>
+    </div>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
 
@@ -71,13 +83,23 @@ export function Sidebar() {
         ))}
       </div>
 
-      <div className="mt-auto px-4 py-3 border-t border-zinc-800 flex gap-3">
-        <a href="/api/docs" target="_blank" className="text-[11px] text-zinc-600 hover:text-zinc-400 transition">
-          API
-        </a>
-        <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[11px] text-zinc-600 hover:text-zinc-400 transition">
-          GitHub
-        </a>
+      <div className="mt-auto border-t border-zinc-800">
+        <div className="px-4 py-3 flex items-center gap-3">
+          <UserButton
+            appearance={{
+              elements: { avatarBox: "w-7 h-7" },
+            }}
+          />
+          <UserName />
+        </div>
+        <div className="px-4 pb-3 flex gap-3">
+          <a href="/api/docs" target="_blank" className="text-[11px] text-zinc-600 hover:text-zinc-400 transition">
+            API
+          </a>
+          <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[11px] text-zinc-600 hover:text-zinc-400 transition">
+            GitHub
+          </a>
+        </div>
       </div>
     </aside>
   );

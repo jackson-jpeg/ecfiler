@@ -13,11 +13,12 @@ export default function LandingPage() {
             <div className="w-7 h-7 bg-zinc-900 rounded-lg flex items-center justify-center text-white text-[11px] font-bold">E</div>
             <span className="text-[15px] font-semibold tracking-tight">ECFiler</span>
           </div>
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-4 text-sm">
             <Link href="/courts" className="text-zinc-500 hover:text-zinc-900 transition">Courts</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-zinc-500 hover:text-zinc-900 transition">GitHub</a>
-            <Link href="/file" className="px-4 py-1.5 bg-zinc-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition">
-              Open App
+            <Link href="/sign-in" className="text-zinc-500 hover:text-zinc-900 transition font-medium">Sign In</Link>
+            <Link href="/sign-up" className="px-4 py-1.5 bg-zinc-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition">
+              Get Started
             </Link>
           </div>
         </div>
