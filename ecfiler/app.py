@@ -45,24 +45,27 @@ def _main_menu(cfg: AppConfig) -> None:
         console.print()
         console.print("[bold]Main Menu[/bold]")
         console.print("  [1] New Filing")
-        console.print("  [2] Filing History")
-        console.print("  [3] Settings")
-        console.print("  [4] Setup Credentials")
-        console.print("  [5] Quit")
+        console.print("  [2] Resume Draft")
+        console.print("  [3] Filing History")
+        console.print("  [4] Settings")
+        console.print("  [5] Setup Credentials")
+        console.print("  [6] Quit")
         console.print()
 
-        choice = Prompt.ask("Select", choices=["1", "2", "3", "4", "5"], default="1")
+        choice = Prompt.ask("Select", choices=["1", "2", "3", "4", "5", "6"], default="1")
 
         match choice:
             case "1":
                 _new_filing(cfg)
             case "2":
-                _filing_history(cfg)
+                _resume_draft(cfg)
             case "3":
-                _settings(cfg)
+                _filing_history(cfg)
             case "4":
-                _setup_credentials(cfg)
+                _settings(cfg)
             case "5":
+                _setup_credentials(cfg)
+            case "6":
                 console.print("[dim]Goodbye.[/dim]")
                 break
 
@@ -73,6 +76,67 @@ def _new_filing(cfg: AppConfig) -> None:
 
     workflow = FilingWorkflow(cfg)
     workflow.run()
+
+
+def _resume_draft(cfg: AppConfig) -> None:
+    """Resume a saved draft filing."""
+    from ecfiler.filing.drafts import delete_draft, list_drafts, load_draft
+
+    drafts = list_drafts()
+    if not drafts:
+        console.print("\n  [dim]No saved drafts.[/dim]")
+        return
+
+    console.print("\n  [bold]Saved Drafts[/bold]")
+    for i, d in enumerate(drafts, 1):
+        console.print(
+            f"  [{i}] {d['name']} — {d['court']} {d['case']} "
+            f"{d['event'][:30]} ({d['saved_at'][:10]})"
+        )
+
+    choice = Prompt.ask(
+        "  Select draft",
+        choices=[str(i) for i in range(1, len(drafts) + 1)],
+    )
+    selected = drafts[int(choice) - 1]
+    data = load_draft(selected["file"])
+
+    if not data:
+        console.print("  [red]Failed to load draft.[/red]")
+        return
+
+    console.print(f"\n  Resuming: [bold]{selected['name']}[/bold]")
+
+    # Reconstruct the Filing from draft data and run the workflow
+    from ecfiler.filing.models import Filing
+    from ecfiler.filing.workflow import FilingWorkflow
+
+    try:
+        filing = Filing.model_validate(data)
+        workflow = FilingWorkflow(cfg)
+        workflow.filing = filing
+
+        # Show what we have so far and jump to review
+        console.print(f"  Court: {filing.court_id}")
+        console.print(f"  Case:  {filing.case.case_number}")
+        console.print(f"  Event: {filing.event.description}")
+
+        if Prompt.ask("  Continue to review?", choices=["y", "n"], default="y") == "y":
+            # Run from AI validation onward
+            workflow._step_preflight()
+            workflow._step_ai_validation()
+            if workflow._step_attorney_review():
+                if cfg.general.dry_run:
+                    console.print("\n  [yellow]DRY RUN — stopping.[/yellow]")
+                else:
+                    receipt = workflow._step_submit_filing()
+                    if receipt:
+                        workflow._step_save_receipt(receipt)
+                # Clean up draft on successful review
+                delete_draft(selected["file"])
+                console.print(f"  [dim]Draft '{selected['name']}' removed.[/dim]")
+    except Exception as e:
+        console.print(f"  [red]Error resuming draft: {e}[/red]")
 
 
 def _filing_history(cfg: AppConfig) -> None:

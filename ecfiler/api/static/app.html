@@ -36,6 +36,9 @@
     </div>
     <div class="flex items-center gap-4 text-sm">
         <button @click="view = 'file'" :class="view === 'file' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">File</button>
+        <button @click="view = 'drafts'; loadDrafts()" :class="view === 'drafts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">
+            Drafts <span x-show="draftCount > 0" class="bg-gold text-navy text-xs px-1 rounded-full" x-text="draftCount"></span>
+        </button>
         <button @click="view = 'cos'" :class="view === 'cos' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Cert of Service</button>
         <button @click="view = 'courts'" :class="view === 'courts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Courts</button>
         <button @click="view = 'history'" :class="view === 'history' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">History</button>
@@ -45,6 +48,16 @@
 
 <!-- Main Content -->
 <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <!-- Setup banner (no API key) -->
+    <div x-show="!hasApiKey" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <span class="text-amber-500 text-lg">&#9888;</span>
+        <div class="text-sm">
+            <div class="font-medium text-amber-800">API key not configured</div>
+            <div class="text-amber-700">Smart filing (AI analysis) requires an Anthropic API key. PDF validation, courts, and certificate of service work without it.</div>
+            <div class="text-amber-600 mt-1 font-mono text-xs">export ANTHROPIC_API_KEY=sk-ant-...</div>
+        </div>
+    </div>
 
     <!-- ===== FILE VIEW ===== -->
     <template x-if="view === 'file'">
@@ -328,6 +341,47 @@
         </div>
     </template>
 
+    <!-- ===== DRAFTS VIEW ===== -->
+    <template x-if="view === 'drafts'">
+        <div>
+            <h2 class="text-xl font-semibold text-navy mb-4">Filing Drafts</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <template x-if="savedDrafts.length > 0">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-left">
+                            <tr>
+                                <th class="px-4 py-2 font-medium text-gray-500">Name</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Court</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Case</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Event</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Saved</th>
+                                <th class="px-4 py-2 font-medium text-gray-500 w-20"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            <template x-for="d in savedDrafts" :key="d.file">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-2 font-medium text-navy" x-text="d.name"></td>
+                                    <td class="px-4 py-2 font-mono" x-text="d.court"></td>
+                                    <td class="px-4 py-2" x-text="d.case"></td>
+                                    <td class="px-4 py-2" x-text="d.event?.substring(0,35)"></td>
+                                    <td class="px-4 py-2 text-gray-500" x-text="d.saved_at?.substring(0,16)"></td>
+                                    <td class="px-4 py-2">
+                                        <button @click="deleteDraft(d.file)" class="text-xs text-gray-400 hover:text-court-red">delete</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+                <div x-show="savedDrafts.length === 0" class="p-12 text-center text-gray-400">
+                    <div class="text-3xl mb-2">&#128221;</div>
+                    <p>No drafts saved. Cancel a filing to save it as a draft.</p>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- ===== CERTIFICATE OF SERVICE VIEW ===== -->
     <template x-if="view === 'cos'">
         <div>
@@ -407,6 +461,9 @@ function ecfiler() {
         cosCaseNumber: '',
         cosRecipients: [{name:'', role:'defendant', attorney_name:'', method:'CM/ECF', email:'', address:''}],
         cosText: '',
+        savedDrafts: [],
+        draftCount: 0,
+        hasApiKey: true,
         currentAnalysisStep: 0,
         analysisSteps: [
             'Validating PDF format and structure',
@@ -434,6 +491,8 @@ function ecfiler() {
         init() {
             this.searchCourts();
             this.loadHistory();
+            this.loadDrafts();
+            this.checkHealth();
         },
 
         handleDrop(event) {
@@ -597,6 +656,29 @@ function ecfiler() {
                 a.download = 'certificate_of_service.pdf';
                 a.click();
                 URL.revokeObjectURL(url);
+            } catch (e) { console.error(e); }
+        },
+
+        async checkHealth() {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                this.hasApiKey = data.has_api_key;
+            } catch (e) { console.error(e); }
+        },
+
+        async loadDrafts() {
+            try {
+                const res = await fetch('/api/drafts');
+                this.savedDrafts = await res.json();
+                this.draftCount = this.savedDrafts.length;
+            } catch (e) { console.error(e); }
+        },
+
+        async deleteDraft(name) {
+            try {
+                await fetch('/api/drafts/' + encodeURIComponent(name), {method: 'DELETE'});
+                this.loadDrafts();
             } catch (e) { console.error(e); }
         },
     };
