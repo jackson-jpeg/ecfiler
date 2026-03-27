@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sidebar: #18181b;
+  --color-sidebar-hover: #27272a;
+  --color-sidebar-active: #3f3f46;
+  --color-accent: #2563eb;
+  --color-accent-light: #dbeafe;
+  --color-surface: #ffffff;
+  --color-muted: #71717a;
+  --color-border: #e4e4e7;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

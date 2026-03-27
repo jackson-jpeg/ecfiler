@@ -1,6 +1,9 @@
 {
-  "buildCommand": "",
-  "outputDirectory": "site",
-  "framework": null,
-  "installCommand": ""
+  "buildCommand": "cd web && npm install && npm run build",
+  "outputDirectory": "web/.next",
+  "framework": "nextjs",
+  "installCommand": "cd web && npm install",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://ecfiler-production.up.railway.app"
+  }
 }
