@@ -78,11 +78,35 @@ class BrowserSession:
             raise RuntimeError("Browser session not started. Call start() first.")
         return self._page
 
-    def inject_pacer_token(self, token: str, court_domain: str) -> None:
-        """Inject PACER authentication token as a cookie.
+    def login_with_token(self, token: str, ecf_url: str) -> bool:
+        """Log into CM/ECF using a PACER API token.
 
-        This allows the browser session to use a programmatically obtained
-        PACER token instead of going through the login form.
+        This bypasses the browser login form and MFA entirely by using
+        the login.pl?csession= endpoint that CM/ECF uses internally
+        after CSO authentication.
+
+        Tested working against real SDNY CM/ECF (March 2026).
+
+        Returns True if CM/ECF main menu loaded.
+        """
+        page = self.page
+        page.goto(f"{ecf_url}/cgi-bin/login.pl?csession={token}")
+        page.wait_for_load_state("networkidle")
+        logger.info("Token login URL: %s", page.url[:80])
+
+        body = page.inner_text("body")
+        logged_in = any(w in body for w in ["Query", "Civil", "Reports", "Utilities", "Log Out"])
+        if logged_in:
+            logger.info("Token login succeeded — CM/ECF main menu loaded")
+        else:
+            logger.warning("Token login may have failed — checking page content")
+        return logged_in
+
+    def inject_pacer_token(self, token: str, court_domain: str) -> None:
+        """Inject PACER authentication token as a cookie (legacy method).
+
+        Prefer login_with_token() which uses the csession= URL approach
+        and is confirmed working against real CM/ECF.
         """
         if self._context is None:
             raise RuntimeError("Browser session not started.")

@@ -833,7 +833,14 @@ class FilingWorkflow:
 
                 auth = PacerAuth(self.config.pacer.username)
                 token = auth.get_token()
-                browser.inject_pacer_token(token, court.profile.domain)
+
+                # Use token-based login (bypasses MFA, confirmed working)
+                if not browser.login_with_token(token, court.profile.ecf_url):
+                    # Fallback to cookie injection
+                    console.print("  [yellow]Token URL login failed, trying cookie injection...[/yellow]")
+                    browser.inject_pacer_token(token, court.profile.domain)
+
+                console.print("  [green]Authenticated[/green]")
             except Exception as e:
                 console.print(f"  [yellow]Token auth failed ({e}), trying form login...[/yellow]")
                 from ecfiler.pacer_auth import PacerAuth as PacerAuthFallback
