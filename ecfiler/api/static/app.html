@@ -3,847 +3,517 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECFiler — Smart Filing</title>
+    <title>ECFiler</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navy: '#1B2A4A',
-                        gold: '#C4952A',
-                        court: { green: '#2D7D46', red: '#B22234' },
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
-        .pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
-        .drop-zone.dragover { border-color: #C4952A; background: rgba(196,149,42,0.05); }
-        [x-cloak] { display: none !important; }
-    </style>
+    <script>tailwind.config={theme:{extend:{colors:{navy:'#1B2A4A','navy-light':'#243556',gold:'#C4952A','gold-light':'#D4A94A',ok:'#22C55E',bad:'#EF4444',warn:'#F59E0B'}}}}</script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        [x-cloak] { display: none !important; }
+        .drop-active { border-color: #C4952A !important; background: rgba(196,149,42,0.04) !important; transform: scale(1.01); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-up { animation: fadeUp 0.4s ease-out; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
+        @keyframes progress { from { width: 0%; } }
+        .progress-animate { animation: progress 1.5s ease-out; }
+        .nav-item { position: relative; padding: 0.5rem 0; }
+        .nav-item.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #C4952A; border-radius: 1px; }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen" x-data="ecfiler()" x-cloak>
+<body class="bg-slate-50 min-h-screen flex flex-col" x-data="ecfiler()" x-cloak>
 
-<!-- Header -->
-<header class="bg-navy text-white px-6 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-        <h1 class="text-xl font-bold tracking-wide">EC<span class="text-gold">Filer</span></h1>
-        <span class="text-gray-400 text-sm hidden sm:inline">Smart Filing for Federal Courts</span>
+<!-- Nav -->
+<nav class="bg-navy border-b border-white/10 sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+        <a href="/" class="flex items-center gap-2 group">
+            <div class="w-8 h-8 bg-gold rounded-lg flex items-center justify-center text-navy font-bold text-sm">E</div>
+            <span class="text-white font-semibold tracking-tight">ECFiler</span>
+        </a>
+        <div class="flex items-center gap-1 text-[13px] overflow-x-auto">
+            <template x-for="tab in tabs" :key="tab.id">
+                <button
+                    @click="switchTab(tab.id)"
+                    class="nav-item px-3 py-2 rounded-md transition-colors whitespace-nowrap"
+                    :class="view === tab.id ? 'active text-gold font-medium' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                    x-text="tab.label"
+                ></button>
+            </template>
+            <a href="/docs" target="_blank" class="px-3 py-2 text-slate-500 hover:text-white transition-colors">API &rarr;</a>
+        </div>
     </div>
-    <div class="flex items-center gap-4 text-sm">
-        <button @click="view = 'file'" :class="view === 'file' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">File</button>
-        <button @click="view = 'drafts'; loadDrafts()" :class="view === 'drafts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">
-            Drafts <span x-show="draftCount > 0" class="bg-gold text-navy text-xs px-1 rounded-full" x-text="draftCount"></span>
-        </button>
-        <button @click="view = 'validate'" :class="view === 'validate' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Validate</button>
-        <button @click="view = 'cos'" :class="view === 'cos' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Cert of Service</button>
-        <button @click="view = 'courts'" :class="view === 'courts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Courts</button>
-        <button @click="view = 'history'" :class="view === 'history' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">History</button>
-        <a href="/docs" target="_blank" class="text-gray-400 hover:text-white transition">API</a>
+</nav>
+
+<!-- Alert Banner -->
+<div x-show="!hasApiKey" x-transition class="bg-amber-50 border-b border-amber-200">
+    <div class="max-w-5xl mx-auto px-6 py-3 flex items-center gap-3 text-sm">
+        <div class="w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">!</div>
+        <span class="text-amber-800">Smart filing needs an API key. Validation, courts, and certificate of service work without it.</span>
     </div>
-</header>
+</div>
 
-<!-- Main Content -->
-<main class="max-w-4xl mx-auto px-4 py-8">
+<main class="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full">
 
-    <!-- Setup banner (no API key) -->
-    <div x-show="!hasApiKey" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <span class="text-amber-500 text-lg">&#9888;</span>
-        <div class="text-sm">
-            <div class="font-medium text-amber-800">API key not configured</div>
-            <div class="text-amber-700">Smart filing (AI analysis) requires an Anthropic API key. PDF validation, courts, and certificate of service work without it.</div>
-            <div class="text-amber-600 mt-1 font-mono text-xs">export ANTHROPIC_API_KEY=sk-ant-...</div>
+<!-- ===== FILE ===== -->
+<template x-if="view === 'file'">
+<div class="fade-up">
+
+    <!-- Upload -->
+    <div x-show="step === 'upload'">
+        <div class="text-center max-w-lg mx-auto mb-10">
+            <h1 class="text-3xl font-bold text-navy mb-3">Drop a document.</h1>
+            <p class="text-slate-500 text-lg">AI reads your PDF and prepares the entire filing. You just confirm.</p>
+        </div>
+
+        <div
+            class="relative border-2 border-dashed border-slate-200 rounded-2xl p-20 text-center cursor-pointer hover:border-gold/50 transition-all duration-200 bg-white shadow-sm"
+            @click="$refs.fileInput.click()"
+            @dragover.prevent="$event.currentTarget.classList.add('drop-active')"
+            @dragleave.prevent="$event.currentTarget.classList.remove('drop-active')"
+            @drop.prevent="$event.currentTarget.classList.remove('drop-active'); handleDrop($event)"
+        >
+            <div class="w-16 h-16 bg-navy/5 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                <svg class="w-8 h-8 text-navy/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <p class="text-slate-700 font-medium mb-1">Drop your PDF here</p>
+            <p class="text-slate-400 text-sm">or click to browse</p>
+            <input type="file" x-ref="fileInput" accept=".pdf" class="hidden" @change="handleFileSelect($event)">
+        </div>
+
+        <!-- Options row -->
+        <div class="flex items-center justify-center gap-4 mt-4 text-sm">
+            <button @click="showAttachments = !showAttachments" class="text-slate-400 hover:text-navy transition" x-text="showAttachments ? 'Hide attachments' : '+ Attachments'"></button>
+            <select x-model="sealingLevel" class="text-slate-400 bg-transparent border-0 text-sm cursor-pointer focus:ring-0">
+                <option value="public">Public filing</option>
+                <option value="sealed">Sealed</option>
+                <option value="restricted">Restricted</option>
+                <option value="ex_parte">Ex parte</option>
+            </select>
+        </div>
+
+        <!-- Attachments -->
+        <div x-show="showAttachments" x-transition class="mt-4 bg-white rounded-xl border p-4 max-w-lg mx-auto">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-slate-600">Attachments</span>
+                <button @click="$refs.attInput.click()" class="text-xs text-gold hover:text-gold-light font-medium">+ Add files</button>
+            </div>
+            <input type="file" x-ref="attInput" accept=".pdf" multiple class="hidden" @change="addAttachments($event)">
+            <template x-for="(att, i) in attachments" :key="i">
+                <div class="flex items-center justify-between py-1.5 text-sm border-t first:border-0">
+                    <span class="text-slate-600 truncate" x-text="att.name"></span>
+                    <button @click="attachments.splice(i, 1)" class="text-slate-300 hover:text-bad ml-2">&times;</button>
+                </div>
+            </template>
+            <div x-show="attachments.length === 0" class="text-xs text-slate-400 py-2">Proposed orders, exhibits, declarations...</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-4 mt-10 max-w-md mx-auto">
+            <div class="text-center"><div class="text-2xl font-bold text-navy">150</div><div class="text-xs text-slate-400 mt-0.5">Courts</div></div>
+            <div class="text-center"><div class="text-2xl font-bold text-navy">7</div><div class="text-xs text-slate-400 mt-0.5">Safety Gates</div></div>
+            <div class="text-center"><div class="text-2xl font-bold text-navy">AI</div><div class="text-xs text-slate-400 mt-0.5">Powered</div></div>
         </div>
     </div>
 
-    <!-- ===== FILE VIEW ===== -->
-    <template x-if="view === 'file'">
-        <div>
-            <!-- Step 0: Drop Zone -->
-            <div x-show="step === 'upload'" class="transition-all">
-                <div class="text-center mb-8">
-                    <h2 class="text-2xl font-semibold text-navy mb-2">Drop a document. We'll handle the rest.</h2>
-                    <p class="text-gray-500">ECFiler reads your PDF, extracts the filing details, and prepares everything for one-click submission.</p>
+    <!-- Analyzing -->
+    <div x-show="step === 'analyzing'" class="fade-up">
+        <div class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border p-8">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-gold/10 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-gold spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 </div>
-
-                <div
-                    class="drop-zone border-2 border-dashed border-gray-300 rounded-xl p-16 text-center cursor-pointer hover:border-gold transition-colors"
-                    @click="$refs.fileInput.click()"
-                    @dragover.prevent="$event.currentTarget.classList.add('dragover')"
-                    @dragleave.prevent="$event.currentTarget.classList.remove('dragover')"
-                    @drop.prevent="handleDrop($event)"
-                >
-                    <div class="text-5xl mb-4 text-gray-300">&#128196;</div>
-                    <p class="text-lg text-gray-600 mb-1">Drop your main document PDF here</p>
-                    <p class="text-sm text-gray-400">or click to browse</p>
-                    <input type="file" x-ref="fileInput" accept=".pdf" class="hidden" @change="handleFileSelect($event)">
-                </div>
-
-                <!-- Attachments -->
-                <div class="mt-4 bg-white rounded-xl shadow-sm p-4" x-show="attachments.length > 0 || showAttachments">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium text-gray-600">Attachments</span>
-                        <button @click="$refs.attInput.click()" class="text-xs text-gold hover:underline">+ Add</button>
-                    </div>
-                    <input type="file" x-ref="attInput" accept=".pdf" multiple class="hidden" @change="addAttachments($event)">
-                    <template x-for="(att, i) in attachments" :key="i">
-                        <div class="flex items-center justify-between py-1 text-sm">
-                            <span class="text-gray-700" x-text="att.name"></span>
-                            <button @click="attachments.splice(i, 1)" class="text-gray-400 hover:text-court-red text-xs">remove</button>
-                        </div>
-                    </template>
-                    <div x-show="attachments.length === 0" class="text-xs text-gray-400">No attachments yet</div>
-                </div>
-                <div class="mt-2 flex gap-3">
-                    <button @click="showAttachments = !showAttachments" class="text-xs text-gray-500 hover:text-navy" x-show="!showAttachments">
-                        + Add attachments (proposed order, exhibits...)
-                    </button>
-                    <select x-model="sealingLevel" class="text-xs border rounded px-2 py-1 text-gray-500">
-                        <option value="public">Public filing</option>
-                        <option value="sealed">Filed under seal</option>
-                        <option value="restricted">Restricted access</option>
-                        <option value="ex_parte">Ex parte</option>
-                    </select>
-                </div>
-
-                <div class="mt-6 grid grid-cols-3 gap-4 text-center text-sm text-gray-500">
-                    <div class="bg-white rounded-lg p-3 shadow-sm">
-                        <div class="font-semibold text-navy">150</div>
-                        <div>Federal Courts</div>
-                    </div>
-                    <div class="bg-white rounded-lg p-3 shadow-sm">
-                        <div class="font-semibold text-navy">7</div>
-                        <div>Safety Gates</div>
-                    </div>
-                    <div class="bg-white rounded-lg p-3 shadow-sm">
-                        <div class="font-semibold text-navy">AI</div>
-                        <div>Auto-Extraction</div>
-                    </div>
+                <div>
+                    <div class="font-semibold text-navy">Analyzing document</div>
+                    <div class="text-sm text-slate-400" x-text="fileName"></div>
                 </div>
             </div>
-
-            <!-- Step 1: Analyzing -->
-            <div x-show="step === 'analyzing'" class="text-center py-16 transition-all">
-                <div class="relative inline-block mb-6">
-                    <div class="w-16 h-16 rounded-full bg-gold/20 pulse-ring absolute inset-0"></div>
-                    <div class="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center relative">
-                        <svg class="animate-spin h-8 w-8 text-gold" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>
-                </div>
-                <h3 class="text-xl font-semibold text-navy mb-2">Analyzing your document...</h3>
-                <p class="text-gray-500 mb-4" x-text="fileName"></p>
-
-                <div class="max-w-md mx-auto space-y-2 text-left text-sm">
-                    <template x-for="(s, i) in analysisSteps" :key="i">
-                        <div class="flex items-center gap-2" :class="i <= currentAnalysisStep ? 'text-navy' : 'text-gray-300'">
-                            <span x-show="i < currentAnalysisStep" class="text-court-green">&#10003;</span>
-                            <span x-show="i === currentAnalysisStep" class="text-gold animate-pulse">&#9679;</span>
-                            <span x-show="i > currentAnalysisStep" class="text-gray-300">&#9675;</span>
-                            <span x-text="s"></span>
+            <div class="space-y-3">
+                <template x-for="(s, i) in analysisSteps" :key="i">
+                    <div class="flex items-center gap-3 text-sm" :class="i <= currentAnalysisStep ? 'text-slate-700' : 'text-slate-300'">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs"
+                            :class="i < currentAnalysisStep ? 'bg-ok/10 text-ok' : i === currentAnalysisStep ? 'bg-gold/10 text-gold' : 'bg-slate-100 text-slate-300'">
+                            <span x-show="i < currentAnalysisStep">&#10003;</span>
+                            <span x-show="i === currentAnalysisStep" class="w-2 h-2 bg-gold rounded-full spinner"></span>
+                            <span x-show="i > currentAnalysisStep">&bull;</span>
                         </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Step 2: Review -->
-            <div x-show="step === 'review'" class="transition-all">
-                <template x-if="filing">
-                    <div>
-                        <!-- Completeness bar -->
-                        <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-medium text-gray-600">AI Extraction Completeness</span>
-                                <span class="text-sm font-bold" :class="filing.completeness_score >= 80 ? 'text-court-green' : filing.completeness_score >= 50 ? 'text-gold' : 'text-court-red'" x-text="filing.completeness_score + '%'"></span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="h-2 rounded-full transition-all duration-1000" :class="filing.completeness_score >= 80 ? 'bg-court-green' : filing.completeness_score >= 50 ? 'bg-gold' : 'bg-court-red'" :style="'width:' + filing.completeness_score + '%'"></div>
-                            </div>
-                        </div>
-
-                        <!-- Filing details -->
-                        <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-                            <div class="bg-navy text-white px-4 py-2 text-sm font-medium">Filing Details — AI Extracted</div>
-                            <div class="divide-y">
-                                <template x-for="field in filingFields" :key="field.label">
-                                    <div class="flex px-4 py-3 text-sm">
-                                        <div class="w-40 font-medium text-gray-500" x-text="field.label"></div>
-                                        <div class="flex-1 flex items-center gap-2">
-                                            <span x-show="field.value" class="text-court-green text-xs">&#10003;</span>
-                                            <span x-show="!field.value" class="text-court-red text-xs">?</span>
-                                            <span :class="field.value ? 'text-navy' : 'text-gray-400 italic'" x-text="field.value || 'Not detected — click to enter'"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Validation -->
-                        <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-                            <div class="bg-navy text-white px-4 py-2 text-sm font-medium">Validation</div>
-                            <div class="p-4 space-y-2 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <span :class="filing.pdf_valid ? 'text-court-green' : 'text-court-red'" x-text="filing.pdf_valid ? '&#10003;' : '&#10007;'"></span>
-                                    <span>PDF Valid</span>
-                                    <span class="text-gray-400" x-text="filing.pdf_size_mb.toFixed(1) + 'MB, ' + filing.pdf_pages + ' pages'"></span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span :class="filing.redaction_issues === 0 ? 'text-court-green' : 'text-gold'" x-text="filing.redaction_issues === 0 ? '&#10003;' : '&#9888;'"></span>
-                                    <span x-text="filing.redaction_issues === 0 ? 'No redaction issues' : filing.redaction_issues + ' potential redaction issue(s)'"></span>
-                                </div>
-                                <div class="flex items-center gap-2" x-show="sealingLevel !== 'public'">
-                                    <span class="text-gold">&#9888;</span>
-                                    <span x-text="'Filing as: ' + sealingLevel.replace('_', ' ').toUpperCase()"></span>
-                                </div>
-                                <div class="flex items-center gap-2" x-show="attachments.length > 0">
-                                    <span class="text-court-green">&#10003;</span>
-                                    <span x-text="attachments.length + ' attachment(s)'"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Warnings -->
-                        <template x-if="filing.warnings.length > 0">
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
-                                <div class="text-sm font-medium text-yellow-800 mb-2">&#9888; Warnings</div>
-                                <template x-for="w in filing.warnings" :key="w">
-                                    <div class="text-sm text-yellow-700 py-0.5" x-text="w"></div>
-                                </template>
-                            </div>
-                        </template>
-
-                        <!-- Checklist -->
-                        <template x-if="filingChecklist && filingChecklist.items.length > 0">
-                            <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-                                <div class="bg-navy text-white px-4 py-2 text-sm font-medium" x-text="filingChecklist.title"></div>
-                                <div class="p-4 space-y-1">
-                                    <template x-for="item in filingChecklist.items" :key="item.text">
-                                        <div class="text-sm flex items-start gap-2">
-                                            <span :class="item.required ? 'text-court-red font-bold' : 'text-gray-400'" x-text="item.required ? '!' : '·'"></span>
-                                            <span x-text="item.text"></span>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-
-                        <!-- Confirm / Cancel -->
-                        <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 text-center">
-                            <div class="text-lg font-bold text-court-red mb-1">Attorney Approval Required</div>
-                            <p class="text-sm text-gray-600 mb-4">Review all details above. This will file on CM/ECF.</p>
-                            <div class="flex justify-center gap-3">
-                                <button
-                                    @click="confirmFiling()"
-                                    :disabled="!filing.ready"
-                                    class="px-8 py-2.5 bg-navy text-white font-semibold rounded-lg hover:bg-navy/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                                >
-                                    CONFIRM &amp; FILE
-                                </button>
-                                <button @click="reset()" class="px-6 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 transition">
-                                    Cancel
-                                </button>
-                            </div>
-                            <p x-show="!filing.ready" class="text-xs text-court-red mt-2">Missing required fields — complete all fields before filing</p>
-                        </div>
+                        <span x-text="s"></span>
                     </div>
                 </template>
             </div>
+        </div>
+    </div>
 
-            <!-- Step 3: Filed -->
-            <div x-show="step === 'filed'" class="transition-all">
-                <div class="text-center mb-6">
-                    <div class="text-5xl mb-4">&#9989;</div>
-                    <h3 class="text-2xl font-semibold text-court-green mb-2" x-text="filingResult?.status === 'dry_run' ? 'Dry Run Complete' : 'Filed Successfully'"></h3>
+    <!-- Review -->
+    <div x-show="step === 'review'" class="fade-up" x-cloak>
+        <template x-if="filing">
+        <div class="space-y-4">
+
+            <!-- Completeness -->
+            <div class="bg-white rounded-2xl shadow-sm border p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-medium text-slate-500">AI Extraction</span>
+                    <span class="text-sm font-bold" :class="filing.completeness_score >= 80 ? 'text-ok' : filing.completeness_score >= 50 ? 'text-warn' : 'text-bad'" x-text="filing.completeness_score + '% complete'"></span>
                 </div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5">
+                    <div class="h-1.5 rounded-full progress-animate" :class="filing.completeness_score >= 80 ? 'bg-ok' : filing.completeness_score >= 50 ? 'bg-warn' : 'bg-bad'" :style="'width:' + filing.completeness_score + '%'"></div>
+                </div>
+            </div>
 
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6" x-show="filing">
-                    <div class="bg-court-green text-white px-4 py-2 text-sm font-medium">Filing Confirmation</div>
-                    <div class="divide-y text-sm">
-                        <div class="flex px-4 py-2" x-show="filing?.court_id"><span class="w-28 font-medium text-gray-500">Court</span><span x-text="filing?.court_id"></span></div>
-                        <div class="flex px-4 py-2" x-show="filing?.case_number"><span class="w-28 font-medium text-gray-500">Case</span><span x-text="filing?.case_number"></span></div>
-                        <div class="flex px-4 py-2" x-show="filing?.case_caption"><span class="w-28 font-medium text-gray-500">Caption</span><span x-text="filing?.case_caption"></span></div>
-                        <div class="flex px-4 py-2" x-show="filing?.event_description"><span class="w-28 font-medium text-gray-500">Event</span><span x-text="filing?.event_description"></span></div>
-                        <div class="flex px-4 py-2" x-show="filing?.filing_party"><span class="w-28 font-medium text-gray-500">Filed By</span><span x-text="filing?.filing_party"></span></div>
-                        <div class="flex px-4 py-2" x-show="filingResult?.docket_number"><span class="w-28 font-medium text-gray-500">Docket #</span><span x-text="filingResult?.docket_number"></span></div>
-                        <div class="flex px-4 py-2"><span class="w-28 font-medium text-gray-500">Status</span>
-                            <span class="px-2 py-0.5 rounded-full text-xs" :class="filingResult?.status === 'dry_run' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'" x-text="filingResult?.status || 'submitted'"></span>
+            <!-- Fields -->
+            <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+                <div class="px-5 py-3 border-b bg-slate-50">
+                    <span class="text-sm font-semibold text-navy">Filing Details</span>
+                </div>
+                <div class="divide-y">
+                    <template x-for="field in filingFields" :key="field.label">
+                        <div class="flex items-center px-5 py-3">
+                            <div class="w-32 text-sm text-slate-400" x-text="field.label"></div>
+                            <div class="flex-1 flex items-center gap-2">
+                                <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" :class="field.value ? 'bg-ok' : 'bg-slate-200'"></div>
+                                <span class="text-sm" :class="field.value ? 'text-slate-800' : 'text-slate-300 italic'" x-text="field.value || 'Not detected'"></span>
+                            </div>
                         </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Validation -->
+            <div class="bg-white rounded-2xl shadow-sm border p-5">
+                <div class="text-sm font-semibold text-navy mb-3">Validation</div>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs" :class="filing.pdf_valid ? 'bg-ok/10 text-ok' : 'bg-bad/10 text-bad'" x-text="filing.pdf_valid ? '&#10003;' : '&#10007;'"></div>
+                        <span class="text-slate-600">PDF valid</span>
+                        <span class="text-slate-400" x-text="filing.pdf_size_mb?.toFixed(1) + 'MB'"></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs" :class="filing.redaction_issues === 0 ? 'bg-ok/10 text-ok' : 'bg-warn/10 text-warn'" x-text="filing.redaction_issues === 0 ? '&#10003;' : '!'"></div>
+                        <span class="text-slate-600" x-text="filing.redaction_issues === 0 ? 'No redaction issues' : filing.redaction_issues + ' issue(s)'"></span>
+                    </div>
+                    <div class="flex items-center gap-2" x-show="sealingLevel !== 'public'">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-warn/10 text-warn">!</div>
+                        <span class="text-slate-600" x-text="sealingLevel.replace('_', ' ')"></span>
+                    </div>
+                    <div class="flex items-center gap-2" x-show="attachments.length > 0">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-ok/10 text-ok">&#10003;</div>
+                        <span class="text-slate-600" x-text="attachments.length + ' attachment(s)'"></span>
                     </div>
                 </div>
+            </div>
 
-                <p x-show="filingResult?.message" class="text-sm text-gray-500 text-center mb-4" x-text="filingResult?.message"></p>
+            <!-- Checklist -->
+            <div x-show="filingChecklist?.items?.length > 0" class="bg-white rounded-2xl shadow-sm border p-5">
+                <div class="text-sm font-semibold text-navy mb-3" x-text="filingChecklist?.title || 'Checklist'"></div>
+                <div class="space-y-2">
+                    <template x-for="item in filingChecklist?.items || []" :key="item.text">
+                        <div class="flex items-start gap-2 text-sm">
+                            <div class="w-4 h-4 mt-0.5 rounded border flex items-center justify-center flex-shrink-0" :class="item.required ? 'border-bad/30 text-bad' : 'border-slate-200 text-slate-300'">
+                                <span class="text-[10px]" x-text="item.required ? '!' : ''"></span>
+                            </div>
+                            <span class="text-slate-600" x-text="item.text"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
 
+            <!-- Warnings -->
+            <div x-show="filing.warnings?.length > 0" class="bg-amber-50 rounded-2xl border border-amber-200 p-5">
+                <div class="text-sm font-semibold text-amber-800 mb-2">Warnings</div>
+                <template x-for="w in filing.warnings" :key="w">
+                    <div class="text-sm text-amber-700 py-0.5" x-text="w"></div>
+                </template>
+            </div>
+
+            <!-- Confirm -->
+            <div class="bg-white rounded-2xl shadow-sm border border-bad/20 p-6">
                 <div class="text-center">
-                    <button @click="reset()" class="px-6 py-2.5 bg-navy text-white rounded-lg hover:bg-navy/90 transition">
-                        File Another Document
-                    </button>
-                </div>
-            </div>
-
-            <!-- Error -->
-            <div x-show="step === 'error'" class="text-center py-16 transition-all">
-                <div class="text-5xl mb-4">&#10060;</div>
-                <h3 class="text-xl font-semibold text-court-red mb-2">Analysis Failed</h3>
-                <p class="text-gray-500 mb-2" x-text="errorMessage"></p>
-                <button @click="reset()" class="px-6 py-2.5 bg-navy text-white rounded-lg hover:bg-navy/90 transition mt-4">
-                    Try Again
-                </button>
-            </div>
-        </div>
-    </template>
-
-    <!-- ===== COURTS VIEW ===== -->
-    <template x-if="view === 'courts'">
-        <div>
-            <h2 class="text-xl font-semibold text-navy mb-4">Federal Courts</h2>
-            <div class="flex gap-2 mb-4">
-                <input type="text" x-model="courtSearch" @input.debounce.300ms="searchCourts()" placeholder="Search by name or ID..." class="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:border-gold outline-none">
-                <select x-model="courtTypeFilter" @change="searchCourts()" class="px-3 py-2 border rounded-lg text-sm bg-white">
-                    <option value="">All Types</option>
-                    <option value="district">District</option>
-                    <option value="bankruptcy">Bankruptcy</option>
-                    <option value="appellate">Appellate</option>
-                </select>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50 text-left">
-                        <tr>
-                            <th class="px-4 py-2 font-medium text-gray-500">ID</th>
-                            <th class="px-4 py-2 font-medium text-gray-500">Name</th>
-                            <th class="px-4 py-2 font-medium text-gray-500">Type</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        <template x-for="court in courts" :key="court.court_id">
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-2 font-mono text-navy font-medium" x-text="court.court_id"></td>
-                                <td class="px-4 py-2" x-text="court.name"></td>
-                                <td class="px-4 py-2">
-                                    <span class="px-2 py-0.5 rounded-full text-xs" :class="{
-                                        'bg-blue-100 text-blue-700': court.court_type === 'district',
-                                        'bg-purple-100 text-purple-700': court.court_type === 'bankruptcy',
-                                        'bg-amber-100 text-amber-700': court.court_type === 'appellate',
-                                    }" x-text="court.court_type"></span>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-                <div x-show="courts.length === 0" class="p-8 text-center text-gray-400">No courts found</div>
-            </div>
-        </div>
-    </template>
-
-    <!-- ===== HISTORY VIEW ===== -->
-    <template x-if="view === 'history'">
-        <div>
-            <h2 class="text-xl font-semibold text-navy mb-4">Filing History</h2>
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <template x-if="history.length > 0">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 text-left">
-                            <tr>
-                                <th class="px-4 py-2 font-medium text-gray-500">Date</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Court</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Case</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Event</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <template x-for="h in history" :key="h.id">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-2 text-gray-500" x-text="h.filed_at?.substring(0,10)"></td>
-                                    <td class="px-4 py-2 font-mono" x-text="h.court_id"></td>
-                                    <td class="px-4 py-2" x-text="h.case_number"></td>
-                                    <td class="px-4 py-2" x-text="h.event_description?.substring(0,40)"></td>
-                                    <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700" x-text="h.status"></span></td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </template>
-                <div x-show="history.length === 0" class="p-12 text-center text-gray-400">
-                    <div class="text-3xl mb-2">&#128203;</div>
-                    <p>No filings yet. Drop a document to get started.</p>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <!-- ===== DRAFTS VIEW ===== -->
-    <template x-if="view === 'drafts'">
-        <div>
-            <h2 class="text-xl font-semibold text-navy mb-4">Filing Drafts</h2>
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <template x-if="savedDrafts.length > 0">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 text-left">
-                            <tr>
-                                <th class="px-4 py-2 font-medium text-gray-500">Name</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Court</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Case</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Event</th>
-                                <th class="px-4 py-2 font-medium text-gray-500">Saved</th>
-                                <th class="px-4 py-2 font-medium text-gray-500 w-20"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <template x-for="d in savedDrafts" :key="d.file">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-2 font-medium text-navy" x-text="d.name"></td>
-                                    <td class="px-4 py-2 font-mono" x-text="d.court"></td>
-                                    <td class="px-4 py-2" x-text="d.case"></td>
-                                    <td class="px-4 py-2" x-text="d.event?.substring(0,35)"></td>
-                                    <td class="px-4 py-2 text-gray-500" x-text="d.saved_at?.substring(0,16)"></td>
-                                    <td class="px-4 py-2">
-                                        <button @click="deleteDraft(d.file)" class="text-xs text-gray-400 hover:text-court-red">delete</button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </template>
-                <div x-show="savedDrafts.length === 0" class="p-12 text-center text-gray-400">
-                    <div class="text-3xl mb-2">&#128221;</div>
-                    <p>No drafts saved. Cancel a filing to save it as a draft.</p>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <!-- ===== VALIDATE VIEW ===== -->
-    <template x-if="view === 'validate'">
-        <div>
-            <h2 class="text-xl font-semibold text-navy mb-2">PDF Validator</h2>
-            <p class="text-sm text-gray-500 mb-4">Check if your PDF meets CM/ECF filing requirements. Works offline — no API key needed.</p>
-
-            <div
-                class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-gold transition-colors mb-4"
-                @click="$refs.valInput.click()"
-                @dragover.prevent="$event.currentTarget.classList.add('dragover')"
-                @dragleave.prevent="$event.currentTarget.classList.remove('dragover')"
-                @drop.prevent="validateDrop($event)"
-            >
-                <p class="text-gray-600">Drop PDF(s) here or click to browse</p>
-                <p class="text-xs text-gray-400 mt-1">Checks: valid PDF, file size, searchable text, encryption, form fields, redaction</p>
-                <input type="file" x-ref="valInput" accept=".pdf" multiple class="hidden" @change="validateFiles($event)">
-            </div>
-
-            <!-- Validation results -->
-            <div x-show="valResults.length > 0" class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div class="bg-navy text-white px-4 py-2 text-sm font-medium flex justify-between">
-                    <span>Validation Results</span>
-                    <span x-text="valPassCount + '/' + valResults.length + ' passed'"></span>
-                </div>
-                <template x-for="(r, i) in valResults" :key="i">
-                    <div class="border-b last:border-0 p-4">
-                        <div class="flex items-center justify-between mb-1">
-                            <div class="flex items-center gap-2">
-                                <span :class="r.valid ? 'text-court-green' : 'text-court-red'" x-text="r.valid ? '&#10003;' : '&#10007;'" class="font-bold"></span>
-                                <span class="font-medium text-sm" x-text="r.name"></span>
-                            </div>
-                            <span class="text-xs text-gray-400" x-text="r.size + ', ' + r.pages + ' pages'"></span>
-                        </div>
-                        <template x-for="e in r.errors" :key="e">
-                            <div class="text-xs text-court-red ml-6" x-text="e"></div>
-                        </template>
-                        <template x-for="w in r.warnings" :key="w">
-                            <div class="text-xs text-amber-600 ml-6" x-text="w"></div>
-                        </template>
-                        <!-- Redaction issues -->
-                        <template x-if="r.redaction && r.redaction.issues.length > 0">
-                            <div class="ml-6 mt-1">
-                                <template x-for="issue in r.redaction.issues" :key="issue.text">
-                                    <div class="text-xs text-amber-600">
-                                        &#9888; <span x-text="issue.type"></span>: <span x-text="issue.text"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-                        <div x-show="r.valid && (!r.redaction || r.redaction.issues.length === 0)" class="text-xs text-court-green ml-6">Ready for CM/ECF</div>
+                    <div class="text-lg font-bold text-navy mb-1">Ready to file?</div>
+                    <p class="text-sm text-slate-400 mb-5">Review everything above. This submits to CM/ECF.</p>
+                    <div class="flex justify-center gap-3">
+                        <button @click="confirmFiling()" :disabled="!filing.ready" class="px-8 py-2.5 bg-navy text-white font-semibold rounded-xl hover:bg-navy-light disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">Confirm &amp; File</button>
+                        <button @click="reset()" class="px-6 py-2.5 text-slate-500 hover:text-slate-700 transition">Cancel</button>
                     </div>
-                </template>
-            </div>
-
-            <div x-show="valLoading" class="text-center py-8 text-gray-400">
-                <svg class="animate-spin h-6 w-6 mx-auto mb-2 text-gold" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                Validating...
+                    <p x-show="!filing.ready" class="text-xs text-bad mt-3">Missing required fields</p>
+                </div>
             </div>
         </div>
-    </template>
+        </template>
+    </div>
 
-    <!-- ===== CERTIFICATE OF SERVICE VIEW ===== -->
-    <template x-if="view === 'cos'">
-        <div>
-            <h2 class="text-xl font-semibold text-navy mb-4">Certificate of Service Generator</h2>
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Attorney Name</label>
-                        <input type="text" x-model="cosAttorney" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:border-gold outline-none" placeholder="Jane Smith, Esq.">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Case Number</label>
-                        <input type="text" x-model="cosCaseNumber" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:border-gold outline-none" placeholder="1:24-cv-01234">
-                    </div>
+    <!-- Filed -->
+    <div x-show="step === 'filed'" class="fade-up">
+        <div class="max-w-lg mx-auto">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-ok/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-ok" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 </div>
-
-                <div class="mb-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="text-sm font-medium text-gray-600">Service Recipients</label>
-                        <button @click="cosRecipients.push({name:'', role:'defendant', attorney_name:'', method:'CM/ECF', email:'', address:''})" class="text-xs text-gold hover:underline">+ Add Recipient</button>
-                    </div>
-                    <template x-for="(r, i) in cosRecipients" :key="i">
-                        <div class="flex gap-2 mb-2 items-start">
-                            <input x-model="r.name" placeholder="Party name" class="flex-1 px-2 py-1.5 border rounded text-sm">
-                            <input x-model="r.attorney_name" placeholder="Attorney" class="flex-1 px-2 py-1.5 border rounded text-sm">
-                            <select x-model="r.method" class="px-2 py-1.5 border rounded text-sm bg-white">
-                                <option value="CM/ECF">CM/ECF</option>
-                                <option value="email">Email</option>
-                                <option value="mail">U.S. Mail</option>
-                                <option value="hand">Hand Delivery</option>
-                            </select>
-                            <input x-show="r.method === 'email'" x-model="r.email" placeholder="email@..." class="flex-1 px-2 py-1.5 border rounded text-sm">
-                            <input x-show="r.method === 'mail'" x-model="r.address" placeholder="Address..." class="flex-1 px-2 py-1.5 border rounded text-sm">
-                            <button @click="cosRecipients.splice(i, 1)" class="text-gray-400 hover:text-court-red text-sm px-1">&times;</button>
+                <h2 class="text-2xl font-bold" :class="filingResult?.status === 'dry_run' ? 'text-warn' : 'text-ok'" x-text="filingResult?.status === 'dry_run' ? 'Dry Run Complete' : 'Filed Successfully'"></h2>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border overflow-hidden mb-6" x-show="filing">
+                <div class="divide-y text-sm">
+                    <template x-for="[k,v] in [['Court',filing?.court_id],['Case',filing?.case_number],['Caption',filing?.case_caption],['Event',filing?.event_description],['Party',filing?.filing_party],['Docket #',filingResult?.docket_number],['Status',filingResult?.status]].filter(x=>x[1])" :key="k">
+                        <div class="flex px-5 py-3">
+                            <span class="w-24 text-slate-400" x-text="k"></span>
+                            <span class="text-slate-800" x-text="v"></span>
                         </div>
                     </template>
-                    <div x-show="cosRecipients.length === 0" class="text-sm text-gray-400 py-2">Add at least one recipient</div>
-                </div>
-
-                <div class="flex gap-2">
-                    <button @click="generateCos()" :disabled="!cosAttorney || cosRecipients.length === 0" class="px-4 py-2 bg-navy text-white text-sm rounded-lg hover:bg-navy/90 disabled:opacity-40 transition">Generate</button>
-                    <button @click="downloadCosPdf()" x-show="cosText" class="px-4 py-2 border border-navy text-navy text-sm rounded-lg hover:bg-gray-50 transition">Download PDF</button>
                 </div>
             </div>
-
-            <!-- Generated certificate -->
-            <div x-show="cosText" class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div class="bg-navy text-white px-4 py-2 text-sm font-medium">Generated Certificate</div>
-                <pre class="p-4 text-sm whitespace-pre-wrap font-mono text-gray-700 leading-relaxed" x-text="cosText"></pre>
+            <p x-show="filingResult?.message" class="text-sm text-slate-400 text-center mb-6" x-text="filingResult?.message"></p>
+            <div class="text-center">
+                <button @click="reset()" class="px-8 py-2.5 bg-navy text-white font-semibold rounded-xl hover:bg-navy-light transition-all shadow-sm">File Another</button>
             </div>
         </div>
-    </template>
+    </div>
+
+    <!-- Error -->
+    <div x-show="step === 'error'" class="fade-up">
+        <div class="max-w-md mx-auto text-center">
+            <div class="w-16 h-16 bg-bad/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-bad" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <h3 class="text-lg font-bold text-navy mb-2">Analysis failed</h3>
+            <p class="text-sm text-slate-500 mb-6" x-text="errorMessage"></p>
+            <button @click="reset()" class="px-6 py-2.5 bg-navy text-white rounded-xl hover:bg-navy-light transition-all shadow-sm">Try Again</button>
+        </div>
+    </div>
+</div>
+</template>
+
+<!-- ===== VALIDATE ===== -->
+<template x-if="view === 'validate'">
+<div class="fade-up">
+    <h1 class="text-2xl font-bold text-navy mb-1">PDF Validator</h1>
+    <p class="text-slate-400 text-sm mb-6">Check if your PDFs meet CM/ECF requirements. No API key needed.</p>
+
+    <div class="border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center cursor-pointer hover:border-gold/50 transition-all bg-white shadow-sm mb-6"
+        @click="$refs.valInput.click()"
+        @dragover.prevent="$event.currentTarget.classList.add('drop-active')"
+        @dragleave.prevent="$event.currentTarget.classList.remove('drop-active')"
+        @drop.prevent="$event.currentTarget.classList.remove('drop-active'); validateDrop($event)">
+        <p class="text-slate-600 font-medium">Drop PDF(s) here</p>
+        <p class="text-slate-400 text-xs mt-1">Checks format, size, text, encryption, and redaction</p>
+        <input type="file" x-ref="valInput" accept=".pdf" multiple class="hidden" @change="validateFiles($event)">
+    </div>
+
+    <div x-show="valLoading" class="text-center py-8"><svg class="w-6 h-6 text-gold spinner mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>
+
+    <div x-show="valResults.length > 0" class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <div class="px-5 py-3 border-b bg-slate-50 flex justify-between">
+            <span class="text-sm font-semibold text-navy">Results</span>
+            <span class="text-sm" :class="valPassCount === valResults.length ? 'text-ok' : 'text-warn'" x-text="valPassCount + '/' + valResults.length + ' passed'"></span>
+        </div>
+        <template x-for="(r, i) in valResults" :key="i">
+            <div class="border-b last:border-0 px-5 py-4">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-xs" :class="r.valid ? 'bg-ok/10 text-ok' : 'bg-bad/10 text-bad'" x-text="r.valid ? '&#10003;' : '&#10007;'"></div>
+                        <span class="font-medium text-sm text-slate-800" x-text="r.name"></span>
+                    </div>
+                    <span class="text-xs text-slate-400" x-text="r.size + ', ' + r.pages + 'p'"></span>
+                </div>
+                <template x-for="e in r.errors"><div class="text-xs text-bad ml-7" x-text="e"></div></template>
+                <template x-for="w in r.warnings"><div class="text-xs text-warn ml-7" x-text="w"></div></template>
+                <template x-if="r.redaction?.issues?.length > 0">
+                    <div class="ml-7"><template x-for="issue in r.redaction.issues"><div class="text-xs text-warn" x-text="issue.type + ': ' + issue.text"></div></template></div>
+                </template>
+                <div x-show="r.valid && (!r.redaction || r.redaction.issues.length === 0)" class="text-xs text-ok ml-7">Ready for CM/ECF</div>
+            </div>
+        </template>
+    </div>
+</div>
+</template>
+
+<!-- ===== CERT OF SERVICE ===== -->
+<template x-if="view === 'cos'">
+<div class="fade-up">
+    <h1 class="text-2xl font-bold text-navy mb-1">Certificate of Service</h1>
+    <p class="text-slate-400 text-sm mb-6">Generate a properly formatted certificate. Download as PDF.</p>
+
+    <div class="bg-white rounded-2xl shadow-sm border p-6 mb-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Attorney Name</label>
+                <input type="text" x-model="cosAttorney" class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-gold/30 focus:border-gold outline-none" placeholder="Jane Smith, Esq.">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Case Number</label>
+                <input type="text" x-model="cosCaseNumber" class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-gold/30 focus:border-gold outline-none" placeholder="1:24-cv-01234">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-medium text-slate-500">Recipients</label>
+                <button @click="cosRecipients.push({name:'',role:'defendant',attorney_name:'',method:'CM/ECF',email:'',address:''})" class="text-xs text-gold hover:text-gold-light font-medium">+ Add</button>
+            </div>
+            <template x-for="(r, i) in cosRecipients" :key="i">
+                <div class="flex gap-2 mb-2 items-center">
+                    <input x-model="r.name" placeholder="Party" class="flex-1 px-2.5 py-1.5 border rounded-lg text-sm focus:ring-1 focus:ring-gold/30 outline-none">
+                    <input x-model="r.attorney_name" placeholder="Attorney" class="flex-1 px-2.5 py-1.5 border rounded-lg text-sm focus:ring-1 focus:ring-gold/30 outline-none">
+                    <select x-model="r.method" class="px-2.5 py-1.5 border rounded-lg text-sm bg-white focus:ring-1 focus:ring-gold/30 outline-none">
+                        <option value="CM/ECF">CM/ECF</option><option value="email">Email</option><option value="mail">Mail</option><option value="hand">Hand</option>
+                    </select>
+                    <input x-show="r.method==='email'" x-model="r.email" placeholder="email" class="w-36 px-2.5 py-1.5 border rounded-lg text-sm outline-none">
+                    <input x-show="r.method==='mail'" x-model="r.address" placeholder="address" class="w-36 px-2.5 py-1.5 border rounded-lg text-sm outline-none">
+                    <button @click="cosRecipients.splice(i,1)" class="text-slate-300 hover:text-bad">&times;</button>
+                </div>
+            </template>
+        </div>
+
+        <div class="flex gap-2">
+            <button @click="generateCos()" :disabled="!cosAttorney || cosRecipients.length===0" class="px-5 py-2 bg-navy text-white text-sm rounded-xl hover:bg-navy-light disabled:opacity-30 transition-all shadow-sm">Generate</button>
+            <button @click="downloadCosPdf()" x-show="cosText" class="px-5 py-2 border text-navy text-sm rounded-xl hover:bg-slate-50 transition">Download PDF</button>
+        </div>
+    </div>
+
+    <div x-show="cosText" class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <div class="px-5 py-3 border-b bg-slate-50 text-sm font-semibold text-navy">Preview</div>
+        <pre class="p-5 text-sm whitespace-pre-wrap text-slate-700 leading-relaxed font-mono" x-text="cosText"></pre>
+    </div>
+</div>
+</template>
+
+<!-- ===== COURTS ===== -->
+<template x-if="view === 'courts'">
+<div class="fade-up">
+    <h1 class="text-2xl font-bold text-navy mb-1">Federal Courts</h1>
+    <p class="text-slate-400 text-sm mb-6">150 district, bankruptcy, and appellate courts.</p>
+
+    <div class="flex gap-2 mb-4">
+        <input type="text" x-model="courtSearch" @input.debounce.300ms="searchCourts()" placeholder="Search courts..." class="flex-1 px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-gold/30 focus:border-gold outline-none bg-white">
+        <select x-model="courtTypeFilter" @change="searchCourts()" class="px-3 py-2 border rounded-xl text-sm bg-white focus:ring-1 focus:ring-gold/30 outline-none">
+            <option value="">All</option><option value="district">District</option><option value="bankruptcy">Bankruptcy</option><option value="appellate">Appellate</option>
+        </select>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-left border-b">
+                <tr><th class="px-5 py-2.5 font-medium text-slate-400 w-20">ID</th><th class="px-5 py-2.5 font-medium text-slate-400">Name</th><th class="px-5 py-2.5 font-medium text-slate-400 w-28">Type</th></tr>
+            </thead>
+            <tbody class="divide-y">
+                <template x-for="court in courts" :key="court.court_id">
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-5 py-2.5 font-mono text-navy font-medium" x-text="court.court_id"></td>
+                        <td class="px-5 py-2.5 text-slate-700" x-text="court.name"></td>
+                        <td class="px-5 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="{'bg-blue-50 text-blue-600':court.court_type==='district','bg-purple-50 text-purple-600':court.court_type==='bankruptcy','bg-amber-50 text-amber-600':court.court_type==='appellate'}" x-text="court.court_type"></span></td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+        <div x-show="courts.length===0" class="p-12 text-center text-slate-400">No courts found</div>
+    </div>
+</div>
+</template>
+
+<!-- ===== DRAFTS ===== -->
+<template x-if="view === 'drafts'">
+<div class="fade-up">
+    <h1 class="text-2xl font-bold text-navy mb-1">Drafts</h1>
+    <p class="text-slate-400 text-sm mb-6">Resume incomplete filings.</p>
+    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <template x-if="savedDrafts.length > 0">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b"><tr><th class="px-5 py-2.5 text-left font-medium text-slate-400">Name</th><th class="px-5 py-2.5 text-left font-medium text-slate-400">Court</th><th class="px-5 py-2.5 text-left font-medium text-slate-400">Case</th><th class="px-5 py-2.5 text-left font-medium text-slate-400">Saved</th><th class="px-5 py-2.5 w-16"></th></tr></thead>
+                <tbody class="divide-y"><template x-for="d in savedDrafts" :key="d.file"><tr class="hover:bg-slate-50/50"><td class="px-5 py-2.5 font-medium text-navy" x-text="d.name"></td><td class="px-5 py-2.5 font-mono text-slate-500" x-text="d.court"></td><td class="px-5 py-2.5 text-slate-500" x-text="d.case"></td><td class="px-5 py-2.5 text-slate-400" x-text="d.saved_at?.substring(0,10)"></td><td class="px-5 py-2.5"><button @click="deleteDraft(d.file)" class="text-xs text-slate-400 hover:text-bad">delete</button></td></tr></template></tbody>
+            </table>
+        </template>
+        <div x-show="savedDrafts.length===0" class="p-16 text-center text-slate-400"><p class="mb-1">No drafts</p><p class="text-xs">Cancel a filing to save progress as a draft.</p></div>
+    </div>
+</div>
+</template>
+
+<!-- ===== HISTORY ===== -->
+<template x-if="view === 'history'">
+<div class="fade-up">
+    <h1 class="text-2xl font-bold text-navy mb-1">Filing History</h1>
+    <p class="text-slate-400 text-sm mb-6">Audit log of all filings.</p>
+    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <template x-if="history.length > 0">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b"><tr><th class="px-5 py-2.5 text-left font-medium text-slate-400">Date</th><th class="px-5 py-2.5 text-left font-medium text-slate-400">Court</th><th class="px-5 py-2.5 text-left font-medium text-slate-400">Case</th><th class="px-5 py-2.5 text-left font-medium text-slate-400">Event</th><th class="px-5 py-2.5 text-left font-medium text-slate-400">Status</th></tr></thead>
+                <tbody class="divide-y"><template x-for="h in history" :key="h.id"><tr class="hover:bg-slate-50/50"><td class="px-5 py-2.5 text-slate-400" x-text="h.filed_at?.substring(0,10)"></td><td class="px-5 py-2.5 font-mono text-navy" x-text="h.court_id"></td><td class="px-5 py-2.5 text-slate-700" x-text="h.case_number"></td><td class="px-5 py-2.5 text-slate-500" x-text="h.event_description?.substring(0,40)"></td><td class="px-5 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-ok/10 text-ok" x-text="h.status"></span></td></tr></template></tbody>
+            </table>
+        </template>
+        <div x-show="history.length===0" class="p-16 text-center text-slate-400"><p class="mb-1">No filings yet</p><p class="text-xs">Drop a document to get started.</p></div>
+    </div>
+</div>
+</template>
 
 </main>
 
-<!-- Footer -->
-<footer class="text-center text-xs text-gray-400 py-6 border-t mt-12">
-    ECFiler is a mechanical filing tool, not a legal advisor. The attorney is responsible for all filings.
+<footer class="text-center text-xs text-slate-400 py-6 border-t bg-white mt-auto">
+    ECFiler is a filing tool, not a legal advisor. The attorney is responsible for all filings.
+    <span class="mx-2">&middot;</span>
+    <a href="https://github.com/jackson-jpeg/ecfiler" class="hover:text-navy transition">GitHub</a>
 </footer>
 
 <script>
 function ecfiler() {
     return {
-        view: 'file',
-        step: 'upload',
-        fileName: '',
-        filing: null,
-        errorMessage: '',
-        courts: [],
-        courtSearch: '',
-        courtTypeFilter: '',
-        history: [],
-        attachments: [],
-        showAttachments: false,
-        sealingLevel: 'public',
-        cosAttorney: '',
-        cosCaseNumber: '',
-        cosRecipients: [{name:'', role:'defendant', attorney_name:'', method:'CM/ECF', email:'', address:''}],
-        cosText: '',
-        savedDrafts: [],
-        draftCount: 0,
-        hasApiKey: true,
-        filingChecklist: null,
-        filingResult: null,
-        valResults: [],
-        valPassCount: 0,
-        valLoading: false,
-        currentAnalysisStep: 0,
-        analysisSteps: [
-            'Validating PDF format and structure',
-            'Extracting document text',
-            'AI analyzing case, court, and parties',
-            'Scanning for redaction issues',
-            'Matching CM/ECF event code',
-            'Preparing filing preview',
+        view: 'file', step: 'upload', fileName: '', filing: null, filingResult: null,
+        errorMessage: '', courts: [], courtSearch: '', courtTypeFilter: '',
+        history: [], attachments: [], showAttachments: false, sealingLevel: 'public',
+        cosAttorney: '', cosCaseNumber: '', cosRecipients: [{name:'',role:'defendant',attorney_name:'',method:'CM/ECF',email:'',address:''}],
+        cosText: '', savedDrafts: [], draftCount: 0, hasApiKey: true, filingChecklist: null,
+        valResults: [], valPassCount: 0, valLoading: false, currentAnalysisStep: 0,
+        tabs: [
+            {id:'file',label:'File'},{id:'validate',label:'Validate'},{id:'cos',label:'Certificate'},
+            {id:'courts',label:'Courts'},{id:'drafts',label:'Drafts'},{id:'history',label:'History'}
         ],
-
+        analysisSteps: ['Validating PDF','Extracting text','Analyzing with AI','Scanning redaction','Matching event code','Preparing preview'],
         get filingFields() {
             if (!this.filing) return [];
-            return [
-                { label: 'Document Type', value: this.filing.document_type },
-                { label: 'Case Number', value: this.filing.case_number },
-                { label: 'Court', value: this.filing.court_id },
-                { label: 'Caption', value: this.filing.case_caption },
-                { label: 'Event Code', value: this.filing.event_description ? `${this.filing.event_description} (${this.filing.event_code})` : '' },
-                { label: 'Filing Party', value: this.filing.filing_party },
-                { label: 'Response To', value: this.filing.is_response ? this.filing.responds_to : null },
-                { label: 'Confidence', value: this.filing.confidence },
-            ].filter(f => f.value !== null);
+            return [{label:'Type',value:this.filing.document_type},{label:'Case',value:this.filing.case_number},
+                {label:'Court',value:this.filing.court_id},{label:'Caption',value:this.filing.case_caption},
+                {label:'Event',value:this.filing.event_description?`${this.filing.event_description} (${this.filing.event_code})`:''},{label:'Filed By',value:this.filing.filing_party},
+                {label:'Response To',value:this.filing.is_response?this.filing.responds_to:null},{label:'Confidence',value:this.filing.confidence}].filter(f=>f.value!==null);
         },
-
-        init() {
-            this.searchCourts();
-            this.loadHistory();
-            this.loadDrafts();
-            this.checkHealth();
-        },
-
-        handleDrop(event) {
-            event.currentTarget.classList.remove('dragover');
-            const file = event.dataTransfer.files[0];
-            if (file && file.type === 'application/pdf') {
-                this.analyzeFile(file);
-            }
-        },
-
-        handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) this.analyzeFile(file);
-        },
-
-        addAttachments(event) {
-            for (const file of event.target.files) {
-                this.attachments.push(file);
-            }
-        },
-
-        validateDrop(event) {
-            event.currentTarget.classList.remove('dragover');
-            this.validateFiles({target: {files: event.dataTransfer.files}});
-        },
-
-        async validateFiles(event) {
-            const files = Array.from(event.target.files);
-            if (!files.length) return;
-            this.valResults = [];
-            this.valLoading = true;
-            this.valPassCount = 0;
-
-            for (const file of files) {
-                try {
-                    // Validate
-                    const valForm = new FormData();
-                    valForm.append('document', file);
-                    const valRes = await fetch('/api/validate', {method: 'POST', body: valForm});
-                    const val = await valRes.json();
-
-                    // Redaction scan
-                    let redaction = null;
-                    if (val.valid) {
-                        const redForm = new FormData();
-                        redForm.append('document', file);
-                        const redRes = await fetch('/api/redaction-scan', {method: 'POST', body: redForm});
-                        redaction = await redRes.json();
-                    }
-
-                    const result = {
-                        name: file.name,
-                        valid: val.valid,
-                        size: val.file_size_mb?.toFixed(1) + 'MB',
-                        pages: val.page_count,
-                        errors: val.errors || [],
-                        warnings: val.warnings || [],
-                        redaction: redaction,
-                    };
-                    this.valResults.push(result);
-                    if (result.valid) this.valPassCount++;
-                } catch (e) {
-                    this.valResults.push({name: file.name, valid: false, size: '?', pages: 0, errors: ['Upload failed: ' + e.message], warnings: [], redaction: null});
-                }
-            }
-            this.valLoading = false;
-        },
-
+        init() { this.searchCourts(); this.loadHistory(); this.loadDrafts(); this.checkHealth(); },
+        switchTab(id) { this.view = id; if (id==='drafts') this.loadDrafts(); if (id==='courts') this.searchCourts(); if (id==='history') this.loadHistory(); },
+        handleDrop(e) { const f=e.dataTransfer.files[0]; if(f) this.analyzeFile(f); },
+        handleFileSelect(e) { const f=e.target.files[0]; if(f) this.analyzeFile(f); },
+        addAttachments(e) { for(const f of e.target.files) this.attachments.push(f); },
+        validateDrop(e) { this.validateFiles({target:{files:e.dataTransfer.files}}); },
         async analyzeFile(file) {
-            this.fileName = file.name;
-            this.step = 'analyzing';
-            this.currentAnalysisStep = 0;
-
-            const stepInterval = setInterval(() => {
-                if (this.currentAnalysisStep < this.analysisSteps.length - 1) {
-                    this.currentAnalysisStep++;
-                }
-            }, 1500);
-
+            this.fileName=file.name; this.step='analyzing'; this.currentAnalysisStep=0;
+            const si=setInterval(()=>{if(this.currentAnalysisStep<this.analysisSteps.length-1)this.currentAnalysisStep++;},1500);
             try {
-                const formData = new FormData();
-                let endpoint = '/api/file';
-
-                if (this.attachments.length > 0) {
-                    // Use multi-document endpoint
-                    endpoint = '/api/file/multi';
-                    formData.append('main_document', file);
-                    for (const att of this.attachments) {
-                        formData.append('attachments', att);
-                    }
-                } else {
-                    formData.append('document', file);
-                }
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                clearInterval(stepInterval);
-                this.currentAnalysisStep = this.analysisSteps.length;
-
-                if (!response.ok) {
-                    const errBody = await response.text();
-                    throw new Error(`Server error ${response.status}: ${errBody.substring(0, 200)}`);
-                }
-
-                const data = await response.json();
-                this.filing = data;
-
-                // Fetch checklist for this filing type
-                if (data.event_description) {
-                    try {
-                        const clRes = await fetch('/api/checklist/' + encodeURIComponent(data.event_description));
-                        this.filingChecklist = await clRes.json();
-                    } catch (e) { this.filingChecklist = null; }
-                }
-
-                await new Promise(r => setTimeout(r, 500));
-                this.step = 'review';
-
-            } catch (err) {
-                clearInterval(stepInterval);
-                this.errorMessage = err.message || 'Failed to analyze document';
-                this.step = 'error';
-            }
+                const fd=new FormData(); let ep='/api/file';
+                if(this.attachments.length>0){ep='/api/file/multi';fd.append('main_document',file);for(const a of this.attachments)fd.append('attachments',a);}else fd.append('document',file);
+                const r=await fetch(ep,{method:'POST',body:fd});
+                clearInterval(si); this.currentAnalysisStep=this.analysisSteps.length;
+                if(!r.ok){const t=await r.text();throw new Error(t.substring(0,200));}
+                this.filing=await r.json();
+                if(this.filing.event_description){try{const c=await fetch('/api/checklist/'+encodeURIComponent(this.filing.event_description));this.filingChecklist=await c.json();}catch(e){}}
+                await new Promise(r=>setTimeout(r,400)); this.step='review';
+            } catch(e) { clearInterval(si); this.errorMessage=e.message||'Analysis failed'; this.step='error'; }
         },
-
         async confirmFiling() {
             try {
-                const res = await fetch('/api/filing/submit', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        court_id: this.filing.court_id,
-                        case_number: this.filing.case_number,
-                        event_code: this.filing.event_code,
-                        event_description: this.filing.event_description,
-                        filing_party_name: this.filing.filing_party?.split('(')[0]?.trim() || '',
-                        filing_party_role: this.filing.filing_party?.match(/\((\w+)\)/)?.[1] || '',
-                        document_path: '',
-                        is_response: this.filing.is_response,
-                        responds_to_docket: this.filing.responds_to || '',
-                        dry_run: false,
-                    }),
-                });
-                const data = await res.json();
-                this.filingResult = data;
-                this.step = 'filed';
-                this.loadHistory();
-            } catch (err) {
-                this.errorMessage = err.message || 'Filing submission failed';
-                this.step = 'error';
-            }
+                const r=await fetch('/api/filing/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court_id:this.filing.court_id,case_number:this.filing.case_number,event_code:this.filing.event_code,event_description:this.filing.event_description,filing_party_name:this.filing.filing_party?.split('(')[0]?.trim()||'',filing_party_role:this.filing.filing_party?.match(/\((\w+)\)/)?.[1]||'',document_path:'',is_response:this.filing.is_response,responds_to_docket:this.filing.responds_to||'',dry_run:false})});
+                this.filingResult=await r.json(); this.step='filed'; this.loadHistory();
+            } catch(e) { this.errorMessage=e.message; this.step='error'; }
         },
-
-        reset() {
-            this.step = 'upload';
-            this.filing = null;
-            this.errorMessage = '';
-            this.fileName = '';
-            this.attachments = [];
-            this.showAttachments = false;
-            this.sealingLevel = 'public';
-            this.filingChecklist = null;
-            this.filingResult = null;
-            this.currentAnalysisStep = 0;
+        reset() { this.step='upload';this.filing=null;this.filingResult=null;this.errorMessage='';this.fileName='';this.attachments=[];this.showAttachments=false;this.sealingLevel='public';this.filingChecklist=null; },
+        async validateFiles(e) {
+            const files=Array.from(e.target.files); if(!files.length)return; this.valResults=[];this.valLoading=true;this.valPassCount=0;
+            for(const f of files){try{const vf=new FormData();vf.append('document',f);const vr=await fetch('/api/validate',{method:'POST',body:vf});const v=await vr.json();
+                let red=null;if(v.valid){const rf=new FormData();rf.append('document',f);const rr=await fetch('/api/redaction-scan',{method:'POST',body:rf});red=await rr.json();}
+                const res={name:f.name,valid:v.valid,size:v.file_size_mb?.toFixed(1)+'MB',pages:v.page_count,errors:v.errors||[],warnings:v.warnings||[],redaction:red};
+                this.valResults.push(res);if(res.valid)this.valPassCount++;}catch(e){this.valResults.push({name:f.name,valid:false,size:'?',pages:0,errors:[e.message],warnings:[],redaction:null});}}
+            this.valLoading=false;
         },
-
-        async searchCourts() {
-            const params = new URLSearchParams();
-            if (this.courtSearch) params.set('search', this.courtSearch);
-            if (this.courtTypeFilter) params.set('court_type', this.courtTypeFilter);
-            try {
-                const res = await fetch('/api/courts?' + params);
-                this.courts = await res.json();
-            } catch (e) { console.error(e); }
-        },
-
-        async loadHistory() {
-            try {
-                const res = await fetch('/api/history');
-                this.history = await res.json();
-            } catch (e) { console.error(e); }
-        },
-
-        async generateCos() {
-            try {
-                const res = await fetch('/api/certificate-of-service', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        attorney_name: this.cosAttorney,
-                        case_number: this.cosCaseNumber,
-                        recipients: this.cosRecipients.filter(r => r.name || r.attorney_name),
-                    }),
-                });
-                const data = await res.json();
-                this.cosText = data.text;
-            } catch (e) { console.error(e); }
-        },
-
-        async downloadCosPdf() {
-            try {
-                const res = await fetch('/api/certificate-of-service/pdf', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        attorney_name: this.cosAttorney,
-                        case_number: this.cosCaseNumber,
-                        recipients: this.cosRecipients.filter(r => r.name || r.attorney_name),
-                    }),
-                });
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'certificate_of_service.pdf';
-                a.click();
-                URL.revokeObjectURL(url);
-            } catch (e) { console.error(e); }
-        },
-
-        async checkHealth() {
-            try {
-                const res = await fetch('/api/health');
-                const data = await res.json();
-                this.hasApiKey = data.has_api_key;
-            } catch (e) { console.error(e); }
-        },
-
-        async loadDrafts() {
-            try {
-                const res = await fetch('/api/drafts');
-                this.savedDrafts = await res.json();
-                this.draftCount = this.savedDrafts.length;
-            } catch (e) { console.error(e); }
-        },
-
-        async deleteDraft(name) {
-            try {
-                await fetch('/api/drafts/' + encodeURIComponent(name), {method: 'DELETE'});
-                this.loadDrafts();
-            } catch (e) { console.error(e); }
-        },
+        async searchCourts(){try{const p=new URLSearchParams();if(this.courtSearch)p.set('search',this.courtSearch);if(this.courtTypeFilter)p.set('court_type',this.courtTypeFilter);const r=await fetch('/api/courts?'+p);this.courts=await r.json();}catch(e){}},
+        async loadHistory(){try{const r=await fetch('/api/history');this.history=await r.json();}catch(e){}},
+        async loadDrafts(){try{const r=await fetch('/api/drafts');this.savedDrafts=await r.json();this.draftCount=this.savedDrafts.length;}catch(e){}},
+        async deleteDraft(n){try{await fetch('/api/drafts/'+encodeURIComponent(n),{method:'DELETE'});this.loadDrafts();}catch(e){}},
+        async checkHealth(){try{const r=await fetch('/api/health');const d=await r.json();this.hasApiKey=d.has_api_key;}catch(e){}},
+        async generateCos(){try{const r=await fetch('/api/certificate-of-service',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attorney_name:this.cosAttorney,case_number:this.cosCaseNumber,recipients:this.cosRecipients.filter(r=>r.name||r.attorney_name)})});const d=await r.json();this.cosText=d.text;}catch(e){}},
+        async downloadCosPdf(){try{const r=await fetch('/api/certificate-of-service/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attorney_name:this.cosAttorney,case_number:this.cosCaseNumber,recipients:this.cosRecipients.filter(r=>r.name||r.attorney_name)})});const b=await r.blob();const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='certificate_of_service.pdf';a.click();URL.revokeObjectURL(u);}catch(e){}}
     };
 }
 </script>
