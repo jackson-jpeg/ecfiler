@@ -8,6 +8,9 @@ from typing import TYPE_CHECKING
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 
 from ecfiler.config import CONFIG_DIR
+from ecfiler.logging import get_logger
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from playwright.sync_api import Playwright
@@ -39,6 +42,7 @@ class BrowserSession:
 
     def start(self) -> Page:
         """Launch browser and create a new page."""
+        logger.info("Starting browser session (headless=%s)", self.headless)
         self._pw = sync_playwright().start()
         self._browser = self._pw.chromium.launch(
             headless=self.headless,

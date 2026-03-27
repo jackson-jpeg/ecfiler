@@ -202,5 +202,154 @@ def history(limit: int, query: str | None) -> None:
     hist.show_recent(console, limit)
 
 
+@main.command("quick")
+@click.argument("template_name")
+@click.argument("case_number")
+@click.argument("pdf_path", type=click.Path(exists=True))
+@click.option("--court", type=str, help="Override court from template")
+@click.option("--dry-run", is_flag=True, help="Stop before submitting")
+def quick_file(
+    template_name: str,
+    case_number: str,
+    pdf_path: str,
+    court: str | None,
+    dry_run: bool,
+) -> None:
+    """Quick file using a saved template.
+
+    Example: ecfiler quick motion-dismiss 1:24-cv-01234 ./brief.pdf
+    """
+    from rich.console import Console
+
+    from ecfiler.storage.templates import load_template, list_templates
+
+    console = Console()
+    template = load_template(template_name)
+
+    if template is None:
+        console.print(f"[red]Template '{template_name}' not found.[/red]")
+        available = list_templates()
+        if available:
+            console.print(f"Available templates: {', '.join(available)}")
+        else:
+            console.print("[dim]No templates saved yet. File normally first, then save as template.[/dim]")
+        return
+
+    console.print(f"\n  Template: [bold]{template_name}[/bold]")
+    console.print(f"  Court:    {court or template.get('court_id', '?')}")
+    console.print(f"  Case:     {case_number}")
+    console.print(f"  Event:    {template.get('event_description', '?')}")
+    console.print(f"  Document: {pdf_path}")
+
+    if dry_run:
+        console.print("\n  [yellow]DRY RUN — template validated, would proceed to filing.[/yellow]")
+        return
+
+    console.print("\n  [dim]To file, use the interactive workflow: ecfiler[/dim]")
+
+
+@main.command("demo")
+def demo_mode() -> None:
+    """Run a demo filing walkthrough (no PACER account needed).
+
+    Shows the complete ECFiler workflow using sample data.
+    """
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+
+    console = Console()
+
+    console.print(
+        Panel(
+            "[bold cyan]ECFiler Demo Mode[/bold cyan]\n"
+            "[dim]This walkthrough shows the complete filing workflow using sample data.\n"
+            "No PACER account or court access is needed.[/dim]",
+            border_style="cyan",
+        )
+    )
+
+    import time
+
+    steps = [
+        ("Selecting court", "S.D.N.Y. (nysd)"),
+        ("Looking up case", "1:24-cv-01234 — Smith v. Jones Corp | Judge Williams | Open"),
+        ("AI suggesting event code", "Reply Memorandum of Law in Support (Code 102) — Confidence: high"),
+        ("Filing on behalf of", "Smith (plaintiff) by Jane Doe, Esq. (Bar #JD5678)"),
+        ("Responding to", "Docket #45 — Motion to Dismiss (filed 2024-11-15)"),
+        ("Validating PDF", "reply_brief.pdf — 2.3MB, 15 pages, searchable, PDF/A"),
+        ("Scanning redaction", "No Rule 5.2 personal identifiers found"),
+        ("AI validation", "Document title matches event code. No missing attachments."),
+    ]
+
+    for label, result in steps:
+        console.print(f"\n  [dim]{label}...[/dim]")
+        time.sleep(0.5)
+        console.print(f"  [green]✓[/green] {result}")
+
+    # Show review screen
+    console.print()
+    console.print(
+        Panel(
+            "[bold red]FILING REVIEW — ATTORNEY APPROVAL REQUIRED[/bold red]",
+            border_style="red",
+        )
+    )
+
+    table = Table(show_header=False, border_style="dim")
+    table.add_column("Field", style="bold")
+    table.add_column("Value")
+    table.add_row("Court", "S.D.N.Y. (district)")
+    table.add_row("Case", "1:24-cv-01234")
+    table.add_row("Title", "Smith v. Jones Corp")
+    table.add_row("Judge", "Williams")
+    table.add_row("Event", "Reply Memorandum of Law in Support (102)")
+    table.add_row("Filing for", "Smith (plaintiff) by Jane Doe")
+    table.add_row("[yellow]Response to[/yellow]", "Docket #45 — Motion to Dismiss")
+    table.add_row("Document", "[green]✓[/green] reply_brief.pdf (2.3MB)")
+    console.print(table)
+
+    console.print("\n  [dim]In a real filing, you would type CONFIRM here.[/dim]")
+    console.print(
+        "\n  [green]✓[/green] [bold]Demo complete.[/bold] "
+        "To file for real, run [bold]ecfiler[/bold] and configure your PACER credentials."
+    )
+
+
+@main.command("save-template")
+@click.argument("name")
+@click.option("--court", required=True, help="Court ID (e.g., nysd)")
+@click.option("--event-code", required=True, help="Event code")
+@click.option("--event-desc", required=True, help="Event description")
+@click.option("--party-role", default="plaintiff", help="Filing party role")
+def save_template_cmd(
+    name: str,
+    court: str,
+    event_code: str,
+    event_desc: str,
+    party_role: str,
+) -> None:
+    """Save a filing template for quick reuse.
+
+    Example: ecfiler save-template mtd --court nysd --event-code 12 --event-desc "Motion to Dismiss"
+    """
+    from rich.console import Console
+
+    from ecfiler.storage.templates import save_template
+
+    console = Console()
+
+    data = {
+        "court_id": court,
+        "event_code": event_code,
+        "event_description": event_desc,
+        "party_role": party_role,
+    }
+
+    path = save_template(name, data)
+    console.print(f"  [green]✓[/green] Template '{name}' saved to {path}")
+    console.print(f"  [dim]Use with: ecfiler quick {name} <case_number> <pdf_path>[/dim]")
+
+
 if __name__ == "__main__":
     main()

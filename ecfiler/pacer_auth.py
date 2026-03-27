@@ -12,6 +12,10 @@ from dataclasses import dataclass
 import httpx
 import keyring
 
+from ecfiler.logging import get_logger
+
+logger = get_logger(__name__)
+
 PACER_AUTH_URL = "https://pacer.login.uscourts.gov/csologin/loginSvc"
 PACER_QA_AUTH_URL = "https://qa-pacer.login.uscourts.gov/csologin/loginSvc"
 KEYRING_SERVICE = "ecfiler-pacer"
@@ -65,8 +69,10 @@ class PacerAuth:
         Returns a cached token if still valid. Retries on transient failures.
         """
         if self._token and not self._token.is_expired:
+            logger.debug("Using cached PACER token")
             return self._token
 
+        logger.info("Authenticating with PACER as %s", self.username)
         password = self.get_password()
         last_error: Exception | None = None
 

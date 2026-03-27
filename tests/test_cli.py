@@ -92,3 +92,39 @@ class TestCli:
         result = runner.invoke(main, ["setup", "--help"])
         assert result.exit_code == 0
         assert "PACER" in result.output or "credential" in result.output.lower()
+
+    def test_demo_mode(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["demo"])
+        assert result.exit_code == 0
+        assert "Demo" in result.output or "demo" in result.output
+        assert "Smith v. Jones" in result.output
+        assert "CONFIRM" in result.output
+
+    def test_quick_missing_template(self, runner: CliRunner, tmp_path) -> None:
+        import fitz
+
+        doc = fitz.open()
+        page = doc.new_page()
+        page.insert_text((72, 72), "Test.")
+        pdf = tmp_path / "test.pdf"
+        doc.save(str(pdf))
+        doc.close()
+
+        result = runner.invoke(main, ["quick", "nonexistent", "1:24-cv-01234", str(pdf)])
+        assert result.exit_code == 0
+        assert "not found" in result.output
+
+    def test_save_template(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, [
+            "save-template", "test-mtd",
+            "--court", "nysd",
+            "--event-code", "12",
+            "--event-desc", "Motion to Dismiss",
+        ])
+        assert result.exit_code == 0
+        assert "saved" in result.output.lower()
+
+    def test_quick_help(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["quick", "--help"])
+        assert result.exit_code == 0
+        assert "template" in result.output.lower()
