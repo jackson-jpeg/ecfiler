@@ -20,6 +20,9 @@ RUN pip install --no-cache-dir ".[web,pdf-convert]"
 RUN playwright install chromium --with-deps
 
 ENV PORT=8000
+# Create persistent data directory (mount a Railway volume here)
+RUN mkdir -p /data/.ecfiler
+ENV ECFILER_DATA_DIR=/data/.ecfiler
 EXPOSE 8000
 
 CMD ["sh", "-c", "uvicorn ecfiler.api.app:app --host 0.0.0.0 --port $PORT"]
