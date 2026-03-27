@@ -404,5 +404,49 @@ def serve(host: str, port: int, do_reload: bool) -> None:
     )
 
 
+@main.command("check")
+@click.pass_context
+def check_setup(ctx: click.Context) -> None:
+    """Verify ECFiler setup — API key, PACER credentials, browser, PDF tools.
+
+    Run this before your first filing to make sure everything is configured.
+    """
+    from rich.console import Console
+    from rich.table import Table
+
+    from ecfiler.diagnostics import run_diagnostics
+
+    console = Console()
+    console.print("\n  [bold]ECFiler Setup Diagnostics[/bold]\n")
+
+    report = run_diagnostics(ctx.obj.get("config"))
+
+    table = Table(show_header=True, border_style="dim")
+    table.add_column("Check", width=16)
+    table.add_column("Status", width=6)
+    table.add_column("Details")
+    table.add_column("Fix", style="dim")
+
+    for check in report.checks:
+        status = "[green]PASS[/green]" if check.passed else "[red]FAIL[/red]"
+        table.add_row(check.name, status, check.message, check.fix)
+
+    console.print(table)
+    console.print()
+
+    if report.all_passed:
+        console.print(f"  [green]All {report.pass_count} checks passed.[/green] Ready to file.")
+    elif report.required_passed:
+        console.print(
+            f"  [yellow]{report.pass_count} passed, {report.fail_count} failed.[/yellow] "
+            f"Core checks OK — some features may be limited."
+        )
+    else:
+        console.print(
+            f"  [red]{report.fail_count} checks failed.[/red] "
+            f"Fix the issues above before filing."
+        )
+
+
 if __name__ == "__main__":
     main()

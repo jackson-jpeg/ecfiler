@@ -507,10 +507,32 @@ function ecfiler() {
             }
         },
 
-        confirmFiling() {
-            // In production, this would call POST /api/filing/submit
-            this.step = 'filed';
-            this.loadHistory();
+        async confirmFiling() {
+            try {
+                const res = await fetch('/api/filing/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        court_id: this.filing.court_id,
+                        case_number: this.filing.case_number,
+                        event_code: this.filing.event_code,
+                        event_description: this.filing.event_description,
+                        filing_party_name: this.filing.filing_party?.split('(')[0]?.trim() || '',
+                        filing_party_role: this.filing.filing_party?.match(/\((\w+)\)/)?.[1] || '',
+                        document_path: '',
+                        is_response: this.filing.is_response,
+                        responds_to_docket: this.filing.responds_to || '',
+                        dry_run: false,
+                    }),
+                });
+                const data = await res.json();
+                this.filingResult = data;
+                this.step = 'filed';
+                this.loadHistory();
+            } catch (err) {
+                this.errorMessage = err.message || 'Filing submission failed';
+                this.step = 'error';
+            }
         },
 
         reset() {
