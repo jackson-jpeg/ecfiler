@@ -1,0 +1,13 @@
+anthropic==0.86.0
+click==8.3.1
+fastapi==0.135.2
+httpx==0.28.1
+keyring==25.7.0
+pikepdf==10.5.1
+pydantic==2.12.5
+pydantic_core==2.41.5
+PyMuPDF==1.27.2.2
+python-multipart==0.0.22
+rich==14.3.3
+starlette==1.0.0
+uvicorn==0.42.0
