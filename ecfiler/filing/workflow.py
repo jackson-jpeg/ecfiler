@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import anthropic
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
@@ -125,7 +126,8 @@ class FilingWorkflow:
                 )
                 if not Confirm.ask("  Use this court?", default=True):
                     default = ""
-            except Exception:
+            except (KeyError, ValueError) as e:
+                console.print(f"  [yellow]Default court '{default}' not found: {e}[/yellow]")
                 default = ""
 
         if not default:
@@ -245,8 +247,13 @@ class FilingWorkflow:
             else:
                 return self._step_select_event(court_id, court_type)
 
+        except (anthropic.APIError, anthropic.APIConnectionError) as e:
+            console.print(f"  [yellow]Claude API error: {e}. Falling back to search.[/yellow]")
+            query = Prompt.ask("  Search events manually")
+            matches = search_events(query, court_type)
+            return self._pick_event(matches) if matches else self._step_select_event(court_id, court_type)
         except Exception as e:
-            console.print(f"  [yellow]AI unavailable: {e}. Falling back to search.[/yellow]")
+            console.print(f"  [yellow]AI unavailable ({type(e).__name__}: {e}). Falling back to search.[/yellow]")
             query = Prompt.ask("  Search events manually")
             matches = search_events(query, court_type)
             return self._pick_event(matches) if matches else self._step_select_event(court_id, court_type)
@@ -341,9 +348,13 @@ class FilingWorkflow:
                     console.print(
                         f"  [green]✓[/green] {doc.filename}: No redaction issues"
                     )
-            except Exception:
+            except FileNotFoundError:
                 console.print(
-                    f"  [dim]Could not scan {doc.filename} for redaction[/dim]"
+                    f"  [red]File not found: {doc.file_path}[/red]"
+                )
+            except Exception as e:
+                console.print(
+                    f"  [dim]Could not scan {doc.filename} for redaction ({type(e).__name__})[/dim]"
                 )
 
     def _step_related_entry(self) -> RelatedEntry | None:
@@ -393,8 +404,8 @@ class FilingWorkflow:
                     console.print(
                         "  [green]✓ AI validation passed[/green]"
                     )
-        except Exception:
-            console.print("  [dim]AI validation unavailable — proceeding[/dim]")
+        except Exception as e:
+            console.print(f"  [dim]AI validation unavailable ({type(e).__name__}) — proceeding[/dim]")
 
     def _step_attorney_review(self) -> bool:
         """Step 8: Attorney review and confirmation (Safety Gate 5).

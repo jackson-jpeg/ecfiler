@@ -22,6 +22,9 @@ class BrowserSession:
     Handles browser lifecycle, cookie management, and session state.
     """
 
+    DEFAULT_TIMEOUT = 30_000  # 30 seconds for page operations
+    NAVIGATION_TIMEOUT = 60_000  # 60 seconds for page navigation
+
     def __init__(self, headless: bool = True, slow_mo: int = 100) -> None:
         self.headless = headless
         self.slow_mo = slow_mo
@@ -40,6 +43,7 @@ class BrowserSession:
         self._browser = self._pw.chromium.launch(
             headless=self.headless,
             slow_mo=self.slow_mo,
+            timeout=30_000,
         )
         self._context = self._browser.new_context(
             viewport={"width": 1280, "height": 900},
@@ -49,6 +53,9 @@ class BrowserSession:
                 "Chrome/120.0.0.0 Safari/537.36"
             ),
         )
+        # Set default timeouts for all operations in this context
+        self._context.set_default_timeout(self.DEFAULT_TIMEOUT)
+        self._context.set_default_navigation_timeout(self.NAVIGATION_TIMEOUT)
         # Start tracing for debug/audit
         self._context.tracing.start(screenshots=True, snapshots=True)
         self._page = self._context.new_page()
