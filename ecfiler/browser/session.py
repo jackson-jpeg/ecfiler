@@ -44,10 +44,17 @@ class BrowserSession:
         """Launch browser and create a new page."""
         logger.info("Starting browser session (headless=%s)", self.headless)
         self._pw = sync_playwright().start()
+        # --no-sandbox needed in containers / root environments
+        import os
+        args = []
+        if os.getuid() == 0 or os.environ.get("PLAYWRIGHT_NO_SANDBOX"):
+            args.append("--no-sandbox")
+
         self._browser = self._pw.chromium.launch(
             headless=self.headless,
             slow_mo=self.slow_mo,
             timeout=30_000,
+            args=args,
         )
         self._context = self._browser.new_context(
             viewport={"width": 1280, "height": 900},
