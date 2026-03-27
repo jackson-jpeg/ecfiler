@@ -82,6 +82,27 @@ COMMON_BANKRUPTCY_EVENTS: list[dict[str, str]] = [
     {"code": "B13", "description": "Motion to Convert", "category": "Motions"},
     {"code": "B14", "description": "Reaffirmation Agreement", "category": "Other"},
     {"code": "B15", "description": "Motion for Hardship Discharge", "category": "Motions"},
+    # Additional bankruptcy events
+    {"code": "B16", "description": "Amended Schedules", "category": "Schedules"},
+    {"code": "B17", "description": "Motion to Avoid Lien", "category": "Motions"},
+    {"code": "B18", "description": "Motion to Value Collateral", "category": "Motions"},
+    {"code": "B19", "description": "Motion to Approve Sale", "category": "Motions"},
+    {"code": "B20", "description": "Adversary Proceeding Complaint", "category": "Adversary"},
+    {"code": "B21", "description": "Answer to Adversary Complaint", "category": "Adversary"},
+    {"code": "B22", "description": "Motion for Summary Judgment", "category": "Motions"},
+    {"code": "B23", "description": "Notice of Appearance", "category": "Notices"},
+    {"code": "B24", "description": "Notice of Hearing", "category": "Notices"},
+    {"code": "B25", "description": "Motion to Extend Time", "category": "Motions"},
+    {"code": "B26", "description": "Motion to Approve Compromise", "category": "Motions"},
+    {"code": "B27", "description": "Monthly Operating Report", "category": "Reports"},
+    {"code": "B28", "description": "Ballot/Vote on Plan", "category": "Plans"},
+    {"code": "B29", "description": "Objection to Confirmation", "category": "Plans"},
+    {"code": "B30", "description": "Motion for Adequate Protection", "category": "Motions"},
+    {"code": "B31", "description": "Motion to Employ Professional", "category": "Motions"},
+    {"code": "B32", "description": "Application for Compensation", "category": "Motions"},
+    {"code": "B33", "description": "Certificate of Service", "category": "Other"},
+    {"code": "B34", "description": "Stipulation", "category": "Other"},
+    {"code": "B35", "description": "Declaration/Affidavit", "category": "Other"},
 ]
 
 COMMON_APPELLATE_EVENTS: list[dict[str, str]] = [
@@ -100,6 +121,22 @@ COMMON_APPELLATE_EVENTS: list[dict[str, str]] = [
     {"code": "A13", "description": "Certificate of Compliance", "category": "Other"},
     {"code": "A14", "description": "Corporate Disclosure Statement", "category": "Other"},
     {"code": "A15", "description": "Motion for Oral Argument", "category": "Motions"},
+    # Additional appellate events
+    {"code": "A16", "description": "Notice of Appeal", "category": "Notices"},
+    {"code": "A17", "description": "Designation of Record", "category": "Other"},
+    {"code": "A18", "description": "Statement of Issues", "category": "Other"},
+    {"code": "A19", "description": "Motion for Appointment of Counsel", "category": "Motions"},
+    {"code": "A20", "description": "Motion for Leave to File", "category": "Motions"},
+    {"code": "A21", "description": "Motion to Consolidate", "category": "Motions"},
+    {"code": "A22", "description": "Motion for Summary Disposition", "category": "Motions"},
+    {"code": "A23", "description": "Emergency Motion", "category": "Motions"},
+    {"code": "A24", "description": "Supplemental Brief", "category": "Briefs"},
+    {"code": "A25", "description": "Response to Motion", "category": "Responses"},
+    {"code": "A26", "description": "Reply to Response", "category": "Responses"},
+    {"code": "A27", "description": "Certificate of Service", "category": "Other"},
+    {"code": "A28", "description": "Notice of Supplemental Authority", "category": "Notices"},
+    {"code": "A29", "description": "Motion to Seal", "category": "Motions"},
+    {"code": "A30", "description": "Stipulation for Dismissal", "category": "Other"},
 ]
 
 

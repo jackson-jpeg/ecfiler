@@ -789,6 +789,17 @@ class FilingWorkflow:
             table.add_row("Mode", "[yellow]DRY RUN[/yellow]")
 
         console.print(table)
+
+        # Show filing checklist if available
+        from ecfiler.filing.checklist import get_checklist
+
+        checklist = get_checklist(self.filing.event.description)
+        if checklist:
+            console.print(f"\n  [bold]{checklist.title}[/bold]")
+            for item in checklist.items:
+                marker = "[red]![/red]" if item.required else "[dim]·[/dim]"
+                console.print(f"    {marker} {item.text}")
+
         console.print()
 
         confirm = Prompt.ask(
