@@ -15,7 +15,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -279,6 +279,47 @@ async def analyze_and_prepare_filing(
         )
     finally:
         Path(tmp_path).unlink(missing_ok=True)
+
+
+# --- Streaming endpoint ---
+
+
+@app.post("/api/file/stream")
+async def analyze_filing_stream(
+    document: UploadFile = File(..., description="PDF document to file"),
+) -> StreamingResponse:
+    """Upload a PDF and receive real-time analysis progress via Server-Sent Events.
+
+    The client should use EventSource or fetch with streaming to consume events:
+
+    - event: step — a processing step started/completed/failed
+      data: {"id": 1, "label": "Validating PDF", "status": "running|done|warn|error", "detail": "..."}
+
+    - event: result — final analysis complete
+      data: {"filing": {...}}  (same schema as /api/file response)
+
+    - event: error — fatal error
+      data: {"message": "..."}
+    """
+    import os
+
+    from ecfiler.api.streaming import stream_analysis
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise HTTPException(503, "Smart filing requires an Anthropic API key.")
+
+    content = await _validate_upload(document)
+
+    return StreamingResponse(
+        stream_analysis(content, document.filename or "upload.pdf", api_key),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # --- Utility endpoints ---
