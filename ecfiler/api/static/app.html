@@ -110,65 +110,144 @@
         </div>
     </div>
 
-    <!-- Review -->
+    <!-- Review — AI confirmation conversation -->
     <div x-show="step==='review'" class="animate-in">
         <template x-if="filing">
-        <div class="max-w-2xl mx-auto space-y-4">
-            <!-- Header -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-lg font-bold" x-text="filing.document_type || 'Filing'"></h2>
-                    <div class="text-sm text-ink/40 mono" x-text="filing.case_number"></div>
-                </div>
-                <div class="text-right">
-                    <div class="text-2xl font-bold" :class="filing.completeness_score>=80?'text-ok':filing.completeness_score>=50?'text-warn':'text-bad'" x-text="filing.completeness_score+'%'"></div>
-                    <div class="text-[11px] text-ink/30">extracted</div>
+        <div class="max-w-2xl mx-auto">
+
+            <!-- AI message: here's what I'm about to file -->
+            <div class="mb-5">
+                <div class="flex items-start gap-3 mb-4">
+                    <div class="w-7 h-7 rounded-lg bg-gold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span class="text-ink text-[10px] font-bold">E</span>
+                    </div>
+                    <div class="text-sm text-ink/70 leading-relaxed">
+                        I've analyzed your document. Here's what I'm about to file on CM/ECF. Please review everything below and confirm.
+                    </div>
                 </div>
             </div>
 
-            <!-- Fields -->
-            <div class="bg-white border border-border rounded-xl overflow-hidden">
-                <template x-for="f in fields" :key="f[0]">
-                    <div class="flex items-center px-5 py-3 border-b border-border last:border-0">
-                        <div class="w-28 text-xs font-medium text-ink/30 uppercase tracking-wide" x-text="f[0]"></div>
-                        <div class="flex-1 flex items-center gap-2">
-                            <div class="w-1 h-1 rounded-full" :class="f[1]?'bg-ok':'bg-ink/10'"></div>
-                            <span class="text-sm" :class="f[1]?'text-ink':'text-ink/20 italic'" x-text="f[1]||'not detected'"></span>
+            <!-- What I'm filing -->
+            <div class="bg-white border border-border rounded-xl overflow-hidden mb-4">
+                <div class="px-5 py-3 border-b border-border bg-surface/50">
+                    <div class="text-[11px] font-semibold text-ink/40 uppercase tracking-wider">Filing Summary</div>
+                </div>
+                <div class="p-5 space-y-4">
+                    <!-- Document -->
+                    <div>
+                        <div class="text-[11px] font-medium text-ink/30 uppercase tracking-wide mb-1">Document</div>
+                        <div class="text-sm font-semibold" x-text="filing.document_type"></div>
+                        <div class="text-xs text-ink/40 mono mt-0.5" x-text="fileName + ' — ' + filing.pdf_size_mb?.toFixed(1) + 'MB, ' + filing.pdf_pages + ' pages'"></div>
+                    </div>
+
+                    <div class="border-t border-border"></div>
+
+                    <!-- Case -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-[11px] font-medium text-ink/30 uppercase tracking-wide mb-1">Case Number</div>
+                            <div class="text-sm font-semibold mono" x-text="filing.case_number || 'Not detected'"></div>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-medium text-ink/30 uppercase tracking-wide mb-1">Court</div>
+                            <div class="text-sm font-semibold" x-text="filing.court_id ? filing.court_id.toUpperCase() : 'Not detected'"></div>
                         </div>
                     </div>
-                </template>
+
+                    <div x-show="filing.case_caption">
+                        <div class="text-[11px] font-medium text-ink/30 uppercase tracking-wide mb-1">Caption</div>
+                        <div class="text-sm" x-text="filing.case_caption"></div>
+                    </div>
+
+                    <div class="border-t border-border"></div>
+
+                    <!-- Docket text / Event -->
+                    <div>
+                        <div class="text-[11px] font-medium text-ink/30 uppercase tracking-wide mb-1">Docket Text (what CM/ECF will show)</div>
+                        <div class="text-sm font-semibold" x-text="filing.event_description"></div>
+                        <div class="text-xs text-ink/30 mono mt-0.5" x-text="'Event code: ' + filing.event_code"></div>
+                    </div>
+
+                    <!-- Response linkage -->
+                    <div x-show="filing.is_response" class="bg-surface rounded-lg p-3">
+                        <div class="text-[11px] font-medium text-ink/30 uppercase tracking-wide mb-1">Linked to</div>
+                        <div class="text-sm" x-text="filing.responds_to"></div>
+                    </div>
+
+                    <div class="border-t border-border"></div>
+
+                    <!-- Filed by -->
+                    <div>
+                        <div class="text-[11px] font-medium text-ink/30 uppercase tracking-wide mb-1">Filing on behalf of</div>
+                        <div class="text-sm font-semibold" x-text="filing.filing_party || 'Not detected'"></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Validation row -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs" :class="filing.pdf_valid?'bg-ok/10 text-ok':'bg-bad/10 text-bad'" x-text="filing.pdf_valid?'&#10003;':'&#10007;'"></div>
-                    <div><div class="text-sm font-medium">PDF</div><div class="text-xs text-ink/30" x-text="filing.pdf_size_mb?.toFixed(1)+'MB, '+filing.pdf_pages+'p'"></div></div>
+            <!-- Verification checks -->
+            <div class="bg-white border border-border rounded-xl overflow-hidden mb-4">
+                <div class="px-5 py-3 border-b border-border bg-surface/50">
+                    <div class="text-[11px] font-semibold text-ink/40 uppercase tracking-wider">Verification</div>
                 </div>
-                <div class="bg-white border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs" :class="filing.redaction_issues===0?'bg-ok/10 text-ok':'bg-warn/10 text-warn'" x-text="filing.redaction_issues===0?'&#10003;':'!'"></div>
-                    <div><div class="text-sm font-medium">Redaction</div><div class="text-xs text-ink/30" x-text="filing.redaction_issues===0?'Clean':''+filing.redaction_issues+' issue(s)'"></div></div>
+                <div class="p-4 space-y-2.5">
+                    <!-- PDF valid -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" :class="filing.pdf_valid?'bg-ok/10 text-ok':'bg-bad/10 text-bad'" x-text="filing.pdf_valid?'&#10003;':'&#10007;'"></div>
+                        <span class="text-sm" x-text="filing.pdf_valid ? 'PDF is valid and meets CM/ECF requirements' : 'PDF has issues — see errors above'"></span>
+                    </div>
+                    <!-- Redaction -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" :class="filing.redaction_issues===0?'bg-ok/10 text-ok':'bg-warn/10 text-warn'" x-text="filing.redaction_issues===0?'&#10003;':'!'"></div>
+                        <span class="text-sm" x-text="filing.redaction_issues===0 ? 'No unredacted personal identifiers (Rule 5.2)' : filing.redaction_issues + ' potential redaction issue(s) — review before filing'"></span>
+                    </div>
+                    <!-- Case number match -->
+                    <div class="flex items-center gap-3" x-show="filing.case_number">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-ok/10 text-ok">&#10003;</div>
+                        <span class="text-sm">Case number <span class="mono font-medium" x-text="filing.case_number"></span> matches document</span>
+                    </div>
+                    <!-- Event code match -->
+                    <div class="flex items-center gap-3" x-show="filing.event_code">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-ok/10 text-ok">&#10003;</div>
+                        <span class="text-sm">Event code <span class="mono font-medium" x-text="filing.event_code"></span> matches document type</span>
+                    </div>
+                    <!-- Certificate of Service -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" :class="filing.warnings?.some(w=>w.includes('certificate')) ? 'bg-warn/10 text-warn' : 'bg-ok/10 text-ok'" x-text="filing.warnings?.some(w=>w.includes('certificate')) ? '!' : '&#10003;'"></div>
+                        <span class="text-sm" x-text="filing.warnings?.some(w=>w.includes('certificate')) ? 'No certificate of service detected — add one if required' : 'Certificate of service present'"></span>
+                    </div>
+                    <!-- Confidence -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" :class="filing.confidence==='high'?'bg-ok/10 text-ok':'bg-warn/10 text-warn'">
+                            <span x-text="filing.confidence==='high'?'&#10003;':'?'"></span>
+                        </div>
+                        <span class="text-sm">AI confidence: <span class="font-medium" x-text="filing.confidence"></span></span>
+                    </div>
                 </div>
             </div>
 
             <!-- Warnings -->
-            <template x-for="w in filing.warnings||[]" :key="w">
-                <div class="flex items-start gap-2 px-4 py-2.5 bg-warn/5 border border-warn/20 rounded-lg text-sm text-warn">
-                    <span class="text-xs mt-0.5">!</span><span x-text="w"></span>
+            <template x-for="w in (filing.warnings||[]).filter(w=>!w.includes('certificate'))" :key="w">
+                <div class="flex items-start gap-2 px-4 py-2.5 bg-warn/5 border border-warn/20 rounded-lg text-sm text-warn mb-2">
+                    <span class="text-xs mt-0.5 font-bold">!</span><span x-text="w"></span>
                 </div>
             </template>
 
-            <!-- Confirm bar -->
-            <div class="bg-white border-2 rounded-xl p-5 text-center" :class="filing.ready?'border-ok/30':'border-border'">
-                <div class="flex justify-center gap-3">
-                    <button @click="confirm()" :disabled="!filing.ready"
-                        class="px-8 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                        :class="filing.ready?'bg-ink text-white hover:bg-ink-2 shadow-sm':'bg-ink/5 text-ink/20 cursor-not-allowed'">
-                        Confirm &amp; File
-                    </button>
-                    <button @click="reset()" class="px-5 py-2.5 text-sm text-ink/40 hover:text-ink transition">Cancel</button>
+            <!-- AI message: ready? -->
+            <div class="flex items-start gap-3 mt-5 mb-4">
+                <div class="w-7 h-7 rounded-lg bg-gold flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="text-ink text-[10px] font-bold">E</span>
                 </div>
-                <p x-show="!filing.ready" class="text-xs text-bad/70 mt-2">Missing required fields</p>
+                <div class="text-sm text-ink/70 leading-relaxed" x-text="filing.ready ? 'Everything looks good. Ready to file?' : 'Some required fields are missing. Please review the issues above.'"></div>
+            </div>
+
+            <!-- Confirm -->
+            <div class="flex gap-3 ml-10">
+                <button @click="confirm()" :disabled="!filing.ready"
+                    class="px-8 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                    :class="filing.ready?'bg-ink text-white hover:bg-ink-2 shadow-sm':'bg-ink/5 text-ink/20 cursor-not-allowed'">
+                    Confirm &amp; File
+                </button>
+                <button @click="reset()" class="px-5 py-2.5 text-sm text-ink/40 hover:text-ink transition">Cancel</button>
             </div>
         </div>
         </template>
