@@ -132,6 +132,12 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         else:
             yield emit_step("Matching event code", "warn", "No exact match — manual selection needed")
 
+        # Check filing fee
+        from ecfiler.filing.fees import get_fee, format_fee
+        fee = get_fee(event_desc or analysis.document_type, court_type)
+        fee_amount = fee.amount if fee else 0
+        fee_text = format_fee(fee) if fee else "Unknown"
+
         # Build warnings
         warnings: list[str] = []
         if not analysis.has_signature:
@@ -140,6 +146,8 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
             warnings.append("No certificate of service detected")
         if analysis.is_response and not analysis.responds_to_docket_number:
             warnings.append("Response filing without docket reference")
+        if fee and fee.amount > 0:
+            warnings.append(f"Filing fee: {fee_text}")
         warnings.extend(validation.warnings)
 
         ready = validation.valid and analysis.completeness_score >= 60 and bool(event_code)
@@ -164,6 +172,8 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
             "warnings": warnings,
             "confidence": analysis.confidence,
             "ready": ready,
+            "filing_fee": fee_amount,
+            "filing_fee_text": fee_text,
         }
 
         yield emit_result(filing)

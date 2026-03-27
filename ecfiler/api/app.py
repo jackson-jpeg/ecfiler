@@ -783,6 +783,26 @@ def get_nos_categories() -> list[str]:
     return get_nature_of_suit_categories()
 
 
+@app.get("/api/fee/{event_description}")
+def get_filing_fee(
+    event_description: str,
+    court_type: str = Query("district", description="district, bankruptcy, or appellate"),
+) -> dict:
+    """Look up the filing fee for a specific event type."""
+    from ecfiler.filing.fees import format_fee, get_fee
+
+    fee = get_fee(event_description, court_type)
+    if fee is None:
+        return {"amount": 0, "description": "Unknown filing type", "text": "Fee unknown"}
+    return {
+        "amount": fee.amount,
+        "description": fee.description,
+        "waivable": fee.waivable,
+        "notes": fee.notes,
+        "text": format_fee(fee),
+    }
+
+
 @app.get("/api/checklist/{event_description}")
 def get_filing_checklist(event_description: str) -> dict | None:
     """Get a filing checklist for a specific event type.
