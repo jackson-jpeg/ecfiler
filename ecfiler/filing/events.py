@@ -160,10 +160,39 @@ def get_common_events(court_type: str) -> list[EventCode]:
 
 
 def search_events(query: str, court_type: str) -> list[EventCode]:
-    """Search event codes by description."""
+    """Search event codes by description.
+
+    Uses bidirectional matching: finds events where either the query
+    contains the event description or the description contains the query.
+    Results sorted by relevance (exact > contains > partial word overlap).
+    """
     query_lower = query.lower()
+    query_words = set(query_lower.split())
     events = get_common_events(court_type)
-    return [e for e in events if query_lower in e.description.lower()]
+
+    scored: list[tuple[float, EventCode]] = []
+    for e in events:
+        desc_lower = e.description.lower()
+        desc_words = set(desc_lower.split())
+
+        if query_lower == desc_lower:
+            scored.append((1000, e))
+        elif desc_lower in query_lower:
+            # Event description is inside the query — score by length
+            # Bonus if query starts with the event description (strongest signal)
+            bonus = 50 if query_lower.startswith(desc_lower) else 0
+            scored.append((100 + len(desc_lower) + bonus, e))
+        elif query_lower in desc_lower:
+            scored.append((90, e))
+        else:
+            # Word overlap — score by % of event words matched
+            overlap = len(query_words & desc_words)
+            if overlap >= 2:
+                pct = overlap / len(desc_words) if desc_words else 0
+                scored.append((overlap * 10 + pct * 5, e))
+
+    scored.sort(key=lambda x: -x[0])
+    return [e for _, e in scored]
 
 
 def get_event_categories(court_type: str) -> list[str]:
