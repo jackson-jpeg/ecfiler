@@ -128,3 +128,34 @@ class TestCli:
         result = runner.invoke(main, ["quick", "--help"])
         assert result.exit_code == 0
         assert "template" in result.output.lower()
+
+    def test_check_command(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["check"])
+        assert result.exit_code == 0
+        assert "config" in result.output.lower()
+        assert "courts" in result.output.lower()
+        assert "PASS" in result.output
+
+    def test_serve_help(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["serve", "--help"])
+        assert result.exit_code == 0
+        assert "API" in result.output or "port" in result.output.lower()
+
+    def test_smart_help(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["smart", "--help"])
+        assert result.exit_code == 0
+        assert "PDF" in result.output or "pdf" in result.output
+        assert "AI" in result.output or "extract" in result.output.lower()
+
+    def test_smart_nonexistent_file(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["smart", "/nonexistent/file.pdf"])
+        # Click catches nonexistent file
+        assert result.exit_code != 0
+
+    def test_history_command(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["history"])
+        assert result.exit_code == 0
+
+    def test_history_search(self, runner: CliRunner) -> None:
+        result = runner.invoke(main, ["history", "--search", "nonexistent"])
+        assert result.exit_code == 0
