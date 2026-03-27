@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECFiler — Open-Source Federal Court Filing</title>
+    <meta name="description" content="The first open-source tool for automated document filing on Federal CM/ECF court systems. Free, auditable, AI-powered.">
+    <style>
+        :root {
+            --navy: #1B2A4A;
+            --gold: #C4952A;
+            --green: #2D7D46;
+            --red: #B22234;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-600: #4B5563;
+            --gray-800: #1F2937;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: var(--gray-800);
+            line-height: 1.7;
+        }
+
+        .mono { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+
+        /* Header */
+        header {
+            background: var(--navy);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        header h1 span { color: var(--gold); }
+
+        header nav a {
+            color: var(--gray-200);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 0.95rem;
+            font-family: -apple-system, sans-serif;
+        }
+
+        header nav a:hover { color: var(--gold); }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, var(--navy) 0%, #2C3E6B 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 2.8rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero .tagline {
+            font-size: 1.3rem;
+            color: var(--gold);
+            margin-bottom: 2.5rem;
+            font-style: italic;
+        }
+
+        .hero .cta {
+            display: inline-block;
+            background: var(--gold);
+            color: var(--navy);
+            padding: 0.9rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 4px;
+            font-family: -apple-system, sans-serif;
+            margin: 0 0.5rem;
+        }
+
+        .hero .cta.secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid var(--gray-200);
+        }
+
+        .hero .cta:hover { opacity: 0.9; }
+
+        /* Stats bar */
+        .stats {
+            background: var(--gray-100);
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            padding: 2rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .stat {
+            text-align: center;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .stat .number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .stat .label {
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Features */
+        .features {
+            max-width: 1000px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .features h3 {
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--navy);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
+        }
+
+        .feature {
+            padding: 1.5rem;
+        }
+
+        .feature h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            color: var(--navy);
+            font-family: -apple-system, sans-serif;
+        }
+
+        .feature p {
+            color: var(--gray-600);
+            font-size: 0.95rem;
+            font-family: -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+
+        .feature .icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        /* Code demo */
+        .demo {
+            background: var(--gray-800);
+            color: #E5E7EB;
+            max-width: 700px;
+            margin: 3rem auto;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .demo-header {
+            background: #374151;
+            padding: 0.6rem 1rem;
+            font-size: 0.8rem;
+            color: #9CA3AF;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .demo pre {
+            padding: 1.5rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .demo .prompt { color: var(--gold); }
+        .demo .success { color: #34D399; }
+        .demo .dim { color: #6B7280; }
+
+        /* Safety section */
+        .safety {
+            background: var(--gray-50);
+            padding: 4rem 2rem;
+            margin: 4rem 0;
+        }
+
+        .safety-inner {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .safety h3 {
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--navy);
+        }
+
+        .safety .subtitle {
+            text-align: center;
+            color: var(--gray-600);
+            margin-bottom: 2.5rem;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .safety-gates {
+            list-style: none;
+            counter-reset: gate;
+        }
+
+        .safety-gates li {
+            counter-increment: gate;
+            padding: 1rem 1rem 1rem 3.5rem;
+            position: relative;
+            font-family: -apple-system, sans-serif;
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .safety-gates li::before {
+            content: counter(gate);
+            position: absolute;
+            left: 0.5rem;
+            top: 1rem;
+            background: var(--navy);
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .safety-gates li strong { color: var(--navy); }
+
+        /* Pricing */
+        .pricing {
+            max-width: 900px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .pricing h3 {
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: var(--navy);
+        }
+
+        .pricing .subtitle {
+            text-align: center;
+            color: var(--gray-600);
+            margin-bottom: 3rem;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .plan {
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 2rem;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .plan.featured {
+            border-color: var(--gold);
+            position: relative;
+        }
+
+        .plan.featured::before {
+            content: "Most Popular";
+            position: absolute;
+            top: -0.8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gold);
+            color: var(--navy);
+            padding: 0.2rem 1rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .plan h4 {
+            font-size: 1.2rem;
+            color: var(--navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .plan .price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 0.3rem;
+        }
+
+        .plan .price span {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: var(--gray-600);
+        }
+
+        .plan ul {
+            list-style: none;
+            margin: 1.5rem 0;
+        }
+
+        .plan ul li {
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+            color: var(--gray-600);
+        }
+
+        .plan ul li::before {
+            content: "\2713  ";
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .plan .plan-cta {
+            display: block;
+            text-align: center;
+            padding: 0.7rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .plan .plan-cta.primary {
+            background: var(--navy);
+            color: white;
+        }
+
+        .plan .plan-cta.outline {
+            border: 2px solid var(--navy);
+            color: var(--navy);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--navy);
+            color: var(--gray-200);
+            padding: 3rem 2rem;
+            text-align: center;
+            font-family: -apple-system, sans-serif;
+            font-size: 0.9rem;
+        }
+
+        footer a { color: var(--gold); text-decoration: none; }
+
+        footer .disclaimer {
+            max-width: 700px;
+            margin: 1.5rem auto 0;
+            font-size: 0.8rem;
+            color: #6B7280;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .hero h2 { font-size: 1.8rem; }
+            .stats { flex-wrap: wrap; gap: 2rem; }
+            .hero .cta { display: block; margin: 0.5rem auto; max-width: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>EC<span>Filer</span></h1>
+    <nav>
+        <a href="#features">Features</a>
+        <a href="#safety">Safety</a>
+        <a href="#pricing">Pricing</a>
+        <a href="https://github.com/ecfiler/ecfiler">GitHub</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <h2>Open-Source Filing for Federal Courts</h2>
+    <p class="tagline">File with confidence. File with code you can read.</p>
+    <a href="https://github.com/ecfiler/ecfiler" class="cta">Get Started — Free</a>
+    <a href="#pricing" class="cta secondary">See Pro Plans</a>
+</section>
+
+<div class="stats">
+    <div class="stat">
+        <div class="number">150</div>
+        <div class="label">Federal Courts</div>
+    </div>
+    <div class="stat">
+        <div class="number">7</div>
+        <div class="label">Safety Gates</div>
+    </div>
+    <div class="stat">
+        <div class="number">$0</div>
+        <div class="label">For Open Source</div>
+    </div>
+    <div class="stat">
+        <div class="number">100%</div>
+        <div class="label">Auditable Code</div>
+    </div>
+</div>
+
+<section class="features" id="features">
+    <h3>Built for Attorneys Who File</h3>
+    <div class="feature-grid">
+        <div class="feature">
+            <span class="icon">&sect;</span>
+            <h4>All Federal Courts</h4>
+            <p>94 district courts, 43 bankruptcy courts, 13 circuit courts of appeals. One tool, every federal filing venue.</p>
+        </div>
+        <div class="feature">
+            <span class="icon">&#x2696;</span>
+            <h4>AI Event Code Matching</h4>
+            <p>Describe your filing in plain English. ECFiler suggests the right CM/ECF event code from hundreds of options. You always confirm.</p>
+        </div>
+        <div class="feature">
+            <span class="icon">&#x1F6E1;</span>
+            <h4>Redaction Scanning</h4>
+            <p>Automatically scans for unredacted SSNs, dates of birth, financial accounts, and other Rule 5.2 personal identifiers before filing.</p>
+        </div>
+        <div class="feature">
+            <span class="icon">&#x2705;</span>
+            <h4>PDF Validation</h4>
+            <p>Checks file size, searchable text, encryption, form fields, and PDF/A conformance. Catches problems before CM/ECF rejects your filing.</p>
+        </div>
+        <div class="feature">
+            <span class="icon">&#x1F512;</span>
+            <h4>Attorney-Controlled</h4>
+            <p>Nothing submits without you typing CONFIRM. Every step is logged, screenshotted, and auditable. Your bar license, your control.</p>
+        </div>
+        <div class="feature">
+            <span class="icon">&#x1F4C2;</span>
+            <h4>Open Source</h4>
+            <p>Every line of code is readable on GitHub. No black boxes. No vendor lock-in. Fork it, audit it, contribute to it.</p>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="demo">
+        <div class="demo-header">Terminal — ecfiler</div>
+<pre><span class="prompt">$</span> ecfiler
+
+  <span style="color:#60A5FA;font-weight:bold">ECFiler</span> v0.1.0
+  Automated filing for Federal CM/ECF courts
+
+  [1] New Filing
+  [2] Filing History
+  [3] Settings
+
+  > 1
+
+  Court: <span style="font-weight:bold">S.D.N.Y.</span> (nysd) [Enter]
+  Case:  1:24-cv-01234
+  <span class="success">&#x2713;</span> Found: Smith v. Jones | Judge Williams | Open
+
+  What are you filing?
+  > reply brief in support of motion to dismiss
+
+  <span style="color:#60A5FA">AI suggests:</span> Reply Memorandum of Law (Code 102)
+  Correct? [Y/n] Y
+
+  Document: reply_brief.pdf
+  <span class="success">&#x2713;</span> Valid, 2.3MB, searchable, no redaction issues
+
+  <span style="color:#EF4444;font-weight:bold">FILING REVIEW — ATTORNEY APPROVAL REQUIRED</span>
+  Court: S.D.N.Y. | Case: 1:24-cv-01234
+  Event: Reply Memorandum of Law | Doc: reply_brief.pdf
+
+  Type CONFIRM to submit: <span style="font-weight:bold">CONFIRM</span>
+
+  <span class="success">&#x2713; FILED — Docket #58</span>
+  Receipt saved: ~/.ecfiler/receipts/...</pre>
+    </div>
+</section>
+
+<section class="safety" id="safety">
+    <div class="safety-inner">
+        <h3>Seven Safety Gates</h3>
+        <p class="subtitle">Every filing passes through seven independent safety checks before touching CM/ECF.</p>
+        <ol class="safety-gates">
+            <li><strong>PDF Validation</strong> — File must be valid PDF, under 100MB, searchable, unencrypted, no fillable forms.</li>
+            <li><strong>Redaction Scan</strong> — AI + regex scanning for unredacted personal identifiers under Rule 5.2.</li>
+            <li><strong>Event Code Verification</strong> — AI confirms the selected event code matches the document content.</li>
+            <li><strong>Completeness Check</strong> — Verifies required attachments (proposed orders, certificates of service).</li>
+            <li><strong>Attorney Review</strong> — Full filing summary displayed. You must type CONFIRM to proceed.</li>
+            <li><strong>Final Submit Watchdog</strong> — Screenshot of CM/ECF confirmation page shown. You must type YES.</li>
+            <li><strong>Receipt Capture</strong> — Filing confirmation saved as HTML + logged to audit database.</li>
+        </ol>
+    </div>
+</section>
+
+<section class="pricing" id="pricing">
+    <h3>Simple Pricing</h3>
+    <p class="subtitle">Open source forever. Pay only if you want the hosted experience.</p>
+    <div class="pricing-grid">
+        <div class="plan">
+            <h4>Open Source</h4>
+            <div class="price">Free <span>forever</span></div>
+            <ul>
+                <li>All 150 federal courts</li>
+                <li>CLI interface</li>
+                <li>AI event code matching</li>
+                <li>PDF validation + redaction scan</li>
+                <li>7 safety gates</li>
+                <li>Filing history</li>
+                <li>Self-hosted</li>
+                <li>Community support</li>
+            </ul>
+            <a href="https://github.com/ecfiler/ecfiler" class="plan-cta outline">View on GitHub</a>
+        </div>
+        <div class="plan featured">
+            <h4>Pro</h4>
+            <div class="price">$99 <span>/attorney/month</span></div>
+            <ul>
+                <li>Everything in Open Source</li>
+                <li>Web UI dashboard</li>
+                <li>Team management</li>
+                <li>Deadline tracking</li>
+                <li>Filing templates</li>
+                <li>Email/SMS confirmations</li>
+                <li>Priority court profile updates</li>
+                <li>Email support</li>
+            </ul>
+            <a href="#" class="plan-cta primary">Coming Soon</a>
+        </div>
+        <div class="plan">
+            <h4>Enterprise</h4>
+            <div class="price">Custom</div>
+            <ul>
+                <li>Everything in Pro</li>
+                <li>Dedicated instance</li>
+                <li>SSO / SAML integration</li>
+                <li>Custom court profiles</li>
+                <li>API access</li>
+                <li>SLA guarantee</li>
+                <li>Dedicated support engineer</li>
+                <li>On-premises deployment</li>
+            </ul>
+            <a href="mailto:enterprise@ecfiler.com" class="plan-cta outline">Contact Sales</a>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>ECFiler is open-source software under the MIT License.</p>
+    <p style="margin-top:0.5rem">
+        <a href="https://github.com/ecfiler/ecfiler">GitHub</a> &middot;
+        <a href="mailto:hello@ecfiler.com">Contact</a> &middot;
+        <a href="#">Documentation</a>
+    </p>
+    <p class="disclaimer">
+        ECFiler is a mechanical filing tool, not a legal advisor. It does not provide legal advice
+        or make filing decisions. The attorney is solely responsible for the substance, accuracy,
+        and completeness of all filings. ECFiler assists with procedural mechanics only.
+        Use of ECFiler does not create an attorney-client relationship with its developers.
+    </p>
+</footer>
+
+</body>
+</html>

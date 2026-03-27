@@ -18,13 +18,16 @@ from rich.table import Table
 from ecfiler.filing.events import get_common_events, search_events
 from ecfiler.filing.models import (
     CaseInfo,
+    CaseOpeningData,
     CourtType,
     Document,
     DocumentValidation,
     EventCode,
     Filing,
+    FilingParty,
     FilingReceipt,
     FilingStatus,
+    PartyInfo,
     RelatedEntry,
 )
 
@@ -58,14 +61,22 @@ class FilingWorkflow:
             # Step 3: Select event code
             event = self._step_select_event(court_id, court_type)
 
+            # Step 3b: Determine if this is a response to an existing entry
+            is_response, related = self._step_response_context(event)
+
+            # Step 3c: Select which party you're filing on behalf of
+            filing_party = self._step_select_filing_party(case_info)
+
+            # Step 3d: If opening a new case, collect case-opening data
+            case_opening = None
+            if event.category == "Initiating" or event.code in ("400", "401", "402", "B1", "B2"):
+                case_opening = self._step_case_opening(court_type)
+
             # Step 4: Select documents
             documents = self._step_select_documents()
 
             # Step 5: Validate documents (Safety Gate 1 & 2)
             documents = self._step_validate_documents(documents)
-
-            # Step 6: Related filing (optional)
-            related = self._step_related_entry()
 
             # Build filing record
             self.filing = Filing(
@@ -75,6 +86,9 @@ class FilingWorkflow:
                 event=event,
                 documents=documents,
                 related_entry=related,
+                filing_party=filing_party,
+                is_response=is_response,
+                case_opening=case_opening,
                 status=FilingStatus.DOCUMENTS_VALIDATED,
             )
 
@@ -381,13 +395,264 @@ class FilingWorkflow:
                     f"  [dim]Could not scan {doc.filename} for redaction ({type(e).__name__})[/dim]"
                 )
 
-    def _step_related_entry(self) -> RelatedEntry | None:
-        """Step 6: Select related docket entry (optional)."""
+    def _step_response_context(self, event: EventCode) -> tuple[bool, RelatedEntry | None]:
+        """Step 3b: Determine if filing is a response to an existing docket entry.
+
+        Responses, replies, oppositions, and answers typically relate to a
+        specific prior docket entry. We ask proactively for these event types.
+        """
+        response_keywords = [
+            "response", "opposition", "reply", "answer", "objection",
+            "sur-reply", "brief in opposition", "memorandum in opposition",
+        ]
+        is_response_type = any(
+            kw in event.description.lower() for kw in response_keywords
+        )
+
+        if is_response_type:
+            console.print(
+                f"\n  [bold]This is a {event.description} — what is it responding to?[/bold]"
+            )
+            number = Prompt.ask("  Docket entry number being responded to")
+            desc = Prompt.ask("  Description of that entry", default="")
+            related = RelatedEntry(docket_number=number, description=desc)
+
+            # Confirm the linkage
+            console.print(
+                f"  [dim]Filing as response to Docket #{number} {desc}[/dim]"
+            )
+            if not Confirm.ask("  Correct?", default=True):
+                return self._step_response_context(event)
+
+            return True, related
+
+        # For non-response filings, still offer the option
         if Confirm.ask("\n  Relate to existing docket entry?", default=False):
             number = Prompt.ask("  Docket entry number")
             desc = Prompt.ask("  Description", default="")
-            return RelatedEntry(docket_number=number, description=desc)
-        return None
+            return False, RelatedEntry(docket_number=number, description=desc)
+
+        return False, None
+
+    def _step_select_filing_party(self, case_info: CaseInfo) -> FilingParty | None:
+        """Step 3c: Select which party the filer represents.
+
+        CM/ECF requires you to identify which party you're filing on behalf of.
+        """
+        console.print("\n  [bold]Filing on behalf of:[/bold]")
+
+        # If we have party info from PACER lookup, show them
+        if case_info.parties:
+            for i, party in enumerate(case_info.parties, 1):
+                role_display = party.role.title()
+                atty = f" (atty: {party.attorney})" if party.attorney else ""
+                console.print(f"  [{i}] {party.name} — {role_display}{atty}")
+            console.print(f"  [{len(case_info.parties) + 1}] Enter manually")
+
+            choice = Prompt.ask(
+                "  Select party",
+                choices=[str(i) for i in range(1, len(case_info.parties) + 2)],
+            )
+            idx = int(choice) - 1
+            if idx < len(case_info.parties):
+                p = case_info.parties[idx]
+                return FilingParty(
+                    party_name=p.name,
+                    party_role=p.role,
+                    attorney_name=self.config.attorney.name,
+                    attorney_bar_number=self.config.attorney.bar_number,
+                )
+
+        # Manual entry
+        party_name = Prompt.ask("  Party name")
+        party_role = Prompt.ask(
+            "  Party role",
+            choices=["plaintiff", "defendant", "petitioner", "respondent", "debtor", "creditor", "other"],
+            default="plaintiff",
+        )
+
+        filing_party = FilingParty(
+            party_name=party_name,
+            party_role=party_role,
+            attorney_name=self.config.attorney.name,
+            attorney_bar_number=self.config.attorney.bar_number,
+        )
+
+        console.print(f"  [dim]Filing on behalf of: {filing_party.display}[/dim]")
+        if not Confirm.ask("  Correct?", default=True):
+            return self._step_select_filing_party(case_info)
+
+        return filing_party
+
+    def _step_case_opening(self, court_type: str) -> CaseOpeningData:
+        """Step 3d: Collect case-opening data for new case filings.
+
+        This is the most critical data entry step — errors here create
+        a permanent, potentially incorrect court record.
+        """
+        console.print(
+            Panel(
+                "[bold yellow]NEW CASE FILING — Extra verification required[/bold yellow]\n"
+                "[dim]All information below becomes part of the permanent court record.\n"
+                "Please verify every field carefully.[/dim]",
+                border_style="yellow",
+            )
+        )
+
+        is_bankruptcy = court_type == "bankruptcy"
+
+        if is_bankruptcy:
+            return self._collect_bankruptcy_case_data()
+
+        # Civil/Criminal case opening
+        case_type = Prompt.ask(
+            "  Case type",
+            choices=["cv", "cr"],
+            default="cv",
+        )
+
+        jurisdiction = ""
+        demand = ""
+        if case_type == "cv":
+            jurisdiction = Prompt.ask(
+                "  Jurisdiction basis",
+                choices=["federal_question", "diversity", "other"],
+                default="federal_question",
+            )
+            if jurisdiction == "diversity":
+                demand = Prompt.ask("  Demand amount ($)", default="")
+
+        cause = Prompt.ask("  Cause of action / statute", default="")
+        jury = Prompt.ask(
+            "  Jury demand",
+            choices=["plaintiff", "defendant", "both", "none"],
+            default="none",
+        )
+
+        # Collect parties
+        console.print("\n  [bold]Plaintiffs / Petitioners:[/bold]")
+        plaintiffs = self._collect_parties("plaintiff")
+
+        console.print("\n  [bold]Defendants / Respondents:[/bold]")
+        defendants = self._collect_parties("defendant")
+
+        data = CaseOpeningData(
+            case_type=case_type,
+            cause_of_action=cause,
+            jurisdiction_basis=jurisdiction,
+            demand_amount=demand,
+            jury_demand=jury,
+            plaintiffs=plaintiffs,
+            defendants=defendants,
+        )
+
+        # CRITICAL: Review all case-opening data before proceeding
+        self._review_case_opening(data)
+
+        return data
+
+    def _collect_bankruptcy_case_data(self) -> CaseOpeningData:
+        """Collect bankruptcy-specific case opening data."""
+        chapter = Prompt.ask("  Chapter", choices=["7", "11", "12", "13"], default="7")
+
+        console.print("\n  [bold]Debtor(s):[/bold]")
+        debtors = self._collect_parties("debtor")
+
+        asset = Confirm.ask("  Asset case?", default=False)
+        creditors = Prompt.ask(
+            "  Estimated number of creditors",
+            choices=["1-49", "50-99", "100-199", "200-999", "1000+"],
+            default="1-49",
+        )
+        assets = Prompt.ask("  Estimated assets", default="")
+        liabilities = Prompt.ask("  Estimated liabilities", default="")
+
+        data = CaseOpeningData(
+            case_type="bk",
+            chapter=chapter,
+            plaintiffs=debtors,
+            asset_case=asset,
+            estimated_creditors=creditors,
+            estimated_assets=assets,
+            estimated_liabilities=liabilities,
+        )
+
+        self._review_case_opening(data)
+        return data
+
+    def _collect_parties(self, default_role: str) -> list[PartyInfo]:
+        """Collect party information interactively."""
+        parties: list[PartyInfo] = []
+        while True:
+            name = Prompt.ask(f"  Name{' (or Enter to finish)' if parties else ''}")
+            if not name and parties:
+                break
+            if not name:
+                console.print("  [red]At least one party required.[/red]")
+                continue
+
+            is_pro_se = Confirm.ask("  Pro se (self-represented)?", default=False)
+            attorney = ""
+            if not is_pro_se:
+                attorney = Prompt.ask("  Attorney name", default=self.config.attorney.name)
+
+            parties.append(PartyInfo(
+                name=name,
+                role=default_role,
+                attorney=attorney,
+                is_pro_se=is_pro_se,
+            ))
+
+            if not Confirm.ask("  Add another?", default=False):
+                break
+
+        return parties
+
+    def _review_case_opening(self, data: CaseOpeningData) -> None:
+        """Display case-opening data for verification. Requires explicit confirmation."""
+        console.print(
+            Panel("[bold]CASE OPENING DATA — VERIFY ALL FIELDS[/bold]", border_style="yellow")
+        )
+
+        table = Table(show_header=False, border_style="dim")
+        table.add_column("Field", style="bold", width=20)
+        table.add_column("Value")
+
+        table.add_row("Case Type", data.case_type.upper())
+        if data.cause_of_action:
+            table.add_row("Cause of Action", data.cause_of_action)
+        if data.jurisdiction_basis:
+            table.add_row("Jurisdiction", data.jurisdiction_basis)
+        if data.demand_amount:
+            table.add_row("Demand", f"${data.demand_amount}")
+        if data.jury_demand:
+            table.add_row("Jury Demand", data.jury_demand)
+        if data.chapter:
+            table.add_row("Chapter", data.chapter)
+        if data.estimated_creditors:
+            table.add_row("Est. Creditors", data.estimated_creditors)
+
+        console.print(table)
+
+        if data.plaintiffs:
+            role_label = "Debtors" if data.is_bankruptcy else "Plaintiffs"
+            console.print(f"\n  [bold]{role_label}:[/bold]")
+            for p in data.plaintiffs:
+                atty = f" (pro se)" if p.is_pro_se else f" (atty: {p.attorney})"
+                console.print(f"    {p.name}{atty}")
+
+        if data.defendants:
+            console.print("\n  [bold]Defendants:[/bold]")
+            for p in data.defendants:
+                atty = f" (pro se)" if p.is_pro_se else f" (atty: {p.attorney})"
+                console.print(f"    {p.name}{atty}")
+
+        console.print()
+        if not Confirm.ask(
+            "  [bold yellow]Is all case-opening information correct?[/bold yellow]",
+            default=False,
+        ):
+            raise KeyboardInterrupt("Case opening data rejected by attorney")
 
     def _step_ai_validation(self) -> None:
         """Step 7: Claude validates the filing package (Safety Gates 3 & 4)."""
@@ -457,19 +722,40 @@ class FilingWorkflow:
         table.add_row("Case", self.filing.case.case_number)
         if self.filing.case.title:
             table.add_row("Title", self.filing.case.title)
+        if self.filing.case.judge:
+            table.add_row("Judge", self.filing.case.judge)
         table.add_row("Event", f"{self.filing.event.description} ({self.filing.event.code})")
 
+        # Filing party
+        if self.filing.filing_party:
+            table.add_row("Filing for", self.filing.filing_party.display)
+
+        # Response context
+        if self.filing.is_response and self.filing.related_entry:
+            table.add_row(
+                "[yellow]Response to[/yellow]",
+                f"Docket #{self.filing.related_entry.docket_number} "
+                f"{self.filing.related_entry.description}",
+            )
+        elif self.filing.related_entry:
+            table.add_row(
+                "Related to",
+                f"Docket #{self.filing.related_entry.docket_number} "
+                f"{self.filing.related_entry.description}",
+            )
+
+        # Documents
         for doc in self.filing.documents:
             status = "[green]✓[/green]" if doc.is_valid else "[red]✗[/red]"
             label = "Document" if doc.is_main else "Attachment"
             size = f"{doc.validation.file_size_mb:.1f}MB" if doc.validation else "?"
             table.add_row(label, f"{status} {doc.filename} ({size})")
 
-        if self.filing.related_entry:
+        # Case opening warning
+        if self.filing.is_case_opening:
             table.add_row(
-                "Related",
-                f"Docket #{self.filing.related_entry.docket_number} "
-                f"{self.filing.related_entry.description}",
+                "[bold yellow]NEW CASE[/bold yellow]",
+                "[bold yellow]This filing opens a new case — verify all data above[/bold yellow]",
             )
 
         if self.config.general.dry_run:

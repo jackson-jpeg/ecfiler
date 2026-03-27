@@ -65,7 +65,43 @@ class CaseInfo(BaseModel):
     case_number: str
     title: str = ""
     judge: str = ""
-    status: str = ""
+    status: str = ""  # open, closed
+    case_type: str = ""  # cv, cr, bk, ap
+    date_filed: str = ""
+    parties: list["PartyInfo"] = Field(default_factory=list)
+
+    @property
+    def plaintiff_names(self) -> list[str]:
+        return [p.name for p in self.parties if p.role in ("plaintiff", "petitioner", "debtor")]
+
+    @property
+    def defendant_names(self) -> list[str]:
+        return [p.name for p in self.parties if p.role in ("defendant", "respondent")]
+
+
+class PartyInfo(BaseModel):
+    """A party in a case."""
+
+    name: str
+    role: str  # plaintiff, defendant, petitioner, respondent, debtor, creditor, etc.
+    attorney: str = ""  # Representing attorney name
+    is_pro_se: bool = False
+
+
+class FilingParty(BaseModel):
+    """Which party the filer is acting on behalf of."""
+
+    party_name: str
+    party_role: str  # plaintiff, defendant, etc.
+    attorney_name: str = ""
+    attorney_bar_number: str = ""
+
+    @property
+    def display(self) -> str:
+        parts = [f"{self.party_name} ({self.party_role})"]
+        if self.attorney_name:
+            parts.append(f"by {self.attorney_name}")
+        return " ".join(parts)
 
 
 class EventCode(BaseModel):
@@ -82,6 +118,57 @@ class RelatedEntry(BaseModel):
     docket_number: str
     description: str = ""
     date: str = ""
+
+
+class DocketEntry(BaseModel):
+    """A docket entry from the case (for selecting related filings)."""
+
+    number: str
+    date: str = ""
+    description: str = ""
+    filed_by: str = ""
+
+    @property
+    def display(self) -> str:
+        parts = [f"#{self.number}"]
+        if self.date:
+            parts.append(self.date)
+        parts.append(self.description[:80])
+        return " — ".join(parts)
+
+
+class CaseOpeningData(BaseModel):
+    """Data required for opening a new case (complaint/petition filing).
+
+    This requires extra validation since incorrect info creates a permanent
+    court record.
+    """
+
+    case_type: str  # cv (civil), cr (criminal), bk (bankruptcy)
+    cause_of_action: str = ""  # Statute or cause
+    jurisdiction_basis: str = ""  # federal question, diversity, etc.
+    demand_amount: str = ""  # Dollar amount for diversity cases
+    jury_demand: str = ""  # plaintiff, defendant, both, none
+
+    # Plaintiff/Petitioner info
+    plaintiffs: list[PartyInfo] = Field(default_factory=list)
+    # Defendant/Respondent info
+    defendants: list[PartyInfo] = Field(default_factory=list)
+
+    # Bankruptcy-specific
+    chapter: str = ""  # 7, 11, 12, 13
+    asset_case: bool = False
+    estimated_creditors: str = ""  # Range: 1-49, 50-99, etc.
+    estimated_assets: str = ""
+    estimated_liabilities: str = ""
+
+    @property
+    def is_bankruptcy(self) -> bool:
+        return self.case_type == "bk"
+
+    @property
+    def all_parties(self) -> list[PartyInfo]:
+        return self.plaintiffs + self.defendants
 
 
 class RedactionFinding(BaseModel):
@@ -102,10 +189,13 @@ class Filing(BaseModel):
     event: EventCode
     documents: list[Document] = Field(default_factory=list)
     related_entry: RelatedEntry | None = None
+    filing_party: FilingParty | None = None
     parties: list[str] = Field(default_factory=list)
     docket_text: str = ""
     status: FilingStatus = FilingStatus.INIT
     redaction_issues: list[RedactionFinding] = Field(default_factory=list)
+    case_opening: CaseOpeningData | None = None  # Set when filing initiates a case
+    is_response: bool = False  # True if this is a response to another filing
 
     @property
     def main_document(self) -> Document | None:
@@ -121,6 +211,11 @@ class Filing(BaseModel):
     @property
     def all_valid(self) -> bool:
         return all(d.is_valid for d in self.documents)
+
+    @property
+    def is_case_opening(self) -> bool:
+        """Whether this filing opens a new case (complaint, petition, etc.)."""
+        return self.case_opening is not None
 
 
 class FilingReceipt(BaseModel):

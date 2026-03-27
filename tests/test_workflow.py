@@ -9,12 +9,15 @@ from ecfiler.filing.events import (
 )
 from ecfiler.filing.models import (
     CaseInfo,
+    CaseOpeningData,
     CourtType,
     Document,
     DocumentValidation,
     EventCode,
     Filing,
+    FilingParty,
     FilingStatus,
+    PartyInfo,
 )
 
 
@@ -57,6 +60,74 @@ class TestFilingModels:
         assert CourtType.DISTRICT.value == "district"
         assert CourtType.BANKRUPTCY.value == "bankruptcy"
         assert CourtType.APPELLATE.value == "appellate"
+
+    def test_filing_party(self) -> None:
+        fp = FilingParty(
+            party_name="Smith Corp",
+            party_role="defendant",
+            attorney_name="Jane Doe",
+            attorney_bar_number="JD5678",
+        )
+        assert "Smith Corp" in fp.display
+        assert "defendant" in fp.display
+        assert "Jane Doe" in fp.display
+
+    def test_case_info_parties(self) -> None:
+        case = CaseInfo(
+            case_number="1:24-cv-01234",
+            parties=[
+                PartyInfo(name="Smith", role="plaintiff"),
+                PartyInfo(name="Jones Corp", role="defendant"),
+                PartyInfo(name="Doe", role="defendant"),
+            ],
+        )
+        assert case.plaintiff_names == ["Smith"]
+        assert len(case.defendant_names) == 2
+
+    def test_case_opening_data(self) -> None:
+        data = CaseOpeningData(
+            case_type="cv",
+            cause_of_action="42 USC 1983",
+            jurisdiction_basis="federal_question",
+            plaintiffs=[PartyInfo(name="Smith", role="plaintiff")],
+            defendants=[PartyInfo(name="City of X", role="defendant")],
+        )
+        assert not data.is_bankruptcy
+        assert len(data.all_parties) == 2
+
+    def test_case_opening_bankruptcy(self) -> None:
+        data = CaseOpeningData(
+            case_type="bk",
+            chapter="7",
+            plaintiffs=[PartyInfo(name="Debtor", role="debtor")],
+        )
+        assert data.is_bankruptcy
+
+    def test_filing_is_case_opening(self) -> None:
+        filing = Filing(
+            court_id="nysd",
+            case=CaseInfo(case_number="NEW"),
+            event=EventCode(code="400", description="Complaint"),
+            case_opening=CaseOpeningData(case_type="cv"),
+        )
+        assert filing.is_case_opening
+
+    def test_filing_not_case_opening(self) -> None:
+        filing = Filing(
+            court_id="nysd",
+            case=CaseInfo(case_number="1:24-cv-01234"),
+            event=EventCode(code="12", description="Motion"),
+        )
+        assert not filing.is_case_opening
+
+    def test_filing_response_flag(self) -> None:
+        filing = Filing(
+            court_id="nysd",
+            case=CaseInfo(case_number="1:24-cv-01234"),
+            event=EventCode(code="301", description="Response"),
+            is_response=True,
+        )
+        assert filing.is_response
 
 
 class TestEventCodes:
