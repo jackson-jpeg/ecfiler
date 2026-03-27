@@ -26,20 +26,56 @@ class ECFFormError(Exception):
 class CourtSelectors:
     """CSS selectors for CM/ECF form elements.
 
+    Based on real NextGen CM/ECF HTML structure (SDNY, MN District).
+    The CM/ECF filing flow is multi-page — each step loads a new page
+    via cgi-bin scripts. The workflow from the MN District manual:
+
+    1. Menu: Civil > Motions and Related Filings > Motions
+    2. ECF Filing Tips page → click Next
+    3. Case number entry → click Next
+    4. Case confirmation → click Next
+    5. Event type selection (checkboxes, not dropdown) → click Next
+    6. Party selection (checkboxes) → click Next
+    7. Browse for main document + attachments → click Next
+    8. Docket text modification → click Next
+    9. Final confirmation → click Next to submit
+    10. NEF confirmation page
+
+    Login uses PACER Central Sign-On (CSO) at pacer.login.uscourts.gov:
+    - loginForm:loginName (username)
+    - loginForm:password (password)
+    - loginForm:clientCode (application ID)
+
     Override per-court when the standard selectors don't match.
     """
 
+    # Case number entry (step 3)
     case_number_input: str = "input[name='case_num']"
+    # Event type — CM/ECF uses checkboxes on some courts, dropdowns on others
     event_category_dropdown: str = "#category"
     event_list: str = "#event_list"
+    event_checkboxes: str = "input[type='checkbox'][name*='event'], input[type='radio'][name*='event']"
+    # Document upload (step 7)
     file_upload: str = "input[type='file']"
-    related_entry: str = "#related_doc"
-    final_submit: str = "input[type='submit'][value='Submit']"
+    file_browse_button: str = "input[value='Browse...'], button:has-text('Browse')"
+    # Related document (step for answers/responses)
+    related_entry: str = "input[type='checkbox'][name*='doc'], input[type='radio'][name*='doc']"
+    # Navigation between form pages
+    next_button: str = "input[value='Next'], button:has-text('Next')"
+    back_button: str = "input[value='Back'], button:has-text('Back')"
+    # Final submission (step 9 → 10)
+    final_submit: str = "input[value='Next']"  # The final "Next" IS the submit
     confirm_submit: str = "input[type='submit']"
-    party_checkboxes: str = "input[type='checkbox'][name='party']"
-    docket_text: str = "textarea[name='docket_text']"
-    brief_notice: str = "input[name='short_title']"
+    # Party selection (step 6 — checkboxes with party names)
+    party_checkboxes: str = "input[type='checkbox']"
+    # Docket text (step 8)
+    docket_text: str = "textarea, input[type='text'][name*='docket'], input[type='text'][name*='text']"
+    brief_notice: str = "input[name='short_title'], input[type='text']"
     fee_status: str = "select[name='fee_status']"
+    # Attorney-party association (first filing in a case)
+    attorney_association: str = "input[type='checkbox'][name*='attorney'], input[type='checkbox'][name*='assoc']"
+    lead_attorney: str = "input[type='checkbox'][name*='lead']"
+    notice_checkbox: str = "input[type='checkbox'][name*='notice']"
 
 
 @dataclass
@@ -82,9 +118,44 @@ class BaseCourt:
         self.selectors = profile.selectors
 
     def navigate_to_filing(self, page: Page) -> None:
-        """Navigate to the filing entry point."""
-        page.goto(self.profile.filing_url)
+        """Navigate to the CM/ECF filing menu.
+
+        Real CM/ECF has a menu bar: Civil | Criminal | Query | Reports | Utilities
+        Under Civil: Initial Pleadings and Service, Motions and Related Filings, etc.
+        We navigate to the base ECF page which shows this menu.
+        """
+        page.goto(self.profile.ecf_url)
         page.wait_for_load_state("networkidle")
+
+    def click_menu(self, page: Page, menu_path: str) -> None:
+        """Navigate the CM/ECF menu bar.
+
+        Args:
+            menu_path: Menu path like "Civil > Motions and Related Filings > Motions"
+        """
+        parts = [p.strip() for p in menu_path.split(">")]
+        for part in parts:
+            link = page.query_selector(f"a:has-text('{part}'), td:has-text('{part}') a")
+            if link:
+                link.click()
+                page.wait_for_load_state("networkidle")
+                logger.debug("Clicked menu: %s", part)
+            else:
+                logger.warning("Menu item not found: %s", part)
+
+    def click_next(self, page: Page) -> None:
+        """Click the Next button to advance to the next form page."""
+        for selector in [
+            self.selectors.next_button,
+            "input[value='Next']",
+            "button:has-text('Next')",
+        ]:
+            el = page.query_selector(selector)
+            if el:
+                el.click()
+                page.wait_for_load_state("networkidle")
+                return
+        raise ECFFormError("Next button not found")
 
     def enter_case_number(self, page: Page, case_number: str) -> None:
         """Enter the case number in the search/filing form."""
@@ -301,6 +372,38 @@ class BaseCourt:
             )
 
         return selected
+
+    def handle_attorney_association(self, page: Page, party_name: str) -> None:
+        """Handle the attorney-party association screen.
+
+        Per the MN District manual: on first filing in a case, CM/ECF shows
+        a screen to associate the attorney with a party. This includes:
+        - Checkbox to associate attorney to party
+        - Optional "Lead" checkbox
+        - "Notice" checkbox (strongly recommended — enables NEF emails)
+        """
+        # Check if association screen appeared
+        assoc_checkboxes = page.query_selector_all(self.selectors.attorney_association)
+        if not assoc_checkboxes:
+            return  # Not the first filing — association already exists
+
+        logger.info("Attorney association screen detected")
+
+        # Check the box next to the party name
+        for cb in assoc_checkboxes:
+            label = cb.evaluate("el => el.parentElement?.textContent?.trim() || ''")
+            if party_name.lower() in label.lower():
+                cb.check()
+                logger.info("Associated attorney with party: %s", label)
+                break
+
+        # Always check the Notice checkbox to receive NEFs
+        notice_cb = page.query_selector(self.selectors.notice_checkbox)
+        if notice_cb:
+            notice_cb.check()
+            logger.info("Enabled electronic notice")
+
+        self.click_next(page)
 
     def get_confirmation_text(self, page: Page) -> str:
         """Extract the filing summary from the confirmation page.

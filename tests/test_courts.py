@@ -116,10 +116,11 @@ class TestCourtProfile:
 class TestCourtSelectors:
     def test_default_selectors(self) -> None:
         s = CourtSelectors()
-        assert s.docket_text == "textarea[name='docket_text']"
-        assert s.brief_notice == "input[name='short_title']"
+        assert "textarea" in s.docket_text
         assert s.fee_status == "select[name='fee_status']"
         assert s.case_number_input == "input[name='case_num']"
+        assert "input[type='file']" in s.file_upload
+        assert "Next" in s.next_button
 
     def test_custom_selectors_from_dict(self) -> None:
         data = {

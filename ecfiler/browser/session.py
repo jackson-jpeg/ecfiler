@@ -100,22 +100,102 @@ class BrowserSession:
         ])
 
     def login_via_form(self, login_url: str, username: str, password: str) -> bool:
-        """Fall back to form-based PACER login if token injection fails.
+        """Log in via PACER Central Sign-On (CSO) form.
 
-        Returns True if login succeeded (detected by navigation to CM/ECF main page).
+        NextGen CM/ECF redirects to pacer.login.uscourts.gov for auth.
+        Real form field names (from live PACER CSO page):
+        - loginForm:loginName (username/email)
+        - loginForm:password (password)
+        - loginForm:clientCode (optional, identifies application)
+        - loginForm:pbtnLogin (submit button)
+
+        Returns True if login succeeded.
         """
         page = self.page
         page.goto(login_url)
         page.wait_for_load_state("networkidle")
+        logger.info("Navigated to login page: %s", page.url)
 
-        # NextGen CM/ECF login form
-        page.fill("input[name='loginId'], input[name='login'], #loginId", username)
-        page.fill("input[name='password'], input[type='password']", password)
-        page.click("input[type='submit'], button[type='submit']")
+        # CM/ECF redirects to PACER CSO — wait for the login form
+        # The real form is at pacer.login.uscourts.gov
+        try:
+            page.wait_for_selector(
+                "#loginForm\\:loginName, input[name='loginForm:loginName']",
+                timeout=15_000,
+            )
+        except Exception:
+            # Fallback: try legacy selector patterns
+            logger.debug("CSO login form not found, trying legacy selectors")
+
+        # Try PACER CSO form fields (real NextGen)
+        for username_sel in [
+            "#loginForm\\:loginName",
+            "input[name='loginForm:loginName']",
+            "input[name='login']",
+            "#loginId",
+        ]:
+            el = page.query_selector(username_sel)
+            if el:
+                el.fill(username)
+                logger.debug("Filled username with selector: %s", username_sel)
+                break
+
+        for password_sel in [
+            "#loginForm\\:password",
+            "input[name='loginForm:password']",
+            "input[type='password']",
+        ]:
+            el = page.query_selector(password_sel)
+            if el:
+                el.fill(password)
+                logger.debug("Filled password with selector: %s", password_sel)
+                break
+
+        # Set client code to identify ECFiler
+        client_code = page.query_selector(
+            "#loginForm\\:clientCode, input[name='loginForm:clientCode']"
+        )
+        if client_code:
+            client_code.fill("ecfiler")
+
+        # Click login button
+        for submit_sel in [
+            "#loginForm\\:pbtnLogin",
+            "button[name='loginForm:pbtnLogin']",
+            "#loginForm input[type='submit']",
+            "button[type='submit']",
+            "input[type='submit']",
+        ]:
+            el = page.query_selector(submit_sel)
+            if el:
+                el.click()
+                logger.debug("Clicked submit with selector: %s", submit_sel)
+                break
+
         page.wait_for_load_state("networkidle")
 
-        # Check if we landed on the main menu (successful login)
-        return "MainMenu" in page.url or "cgi-bin" in page.url
+        # After CSO login, PACER redirects back to CM/ECF
+        # Check for the redaction agreement dialog (appears on first login)
+        redaction_btn = page.query_selector(
+            "#redactionConfirmation button, "
+            "button:has-text('I Understand'), "
+            "button:has-text('Accept')"
+        )
+        if redaction_btn:
+            redaction_btn.click()
+            page.wait_for_load_state("networkidle")
+            logger.info("Accepted redaction agreement")
+
+        # Verify we're on CM/ECF (not still on login page)
+        url = page.url.lower()
+        logged_in = (
+            "cgi-bin" in url
+            or "servlet" in url
+            or "ecf." in url
+            and "login" not in url
+        )
+        logger.info("Login %s (url: %s)", "succeeded" if logged_in else "failed", url[:80])
+        return logged_in
 
     def screenshot(self, label: str = "") -> Path:
         """Capture a screenshot of the current page.
