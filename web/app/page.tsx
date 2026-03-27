@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 export default function LandingPage() {
   return (
@@ -186,6 +189,9 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* Waitlist */}
+      <Waitlist />
+
       {/* CTA */}
       <div className="bg-zinc-900">
         <div className="max-w-5xl mx-auto px-6 py-20 text-center">
@@ -211,6 +217,63 @@ export default function LandingPage() {
             <Link href="/courts" className="hover:text-zinc-600 transition">Courts</Link>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Waitlist() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus("loading");
+    try {
+      await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  return (
+    <div className="bg-white border-y border-zinc-100">
+      <div className="max-w-5xl mx-auto px-6 py-16 text-center">
+        <h2 className="text-2xl font-bold tracking-tight mb-2">Get early access to ECFiler Pro</h2>
+        <p className="text-zinc-500 mb-6 max-w-md mx-auto">
+          Hosted version with team management, filing templates, and priority support. $99/attorney/month.
+        </p>
+        {status === "done" ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 font-medium">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+            You&apos;re on the list. We&apos;ll be in touch.
+          </div>
+        ) : (
+          <form onSubmit={submit} className="flex gap-2 max-w-sm mx-auto">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@lawfirm.com"
+              required
+              className="flex-1 px-4 py-2.5 border border-zinc-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
+            />
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              className="px-5 py-2.5 bg-zinc-900 text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 disabled:opacity-50 transition whitespace-nowrap"
+            >
+              {status === "loading" ? "..." : "Join Waitlist"}
+            </button>
+          </form>
+        )}
+        {status === "error" && <p className="text-xs text-red-500 mt-2">Something went wrong. Try again.</p>}
       </div>
     </div>
   );

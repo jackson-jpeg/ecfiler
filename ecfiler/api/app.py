@@ -818,6 +818,56 @@ def delete_draft_endpoint(name: str) -> dict:
     raise HTTPException(404, f"Draft '{name}' not found")
 
 
+class WaitlistRequest(BaseModel):
+    email: str
+
+
+@app.post("/api/waitlist")
+def join_waitlist(request: WaitlistRequest) -> dict:
+    """Add an email to the ECFiler Pro waitlist."""
+    import sqlite3
+    from datetime import datetime
+
+    from ecfiler.config import CONFIG_DIR
+
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    db_path = CONFIG_DIR / "waitlist.db"
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS waitlist (id INTEGER PRIMARY KEY, email TEXT UNIQUE, created_at TEXT)"
+        )
+        try:
+            conn.execute(
+                "INSERT INTO waitlist (email, created_at) VALUES (?, ?)",
+                (request.email.strip().lower(), datetime.now().isoformat()),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            pass  # Already on the list
+
+    return {"status": "ok", "email": request.email}
+
+
+@app.get("/api/waitlist/count")
+def waitlist_count() -> dict:
+    """Get the number of people on the waitlist."""
+    import sqlite3
+
+    from ecfiler.config import CONFIG_DIR
+
+    db_path = CONFIG_DIR / "waitlist.db"
+    if not db_path.exists():
+        return {"count": 0}
+
+    with sqlite3.connect(db_path) as conn:
+        try:
+            row = conn.execute("SELECT COUNT(*) FROM waitlist").fetchone()
+            return {"count": row[0] if row else 0}
+        except Exception:
+            return {"count": 0}
+
+
 @app.get("/api/health")
 def health() -> dict:
     """Health check."""
