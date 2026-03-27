@@ -584,19 +584,16 @@ async def stream_browser_view(request: FilingSubmitRequest) -> StreamingResponse
     - event: browser — step with screenshot
     - event: browser_done — filing complete or failed
 
-    Uses mock CM/ECF server for demo. Set mock=false in request for real filing.
+    Uses demo mode with rendered screenshots when PACER isn't configured.
     """
-    from ecfiler.api.browser_stream import stream_browser_filing
+    from ecfiler.api.browser_demo import stream_demo_filing
 
     return StreamingResponse(
-        stream_browser_filing(
+        stream_demo_filing(
             court_id=request.court_id,
             case_number=request.case_number,
-            event_code=request.event_code,
             event_description=request.event_description,
             filing_party=request.filing_party_name,
-            document_path=request.document_path,
-            mock=True,  # Always mock for now — real CM/ECF needs PACER auth
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
