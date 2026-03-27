@@ -26,7 +26,6 @@ export default function FilePage() {
     setFileName(file.name);
     setStep("analyzing");
     setSteps([]);
-
     try {
       for await (const event of streamAnalysis(file)) {
         if (event.type === "step") {
@@ -51,10 +50,7 @@ export default function FilePage() {
   const handleConfirm = useCallback(async () => {
     if (!filing) return;
     setStep("browser");
-    setBrowserSteps([]);
-    setScreenshot("");
-    setBrowserDone(false);
-
+    setBrowserSteps([]); setScreenshot(""); setBrowserDone(false);
     try {
       for await (const event of streamBrowser(filing)) {
         if (event.type === "browser") {
@@ -65,10 +61,7 @@ export default function FilePage() {
             return [...prev, event.data];
           });
         }
-        if (event.type === "done") {
-          setBrowserDone(true);
-          setBrowserMsg(event.message);
-        }
+        if (event.type === "done") { setBrowserDone(true); setBrowserMsg(event.message); }
       }
     } catch (e: unknown) {
       setBrowserDone(true);
@@ -76,37 +69,50 @@ export default function FilePage() {
     }
   }, [filing]);
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
   return (
-    <div className="px-8 py-8 max-w-2xl">
-      <h1 className="text-xl font-bold tracking-tight mb-1">
-        {step === "upload" ? "New Filing" : step === "analyzing" ? "Analyzing..." : step === "review" ? "Review Filing" : step === "browser" ? "Filing on CM/ECF" : step === "done" ? "Complete" : "Error"}
-      </h1>
+    <div className="p-8 lg:p-12">
+      {/* Step indicator */}
+      <div className="flex items-center gap-3 mb-8">
+        {["Upload", "Analyze", "Review", "File"].map((label, i) => {
+          const stepMap: Record<string, number> = { upload: 0, analyzing: 1, review: 2, browser: 3, done: 4, error: -1 };
+          const current = stepMap[step] ?? -1;
+          const isActive = i === current;
+          const isDone = i < current;
+          return (
+            <div key={label} className="flex items-center gap-3">
+              {i > 0 && <div className={`w-8 h-px ${isDone ? "bg-green-400" : "bg-zinc-200"}`} />}
+              <div className="flex items-center gap-2">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  isDone ? "bg-green-50 text-green-600" : isActive ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-400"
+                }`}>
+                  {isDone ? "✓" : i + 1}
+                </div>
+                <span className={`text-xs font-medium ${isActive ? "text-zinc-900" : isDone ? "text-green-600" : "text-zinc-400"}`}>{label}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Upload */}
       {step === "upload" && (
-        <div className="animate-in fade-in">
-          <p className="text-sm text-zinc-500 mb-5">
-            Drop a PDF. AI reads your document, extracts filing details, and shows you exactly what it will submit.
-          </p>
+        <div className="max-w-xl">
+          <h1 className="text-2xl font-bold tracking-tight mb-2">New Filing</h1>
+          <p className="text-zinc-500 mb-6">Drop a PDF and AI will extract the case, court, party, and event type.</p>
           <div
-            className="border-2 border-dashed border-zinc-200 rounded-2xl p-14 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all"
+            className="border-2 border-dashed border-zinc-200 rounded-2xl p-16 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/20 transition-all group"
             onClick={() => fileRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={onDrop}
+            onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-blue-400", "bg-blue-50/30"); }}
+            onDragLeave={(e) => { e.currentTarget.classList.remove("border-blue-400", "bg-blue-50/30"); }}
+            onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-blue-400", "bg-blue-50/30"); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
           >
-            <div className="w-12 h-12 bg-zinc-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <div className="w-14 h-14 bg-zinc-100 group-hover:bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5 transition">
+              <svg className="w-7 h-7 text-zinc-400 group-hover:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
               </svg>
             </div>
-            <div className="text-sm font-medium text-zinc-700 mb-1">Drop PDF or click to browse</div>
-            <div className="text-xs text-zinc-400">Motions, briefs, complaints, notices, petitions</div>
+            <div className="text-sm font-semibold text-zinc-700 mb-1">Drop your PDF here</div>
+            <div className="text-xs text-zinc-400">or click to browse &middot; motions, briefs, complaints, notices</div>
             <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
           </div>
         </div>
@@ -114,217 +120,143 @@ export default function FilePage() {
 
       {/* Analyzing */}
       {step === "analyzing" && (
-        <div className="animate-in fade-in mt-4">
-          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-zinc-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Processing</span>
-              <span className="font-mono text-xs text-zinc-400">{fileName}</span>
-            </div>
-            <div className="px-5 py-3">
-              {steps.map((s) => (
-                <div key={s.id} className="flex items-start gap-3 py-2.5 animate-in fade-in">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
-                    s.status === "done" ? "bg-green-50 text-green-600" :
-                    s.status === "running" ? "bg-blue-50 text-blue-600" :
-                    s.status === "warn" ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-600"
-                  }`}>
-                    {s.status === "done" ? "✓" : s.status === "running" ? <span className="animate-pulse">•</span> : s.status === "warn" ? "!" : "×"}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">{s.label}</div>
-                    {s.detail && <div className="font-mono text-xs text-zinc-400 mt-0.5">{s.detail}</div>}
-                  </div>
+        <div className="max-w-lg">
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Analyzing</h1>
+          <p className="text-zinc-500 mb-6">Reading <span className="font-mono text-zinc-700">{fileName}</span></p>
+          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+            {steps.map((s) => (
+              <div key={s.id} className="flex items-start gap-3 px-5 py-4 border-b border-zinc-100 last:border-0">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
+                  s.status === "done" ? "bg-green-50 text-green-600" :
+                  s.status === "running" ? "bg-blue-50 text-blue-600" :
+                  s.status === "warn" ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-600"
+                }`}>
+                  {s.status === "done" ? "✓" : s.status === "running" ? <span className="animate-pulse">●</span> : s.status === "warn" ? "!" : "×"}
                 </div>
-              ))}
-            </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">{s.label}</div>
+                  {s.detail && <div className="font-mono text-xs text-zinc-400 mt-1 truncate">{s.detail}</div>}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Review */}
       {step === "review" && filing && (
-        <div className="animate-in fade-in mt-4 space-y-4">
-          {/* AI message */}
-          <div className="flex gap-3">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0 mt-1">E</div>
-            <p className="text-sm text-zinc-500 leading-relaxed">I&apos;ve analyzed your document. Here&apos;s exactly what I&apos;ll submit to CM/ECF.</p>
+        <div className="max-w-2xl">
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Review Filing</h1>
+          <p className="text-zinc-500 mb-6">Confirm everything below before submitting to CM/ECF.</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <Stat label="Completeness" value={`${filing.completeness_score}%`} ok={filing.completeness_score >= 80} />
+            <Stat label="PDF" value={`${filing.pdf_size_mb?.toFixed(1)}MB · ${filing.pdf_pages}p`} ok={filing.pdf_valid} />
+            <Stat label="Redaction" value={filing.redaction_issues === 0 ? "Clean" : `${filing.redaction_issues} issue(s)`} ok={filing.redaction_issues === 0} />
           </div>
 
-          {/* Filing summary */}
-          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-zinc-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Filing Summary</span>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${filing.completeness_score >= 80 ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
-                {filing.completeness_score}% extracted
-              </span>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <div className="text-base font-bold tracking-tight">{filing.document_type}</div>
-                <div className="font-mono text-xs text-zinc-400 mt-1">{fileName}</div>
-              </div>
-              <hr className="border-zinc-100" />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide mb-1">Case</div>
-                  <div className="font-mono text-sm font-semibold">{filing.case_number || "—"}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide mb-1">Court</div>
-                  <div className="text-sm font-semibold">{filing.court_id?.toUpperCase() || "—"}</div>
-                </div>
-              </div>
-              {filing.case_caption && (
-                <div>
-                  <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide mb-1">Caption</div>
-                  <div className="text-sm">{filing.case_caption}</div>
-                </div>
-              )}
-              <hr className="border-zinc-100" />
-              <div>
-                <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide mb-1">Docket Text</div>
-                <div className="text-sm font-semibold">{filing.event_description}</div>
-                <div className="font-mono text-xs text-zinc-400 mt-1">Event code {filing.event_code}</div>
-              </div>
-              {filing.is_response && filing.responds_to && (
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wide mb-1">Responding to</div>
-                  <div className="text-sm">{filing.responds_to}</div>
-                </div>
-              )}
-              <hr className="border-zinc-100" />
-              <div>
-                <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide mb-1">Filing Party</div>
-                <div className="text-sm font-semibold">{filing.filing_party || "Not detected"}</div>
-              </div>
-            </div>
+          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden mb-6">
+            <Row label="Document" value={filing.document_type} sub={fileName} />
+            <Row label="Case" value={filing.case_number || "—"} mono />
+            <Row label="Court" value={filing.court_id?.toUpperCase() || "—"} />
+            {filing.case_caption && <Row label="Caption" value={filing.case_caption} />}
+            <Row label="Docket Text" value={filing.event_description} sub={`Event code ${filing.event_code}`} bold />
+            {filing.is_response && filing.responds_to && <Row label="Response to" value={filing.responds_to} highlight />}
+            <Row label="Filing Party" value={filing.filing_party || "Not detected"} />
+            <Row label="Confidence" value={filing.confidence} />
           </div>
 
-          {/* Verification */}
-          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-zinc-100">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Verification</span>
-            </div>
-            <div className="px-5 py-3 space-y-1">
-              <Check ok={filing.pdf_valid} text={filing.pdf_valid ? `PDF valid — ${filing.pdf_size_mb?.toFixed(1)}MB, ${filing.pdf_pages}p` : "PDF has issues"} />
-              <Check ok={filing.redaction_issues === 0} text={filing.redaction_issues === 0 ? "No unredacted identifiers (Rule 5.2)" : `${filing.redaction_issues} redaction issue(s)`} warn={filing.redaction_issues > 0} />
-              {filing.case_number && <Check ok text={<>Case <b className="font-mono">{filing.case_number}</b> matches PDF</>} />}
-              {filing.event_code && <Check ok text={<>Event <b className="font-mono">{filing.event_code}</b> matches document</>} />}
-              <Check ok={!filing.warnings?.some((w) => w.includes("certificate"))} warn={filing.warnings?.some((w) => w.includes("certificate"))} text={filing.warnings?.some((w) => w.includes("certificate")) ? "No certificate of service" : "Certificate of service present"} />
-            </div>
-          </div>
-
-          {/* Warnings */}
-          {filing.warnings?.filter((w) => !w.includes("certificate")).map((w) => (
-            <div key={w} className="flex gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-              <span className="font-bold">!</span> {w}
+          {filing.warnings?.filter(w => !w.includes("certificate")).map((w) => (
+            <div key={w} className="flex gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 mb-3">
+              <span className="font-bold shrink-0">!</span> {w}
             </div>
           ))}
 
-          {/* Confirm */}
-          <div className="flex gap-3 mt-2">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0 mt-1">E</div>
-            <p className="text-sm text-zinc-500">{filing.ready ? "Everything checks out. Confirm to file." : "Some fields are missing."}</p>
-          </div>
-          <div className="flex gap-2 ml-9">
-            <button onClick={handleConfirm} disabled={!filing.ready} className="px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-25 disabled:cursor-not-allowed transition">
-              Confirm & File
+          <div className="flex gap-3 mt-6">
+            <button onClick={handleConfirm} disabled={!filing.ready} className="px-8 py-3 bg-zinc-900 text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed transition shadow-sm">
+              Confirm &amp; File
             </button>
-            <button onClick={reset} className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-600 transition">Cancel</button>
+            <button onClick={reset} className="px-6 py-3 text-sm text-zinc-500 hover:text-zinc-700 transition">Cancel</button>
           </div>
         </div>
       )}
 
       {/* Browser */}
       {step === "browser" && (
-        <div className="animate-in fade-in mt-4 space-y-4">
-          <div className="flex gap-3">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0 mt-1">E</div>
-            <p className="text-sm text-zinc-500">Filing on CM/ECF. Watch each step below.</p>
-          </div>
+        <div className="max-w-2xl">
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Filing on CM/ECF</h1>
+          <p className="text-zinc-500 mb-6">Navigating the court&apos;s electronic filing system.</p>
 
-          {/* Browser frame */}
-          <div className="border border-zinc-200 rounded-xl overflow-hidden">
-            <div className="bg-white px-3 py-2 border-b border-zinc-200 flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-              <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-              <span className="ml-2 font-mono text-[11px] text-zinc-400">ecf.{filing?.court_id || "nysd"}.uscourts.gov</span>
-              {!browserDone && <span className="ml-auto text-[10px] text-blue-600 font-semibold animate-pulse">LIVE</span>}
+          <div className="border border-zinc-200 rounded-2xl overflow-hidden mb-6 shadow-lg shadow-zinc-200/50">
+            <div className="bg-zinc-100 px-4 py-2 flex items-center gap-2 border-b border-zinc-200">
+              <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-zinc-300"/><div className="w-3 h-3 rounded-full bg-zinc-300"/><div className="w-3 h-3 rounded-full bg-zinc-300"/></div>
+              <div className="flex-1 text-center font-mono text-[11px] text-zinc-400">ecf.{filing?.court_id || "nysd"}.uscourts.gov</div>
+              {!browserDone && <span className="text-[10px] text-blue-600 font-semibold animate-pulse">LIVE</span>}
             </div>
-            <div className="bg-zinc-100 min-h-[280px] flex items-center justify-center">
-              {screenshot ? (
-                <img src={`data:image/png;base64,${screenshot}`} className="w-full" alt="CM/ECF" />
-              ) : (
-                <span className="text-sm text-zinc-400">Connecting...</span>
-              )}
+            <div className="bg-zinc-50 min-h-[300px] flex items-center justify-center">
+              {screenshot ? <img src={`data:image/png;base64,${screenshot}`} className="w-full" alt="CM/ECF" /> : <span className="text-sm text-zinc-400">Connecting...</span>}
             </div>
           </div>
 
-          {/* Steps */}
-          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-zinc-100">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Steps</span>
-            </div>
-            <div className="px-5 py-2">
-              {browserSteps.map((s) => (
-                <div key={s.step} className="flex items-start gap-3 py-2">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                    s.status === "done" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
-                  }`}>
-                    {s.status === "done" ? "✓" : <span className="animate-pulse">•</span>}
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium">{s.step}</div>
-                    <div className="text-[11px] text-zinc-400">{s.description}</div>
-                  </div>
+          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden mb-6">
+            {browserSteps.map((s) => (
+              <div key={s.step} className="flex items-start gap-3 px-5 py-3 border-b border-zinc-100 last:border-0">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                  s.status === "done" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
+                }`}>
+                  {s.status === "done" ? "✓" : <span className="animate-pulse">●</span>}
                 </div>
-              ))}
-            </div>
+                <div>
+                  <div className="text-xs font-semibold">{s.step}</div>
+                  <div className="text-xs text-zinc-400">{s.description}</div>
+                </div>
+              </div>
+            ))}
           </div>
 
           {browserDone && (
-            <>
-              <div className="flex gap-3">
-                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0 mt-1">E</div>
-                <p className="text-sm text-zinc-500">{browserMsg}</p>
-              </div>
-              <button onClick={reset} className="ml-9 px-5 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-700 transition">
-                Done
-              </button>
-            </>
+            <div className="flex items-center gap-3">
+              <button onClick={reset} className="px-6 py-2.5 bg-zinc-900 text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 transition shadow-sm">Done</button>
+              <span className="text-sm text-zinc-500">{browserMsg}</span>
+            </div>
           )}
         </div>
       )}
 
       {/* Error */}
       {step === "error" && (
-        <div className="animate-in fade-in mt-6">
-          <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-4">
+        <div className="max-w-md">
+          <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
           </div>
-          <h2 className="text-lg font-bold mb-2">Failed</h2>
-          <p className="text-sm text-zinc-500 mb-5">{error}</p>
-          <button onClick={reset} className="px-5 py-2 bg-zinc-900 text-white text-sm font-semibold rounded-lg hover:bg-zinc-700 transition">
-            Try Again
-          </button>
+          <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
+          <p className="text-sm text-zinc-500 mb-6">{error}</p>
+          <button onClick={reset} className="px-6 py-2.5 bg-zinc-900 text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 transition">Try Again</button>
         </div>
       )}
     </div>
   );
 }
 
-function Check({ ok, warn, text }: { ok?: boolean; warn?: boolean; text: React.ReactNode }) {
+function Stat({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
-    <div className="flex items-center gap-2.5 py-1.5">
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-        warn ? "bg-amber-50 text-amber-600" : ok ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
-      }`}>
-        {warn ? "!" : ok ? "✓" : "×"}
+    <div className={`rounded-2xl border p-4 ${ok ? "border-green-200 bg-green-50/50" : "border-amber-200 bg-amber-50/50"}`}>
+      <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide mb-1">{label}</div>
+      <div className={`text-lg font-bold ${ok ? "text-green-700" : "text-amber-700"}`}>{value}</div>
+    </div>
+  );
+}
+
+function Row({ label, value, sub, mono, bold, highlight }: { label: string; value: string; sub?: string; mono?: boolean; bold?: boolean; highlight?: boolean }) {
+  return (
+    <div className={`flex px-5 py-3.5 border-b border-zinc-100 last:border-0 ${highlight ? "bg-blue-50/50" : ""}`}>
+      <div className="w-28 shrink-0 text-[10px] font-semibold text-zinc-400 uppercase tracking-wide pt-0.5">{label}</div>
+      <div className="min-w-0">
+        <div className={`text-sm ${bold ? "font-semibold" : ""} ${mono ? "font-mono" : ""}`}>{value}</div>
+        {sub && <div className="text-xs text-zinc-400 font-mono mt-0.5">{sub}</div>}
       </div>
-      <span className="text-sm">{text}</span>
     </div>
   );
 }
