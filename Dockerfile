@@ -19,9 +19,7 @@ RUN pip install --no-cache-dir ".[web,pdf-convert]"
 # Install Playwright browser
 RUN playwright install chromium --with-deps
 
+ENV PORT=8000
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/api/health').raise_for_status()"
-
-CMD uvicorn ecfiler.api.app:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD ["sh", "-c", "uvicorn ecfiler.api.app:app --host 0.0.0.0 --port $PORT"]
