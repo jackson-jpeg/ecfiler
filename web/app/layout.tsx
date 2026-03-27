@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/sidebar";
 
 export const metadata: Metadata = {
   title: "ECFiler",
@@ -21,10 +20,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-zinc-50 text-zinc-900">
-        <div className="flex h-screen">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto">{children}</main>
-        </div>
+        {children}
       </body>
     </html>
   );
