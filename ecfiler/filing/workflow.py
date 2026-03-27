@@ -842,20 +842,37 @@ class FilingWorkflow:
 
             page = browser.page
 
+            from ecfiler.browser.recovery import (
+                check_page_state,
+                retry_on_error,
+            )
+
             # Navigate to filing
             console.print("  [dim]Navigating to filing page...[/dim]")
-            court.navigate_to_filing(page)
+            retry_on_error(
+                lambda: court.navigate_to_filing(page),
+                description="navigate to filing",
+            )
             browser.screenshot("filing_page")
+            check_page_state(page)
 
             # Enter case
             console.print("  [dim]Entering case number...[/dim]")
-            court.enter_case_number(page, self.filing.case.case_number)
+            retry_on_error(
+                lambda: court.enter_case_number(page, self.filing.case.case_number),
+                description="enter case number",
+            )
             browser.screenshot("case_entered")
+            check_page_state(page)
 
             # Select event
             console.print("  [dim]Selecting event type...[/dim]")
-            court.select_event(page, self.filing.event.code)
+            retry_on_error(
+                lambda: court.select_event(page, self.filing.event.code),
+                description="select event",
+            )
             browser.screenshot("event_selected")
+            check_page_state(page)
 
             # Select filing party
             if self.filing.filing_party:
@@ -869,8 +886,12 @@ class FilingWorkflow:
             main_doc = self.filing.main_document
             if main_doc:
                 console.print("  [dim]Uploading main document...[/dim]")
-                court.upload_document(page, main_doc.file_path)
+                retry_on_error(
+                    lambda: court.upload_document(page, main_doc.file_path),
+                    description="upload document",
+                )
                 browser.screenshot("document_uploaded")
+                check_page_state(page)
 
             for att in self.filing.attachments:
                 console.print(f"  [dim]Uploading attachment: {att.filename}...[/dim]")

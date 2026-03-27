@@ -63,9 +63,36 @@
                     @drop.prevent="handleDrop($event)"
                 >
                     <div class="text-5xl mb-4 text-gray-300">&#128196;</div>
-                    <p class="text-lg text-gray-600 mb-1">Drop your PDF here</p>
+                    <p class="text-lg text-gray-600 mb-1">Drop your main document PDF here</p>
                     <p class="text-sm text-gray-400">or click to browse</p>
                     <input type="file" x-ref="fileInput" accept=".pdf" class="hidden" @change="handleFileSelect($event)">
+                </div>
+
+                <!-- Attachments -->
+                <div class="mt-4 bg-white rounded-xl shadow-sm p-4" x-show="attachments.length > 0 || showAttachments">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-600">Attachments</span>
+                        <button @click="$refs.attInput.click()" class="text-xs text-gold hover:underline">+ Add</button>
+                    </div>
+                    <input type="file" x-ref="attInput" accept=".pdf" multiple class="hidden" @change="addAttachments($event)">
+                    <template x-for="(att, i) in attachments" :key="i">
+                        <div class="flex items-center justify-between py-1 text-sm">
+                            <span class="text-gray-700" x-text="att.name"></span>
+                            <button @click="attachments.splice(i, 1)" class="text-gray-400 hover:text-court-red text-xs">remove</button>
+                        </div>
+                    </template>
+                    <div x-show="attachments.length === 0" class="text-xs text-gray-400">No attachments yet</div>
+                </div>
+                <div class="mt-2 flex gap-3">
+                    <button @click="showAttachments = !showAttachments" class="text-xs text-gray-500 hover:text-navy" x-show="!showAttachments">
+                        + Add attachments (proposed order, exhibits...)
+                    </button>
+                    <select x-model="sealingLevel" class="text-xs border rounded px-2 py-1 text-gray-500">
+                        <option value="public">Public filing</option>
+                        <option value="sealed">Filed under seal</option>
+                        <option value="restricted">Restricted access</option>
+                        <option value="ex_parte">Ex parte</option>
+                    </select>
                 </div>
 
                 <div class="mt-6 grid grid-cols-3 gap-4 text-center text-sm text-gray-500">
@@ -154,6 +181,14 @@
                                 <div class="flex items-center gap-2">
                                     <span :class="filing.redaction_issues === 0 ? 'text-court-green' : 'text-gold'" x-text="filing.redaction_issues === 0 ? '&#10003;' : '&#9888;'"></span>
                                     <span x-text="filing.redaction_issues === 0 ? 'No redaction issues' : filing.redaction_issues + ' potential redaction issue(s)'"></span>
+                                </div>
+                                <div class="flex items-center gap-2" x-show="sealingLevel !== 'public'">
+                                    <span class="text-gold">&#9888;</span>
+                                    <span x-text="'Filing as: ' + sealingLevel.replace('_', ' ').toUpperCase()"></span>
+                                </div>
+                                <div class="flex items-center gap-2" x-show="attachments.length > 0">
+                                    <span class="text-court-green">&#10003;</span>
+                                    <span x-text="attachments.length + ' attachment(s)'"></span>
                                 </div>
                             </div>
                         </div>
@@ -311,6 +346,9 @@ function ecfiler() {
         courtSearch: '',
         courtTypeFilter: '',
         history: [],
+        attachments: [],
+        showAttachments: false,
+        sealingLevel: 'public',
         currentAnalysisStep: 0,
         analysisSteps: [
             'Validating PDF format and structure',
@@ -353,12 +391,17 @@ function ecfiler() {
             if (file) this.analyzeFile(file);
         },
 
+        addAttachments(event) {
+            for (const file of event.target.files) {
+                this.attachments.push(file);
+            }
+        },
+
         async analyzeFile(file) {
             this.fileName = file.name;
             this.step = 'analyzing';
             this.currentAnalysisStep = 0;
 
-            // Animate steps
             const stepInterval = setInterval(() => {
                 if (this.currentAnalysisStep < this.analysisSteps.length - 1) {
                     this.currentAnalysisStep++;
@@ -367,9 +410,20 @@ function ecfiler() {
 
             try {
                 const formData = new FormData();
-                formData.append('document', file);
+                let endpoint = '/api/file';
 
-                const response = await fetch('/api/file', {
+                if (this.attachments.length > 0) {
+                    // Use multi-document endpoint
+                    endpoint = '/api/file/multi';
+                    formData.append('main_document', file);
+                    for (const att of this.attachments) {
+                        formData.append('attachments', att);
+                    }
+                } else {
+                    formData.append('document', file);
+                }
+
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData,
                 });
@@ -378,13 +432,13 @@ function ecfiler() {
                 this.currentAnalysisStep = this.analysisSteps.length;
 
                 if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
+                    const errBody = await response.text();
+                    throw new Error(`Server error ${response.status}: ${errBody.substring(0, 200)}`);
                 }
 
                 const data = await response.json();
                 this.filing = data;
 
-                // Small delay for the final step animation
                 await new Promise(r => setTimeout(r, 500));
                 this.step = 'review';
 
@@ -406,6 +460,9 @@ function ecfiler() {
             this.filing = null;
             this.errorMessage = '';
             this.fileName = '';
+            this.attachments = [];
+            this.showAttachments = false;
+            this.sealingLevel = 'public';
             this.currentAnalysisStep = 0;
         },
 

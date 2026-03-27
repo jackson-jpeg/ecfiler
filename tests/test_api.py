@@ -45,7 +45,7 @@ class TestUIServing:
 
     def test_ui_has_drop_zone(self, client: TestClient) -> None:
         response = client.get("/")
-        assert "Drop your PDF here" in response.text
+        assert "Drop your main document PDF here" in response.text
 
     def test_ui_has_alpine(self, client: TestClient) -> None:
         response = client.get("/")

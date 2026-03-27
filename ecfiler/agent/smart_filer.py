@@ -172,7 +172,23 @@ class SmartFiler:
             for w in warnings:
                 console.print(f"    [yellow]⚠ {w}[/yellow]")
 
-        # Step 9: Final review — one screen, one CONFIRM
+        # Step 9: Pre-flight checks
+        from ecfiler.filing.preflight import run_preflight
+
+        console.print("\n  [dim]Running pre-flight checks...[/dim]")
+        preflight = run_preflight(filing)
+        for err in preflight.errors:
+            console.print(f"  [red]✗ {err}[/red]")
+        for warn in preflight.warnings:
+            console.print(f"  [yellow]⚠ {warn}[/yellow]")
+        if preflight.passed:
+            console.print("  [green]✓[/green] Pre-flight checks passed")
+        else:
+            console.print(f"\n  [red]Pre-flight FAILED ({len(preflight.errors)} errors)[/red]")
+            if not Confirm.ask("  Continue anyway?", default=False):
+                return None
+
+        # Step 10: Final review — one screen, one CONFIRM
         if not self._final_review(filing, analysis):
             console.print("[yellow]Filing cancelled.[/yellow]")
             return None
@@ -181,11 +197,14 @@ class SmartFiler:
             console.print("\n  [yellow]DRY RUN — stopping before submission.[/yellow]")
             return None
 
-        # Step 10: Submit
+        # Step 11: Submit via the full workflow (with error recovery)
         from ecfiler.filing.workflow import FilingWorkflow
         workflow = FilingWorkflow(self.config)
         workflow.filing = filing
-        return workflow._step_submit_filing()
+        receipt = workflow._step_submit_filing()
+        if receipt:
+            workflow._step_save_receipt(receipt)
+        return receipt
 
     def _show_analysis(self, analysis: DocumentAnalysis) -> None:
         """Display what the AI extracted."""
