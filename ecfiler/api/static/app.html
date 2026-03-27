@@ -8,172 +8,199 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #fafafa; --surface: #fff; --border: #e8e8e8; --border-light: #f0f0f0;
-  --text: #1a1a1a; --text-2: #666; --text-3: #999; --text-4: #bbb;
-  --accent: #0066ff; --accent-bg: #f0f6ff; --accent-light: #e0edff;
-  --ok: #00b341; --ok-bg: #edfbf2; --warn: #f59e0b; --warn-bg: #fffbeb; --bad: #ef4444; --bad-bg: #fef2f2;
-  --radius: 12px; --radius-sm: 8px;
+  --bg: #f5f5f7; --sidebar-bg: #1d1d1f; --sidebar-hover: #2d2d2f; --sidebar-active: #3a3a3c;
+  --surface: #fff; --surface-2: #fafafa; --border: #e5e5e7; --border-light: #f0f0f2;
+  --text: #1d1d1f; --text-2: #6e6e73; --text-3: #aeaeb2; --text-inv: #f5f5f7;
+  --accent: #0071e3; --accent-hover: #0077ed; --accent-bg: #f0f5ff;
+  --green: #34c759; --green-bg: #f0faf3; --red: #ff3b30; --red-bg: #fff5f5;
+  --amber: #ff9f0a; --amber-bg: #fffbf0;
+  --r: 10px; --r-lg: 14px;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
-.mono { font-family: 'JetBrains Mono', monospace; }
-[x-cloak] { display: none !important; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;height:100vh;display:flex;overflow:hidden}
+.mono{font-family:'JetBrains Mono',monospace}
+[x-cloak]{display:none!important}
 
-/* Nav */
-nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px); }
-nav .inner { max-width: 880px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-nav .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: -0.02em; }
-nav .logo-dot { width: 24px; height: 24px; background: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; }
-nav .tabs { display: flex; gap: 2px; }
-nav .tab { padding: 6px 14px; font-size: 13px; font-weight: 500; color: var(--text-3); border-radius: 8px; cursor: pointer; transition: all 0.15s; border: none; background: none; }
-nav .tab:hover { color: var(--text-2); background: var(--bg); }
-nav .tab.on { color: var(--text); background: var(--bg); }
+/* Sidebar */
+.sidebar{width:220px;background:var(--sidebar-bg);display:flex;flex-direction:column;flex-shrink:0;height:100vh}
+.sidebar-logo{padding:20px 18px 24px;display:flex;align-items:center;gap:10px}
+.sidebar-logo .dot{width:28px;height:28px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+.sidebar-logo span{color:#fff;font-size:15px;font-weight:600;letter-spacing:-0.02em}
+.sidebar-section{padding:0 10px;margin-bottom:20px}
+.sidebar-label{font-size:10px;font-weight:600;color:#636366;text-transform:uppercase;letter-spacing:0.08em;padding:0 8px 6px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13px;color:#aeaeb2;cursor:pointer;transition:all 0.12s;border:none;background:none;width:100%;text-align:left}
+.sidebar-item:hover{background:var(--sidebar-hover);color:#d1d1d6}
+.sidebar-item.active{background:var(--sidebar-active);color:#fff;font-weight:500}
+.sidebar-item svg{width:16px;height:16px;opacity:0.5;flex-shrink:0}
+.sidebar-item.active svg{opacity:0.9}
+.sidebar-bottom{margin-top:auto;padding:14px 18px;border-top:1px solid #2d2d2f}
+.sidebar-bottom a{font-size:11px;color:#636366;text-decoration:none}
+.sidebar-bottom a:hover{color:#aeaeb2}
 
-/* Layout */
-main { max-width: 880px; margin: 0 auto; padding: 40px 24px; width: 100%; flex: 1; }
-h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px; }
-.sub { font-size: 14px; color: var(--text-3); margin-bottom: 28px; }
+/* Main */
+.main{flex:1;overflow-y:auto;height:100vh}
+.main-header{padding:24px 32px 0;display:flex;align-items:center;justify-content:space-between}
+.main-header h1{font-size:22px;font-weight:700;letter-spacing:-0.03em}
+.main-header .badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.content{padding:20px 32px 40px}
 
-/* Card */
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.card-header { padding: 14px 20px; border-bottom: 1px solid var(--border-light); font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
-.card-body { padding: 20px; }
-.card-row { display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border-light); font-size: 14px; }
-.card-row:last-child { border-bottom: none; }
-.card-label { width: 120px; font-size: 12px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0; }
-.card-value { color: var(--text); }
-.card-value.empty { color: var(--text-4); font-style: italic; }
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px}
+.card-head{padding:14px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.card-head-title{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.04em}
+.card-body{padding:20px}
+.card-row{display:flex;padding:11px 20px;border-bottom:1px solid var(--border-light);font-size:14px;align-items:baseline}
+.card-row:last-child{border:0}
+.label{width:110px;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0}
+.value{color:var(--text)}
+.value.empty{color:var(--text-3);font-style:italic;font-size:13px}
+.divider{height:1px;background:var(--border-light);margin:14px 0}
 
 /* Drop zone */
-.drop { border: 2px dashed var(--border); border-radius: 16px; padding: 64px 32px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--surface); }
-.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-bg); }
-.drop-icon { width: 48px; height: 48px; background: var(--bg); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; transition: all 0.2s; }
-.drop:hover .drop-icon { background: var(--accent-light); }
-.drop h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-.drop p { font-size: 13px; color: var(--text-3); }
+.drop{border:2px dashed var(--border);border-radius:var(--r-lg);padding:56px 32px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--surface)}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-bg)}
+.drop-icon{width:44px;height:44px;background:var(--bg);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px}
+.drop:hover .drop-icon{background:var(--accent-bg)}
 
 /* Steps */
-.step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; }
-.step-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
-.step-dot.done { background: var(--ok-bg); color: var(--ok); }
-.step-dot.run { background: var(--accent-bg); color: var(--accent); }
-.step-dot.warn { background: var(--warn-bg); color: var(--warn); }
-.step-dot.err { background: var(--bad-bg); color: var(--bad); }
-.step-label { font-size: 14px; font-weight: 500; }
-.step-detail { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
-.pulse { animation: pulse 1.2s ease-in-out infinite; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} }
-.fade-in { animation: fadeIn 0.25s ease-out both; }
+.step-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0}
+.step-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.dot-ok{background:var(--green-bg);color:var(--green)}
+.dot-run{background:var(--accent-bg);color:var(--accent)}
+.dot-warn{background:var(--amber-bg);color:var(--amber)}
+.dot-bad{background:var(--red-bg);color:var(--red)}
 
-/* Check row */
-.check { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: 14px; }
-.check-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
-
-/* AI message */
-.ai-msg { display: flex; gap: 12px; margin: 20px 0; }
-.ai-avatar { width: 28px; height: 28px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; flex-shrink: 0; }
-.ai-text { font-size: 14px; color: var(--text-2); line-height: 1.6; padding-top: 4px; }
-
-/* Section divider in card */
-.divider { height: 1px; background: var(--border-light); margin: 16px 0; }
+/* Check */
+.check{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px}
 
 /* Buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 24px; font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; border: none; }
-.btn-primary { background: var(--accent); color: white; }
-.btn-primary:hover { background: #0055dd; }
-.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
-.btn-secondary { background: none; color: var(--text-3); }
-.btn-secondary:hover { color: var(--text); }
-.btn-dark { background: var(--text); color: white; }
-.btn-dark:hover { background: #333; }
-.btn-dark:disabled { opacity: 0.2; cursor: not-allowed; }
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 20px;font-size:13px;font-weight:600;border-radius:8px;border:none;cursor:pointer;transition:all 0.12s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-hover)}
+.btn-primary:disabled{opacity:0.25;cursor:not-allowed}
+.btn-dark{background:var(--text);color:#fff}.btn-dark:hover{background:#333}
+.btn-dark:disabled{opacity:0.2;cursor:not-allowed}
+.btn-ghost{background:none;color:var(--text-2)}.btn-ghost:hover{color:var(--text)}
+.btn-outline{border:1px solid var(--border);background:var(--surface);color:var(--text-2)}.btn-outline:hover{border-color:var(--text-3)}
 
-/* Warn banner */
-.warn-banner { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; background: var(--warn-bg); border: 1px solid #fde68a; border-radius: var(--radius-sm); font-size: 13px; color: #92400e; margin-bottom: 12px; }
+/* AI message */
+.ai{display:flex;gap:10px;margin:16px 0}
+.ai-dot{width:24px;height:24px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700;flex-shrink:0;margin-top:2px}
+.ai-text{font-size:14px;color:var(--text-2);line-height:1.6}
 
-/* Input */
-input[type="text"], select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; outline: none; transition: border 0.15s; background: var(--surface); }
-input[type="text"]:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
-textarea { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; width: 100%; resize: vertical; }
+/* Browser frame */
+.browser-frame{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:#e8e8e8}
+.browser-bar{padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.browser-dot{width:10px;height:10px;border-radius:50%}
+.browser-url{flex:1;font-size:11px;color:var(--text-3);margin-left:8px}
+.browser-body{min-height:280px;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.browser-body img{width:100%;display:block}
+
+/* Warn */
+.warn{display:flex;gap:8px;padding:10px 14px;background:var(--amber-bg);border:1px solid #ffe0a0;border-radius:8px;font-size:13px;color:#7c5e00;margin-bottom:8px}
 
 /* Table */
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; padding: 10px 20px; font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: var(--bg); }
-td { padding: 10px 20px; border-bottom: 1px solid var(--border-light); }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: #fafbfc; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.badge-ok { background: var(--ok-bg); color: var(--ok); }
-.badge-blue { background: #eef2ff; color: #4338ca; }
-.badge-purple { background: #f5f3ff; color: #7c3aed; }
-.badge-amber { background: #fffbeb; color: #b45309; }
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 20px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--border);background:var(--surface-2)}
+td{padding:10px 20px;border-bottom:1px solid var(--border-light)}
+tr:last-child td{border:0}
+tr:hover td{background:var(--surface-2)}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.tag-blue{background:#eef2ff;color:#4338ca}.tag-purple{background:#f5f3ff;color:#7c3aed}.tag-amber{background:#fffbeb;color:#b45309}
+.tag-green{background:var(--green-bg);color:var(--green)}
 
-footer { text-align: center; padding: 20px; font-size: 11px; color: var(--text-4); border-top: 1px solid var(--border-light); margin-top: auto; }
-footer a { color: var(--text-3); }
+/* Input */
+input[type="text"],select,textarea{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border 0.15s;background:var(--surface)}
+input[type="text"]:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
 
-@media(max-width:640px) { h1{font-size:20px;} main{padding:24px 16px;} .drop{padding:40px 20px;} .card-label{width:90px;} }
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeIn 0.2s ease-out both}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.pulse{animation:pulse 1s ease-in-out infinite}
+
+@media(max-width:768px){.sidebar{display:none}.content{padding:16px}}
 </style>
 </head>
 <body x-data="app()" x-cloak>
 
-<nav>
-<div class="inner">
-    <a href="/" style="text-decoration:none;color:inherit" class="logo">
-        <div class="logo-dot">E</div>
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <div class="dot">E</div>
         <span>ECFiler</span>
-    </a>
-    <div class="tabs">
-        <template x-for="t in tabs" :key="t.id">
-            <button class="tab" :class="view===t.id&&'on'" @click="go(t.id)" x-text="t.label"></button>
-        </template>
-        <a href="/docs" target="_blank" class="tab" style="color:var(--text-4)">API</a>
     </div>
-</div>
-</nav>
 
-<main>
+    <div class="sidebar-section">
+        <div class="sidebar-label">Filing</div>
+        <button class="sidebar-item" :class="view==='file'&&'active'" @click="go('file')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>
+            New Filing
+        </button>
+        <button class="sidebar-item" :class="view==='drafts'&&'active'" @click="go('drafts')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            Drafts
+            <span x-show="drafts.length>0" style="margin-left:auto;background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600" x-text="drafts.length"></span>
+        </button>
+        <button class="sidebar-item" :class="view==='history'&&'active'" @click="go('history')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            History
+        </button>
+    </div>
 
-<!-- FILE -->
+    <div class="sidebar-section">
+        <div class="sidebar-label">Tools</div>
+        <button class="sidebar-item" :class="view==='validate'&&'active'" @click="go('validate')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Validate PDF
+        </button>
+        <button class="sidebar-item" :class="view==='cos'&&'active'" @click="go('cos')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            Certificate of Service
+        </button>
+        <button class="sidebar-item" :class="view==='courts'&&'active'" @click="go('courts')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21"/></svg>
+            Courts
+        </button>
+    </div>
+
+    <div class="sidebar-bottom">
+        <a href="/docs" target="_blank">API Docs</a>
+        <span style="margin:0 8px;color:#3a3a3c">&middot;</span>
+        <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank">GitHub</a>
+    </div>
+</aside>
+
+<!-- Main content -->
+<div class="main">
+
+<!-- ===== NEW FILING ===== -->
 <template x-if="view==='file'">
-<div>
+<div class="anim">
+    <div class="main-header"><h1 x-text="step==='upload'?'New Filing':step==='analyzing'?'Analyzing...':step==='review'?'Review Filing':step==='browser'?'Filing on CM/ECF':step==='filed'?'Complete':'Error'"></h1></div>
+    <div class="content">
+
     <!-- Upload -->
-    <div x-show="step==='upload'" class="fade-in" style="max-width:560px;margin:0 auto">
-        <h1 style="text-align:center">Drop a document</h1>
-        <p class="sub" style="text-align:center">AI reads your filing, extracts the details, and shows you exactly what it will submit.</p>
+    <div x-show="step==='upload'" style="max-width:520px">
+        <p style="color:var(--text-2);margin-bottom:20px">Drop a PDF. AI reads your document, extracts the filing details, and shows you exactly what it will submit.</p>
         <div class="drop" @click="$refs.fi.click()" @dragover.prevent="$event.currentTarget.classList.add('over')" @dragleave.prevent="$event.currentTarget.classList.remove('over')" @drop.prevent="$event.currentTarget.classList.remove('over');upload($event.dataTransfer.files[0])">
-            <div class="drop-icon">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>
-            </div>
-            <h3>Drop PDF or click to browse</h3>
-            <p>Motions, briefs, complaints, notices, petitions</p>
-            <input type="file" x-ref="fi" accept=".pdf" class="hidden" style="display:none" @change="upload($event.target.files[0])">
-        </div>
-        <div style="display:flex;justify-content:center;gap:24px;margin-top:24px;font-size:12px;color:var(--text-4)">
-            <span>150 courts</span><span>&middot;</span><span>7 safety gates</span><span>&middot;</span><span>Real-time AI</span>
+            <div class="drop-icon"><svg width="22" height="22" fill="none" stroke="var(--text-3)" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg></div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px">Drop PDF or click to browse</div>
+            <div style="font-size:12px;color:var(--text-3)">Motions, briefs, complaints, notices, petitions</div>
+            <input type="file" x-ref="fi" accept=".pdf" style="display:none" @change="upload($event.target.files[0])">
         </div>
     </div>
 
     <!-- Analyzing -->
-    <div x-show="step==='analyzing'" class="fade-in" style="max-width:520px;margin:0 auto">
+    <div x-show="step==='analyzing'" style="max-width:480px">
         <div class="card">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-                <span>Analyzing</span>
-                <span class="mono" style="font-size:11px;color:var(--text-4)" x-text="fileName"></span>
-            </div>
+            <div class="card-head"><span class="card-head-title">Processing</span><span class="mono" style="font-size:11px;color:var(--text-3)" x-text="fileName"></span></div>
             <div class="card-body">
                 <template x-for="s in liveSteps" :key="s.id">
-                    <div class="step fade-in">
-                        <div class="step-dot" :class="{'done':s.status==='done','run':s.status==='running','warn':s.status==='warn','err':s.status==='error'}">
-                            <span x-show="s.status==='done'">&#10003;</span>
-                            <span x-show="s.status==='running'" class="pulse">&bull;</span>
-                            <span x-show="s.status==='warn'">!</span>
-                            <span x-show="s.status==='error'">&times;</span>
+                    <div class="step-row anim">
+                        <div class="step-dot" :class="{'dot-ok':s.status==='done','dot-run':s.status==='running','dot-warn':s.status==='warn','dot-bad':s.status==='error'}">
+                            <span x-show="s.status==='done'">&#10003;</span><span x-show="s.status==='running'" class="pulse">&bull;</span><span x-show="s.status==='warn'">!</span><span x-show="s.status==='error'">&times;</span>
                         </div>
-                        <div>
-                            <div class="step-label" x-text="s.label"></div>
-                            <div x-show="s.detail" class="step-detail mono" x-text="s.detail"></div>
-                        </div>
+                        <div><div style="font-size:13px;font-weight:500" x-text="s.label"></div><div x-show="s.detail" class="mono" style="font-size:11px;color:var(--text-3);margin-top:2px" x-text="s.detail"></div></div>
                     </div>
                 </template>
             </div>
@@ -181,327 +208,210 @@ footer a { color: var(--text-3); }
     </div>
 
     <!-- Review -->
-    <div x-show="step==='review'" class="fade-in">
+    <div x-show="step==='review'" style="max-width:600px">
         <template x-if="filing">
-        <div style="max-width:640px;margin:0 auto">
-            <div class="ai-msg">
-                <div class="ai-avatar">E</div>
-                <div class="ai-text">I've analyzed your document. Here's exactly what I'll submit to CM/ECF. Review each section, then confirm.</div>
-            </div>
+        <div>
+            <div class="ai"><div class="ai-dot">E</div><div class="ai-text">I've analyzed your document. Here's exactly what I'll submit to CM/ECF.</div></div>
 
-            <!-- Filing summary -->
-            <div class="card" style="margin-bottom:16px">
-                <div class="card-header">What I'm Filing</div>
+            <div class="card">
+                <div class="card-head"><span class="card-head-title">Filing Summary</span><span class="tag" :class="filing.completeness_score>=80?'tag-green':'tag-amber'" x-text="filing.completeness_score+'% extracted'"></span></div>
                 <div class="card-body">
-                    <div style="margin-bottom:16px">
-                        <div style="font-size:18px;font-weight:700;letter-spacing:-0.02em" x-text="filing.document_type"></div>
-                        <div class="mono" style="font-size:13px;color:var(--text-3);margin-top:4px" x-text="fileName"></div>
-                    </div>
+                    <div style="font-size:17px;font-weight:700;letter-spacing:-0.02em;margin-bottom:2px" x-text="filing.document_type"></div>
+                    <div class="mono" style="font-size:12px;color:var(--text-3)" x-text="fileName"></div>
                     <div class="divider"></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">
-                        <div>
-                            <div style="font-size:11px;font-weight:600;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Case</div>
-                            <div class="mono" style="font-size:15px;font-weight:600" x-text="filing.case_number||'—'"></div>
-                        </div>
-                        <div>
-                            <div style="font-size:11px;font-weight:600;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Court</div>
-                            <div style="font-size:15px;font-weight:600" x-text="filing.court_id?filing.court_id.toUpperCase():'—'"></div>
-                        </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                        <div><div class="label">Case</div><div class="mono" style="font-size:14px;font-weight:600" x-text="filing.case_number||'—'"></div></div>
+                        <div><div class="label">Court</div><div style="font-size:14px;font-weight:600" x-text="filing.court_id?filing.court_id.toUpperCase():'—'"></div></div>
                     </div>
-                    <div x-show="filing.case_caption" style="margin-bottom:16px">
-                        <div style="font-size:11px;font-weight:600;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Caption</div>
-                        <div style="font-size:14px" x-text="filing.case_caption"></div>
-                    </div>
+                    <div x-show="filing.case_caption" style="margin-top:12px"><div class="label">Caption</div><div style="font-size:13px" x-text="filing.case_caption"></div></div>
                     <div class="divider"></div>
-                    <div style="margin:16px 0">
-                        <div style="font-size:11px;font-weight:600;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Docket Text</div>
-                        <div style="font-size:15px;font-weight:600" x-text="filing.event_description"></div>
-                        <div class="mono" style="font-size:12px;color:var(--text-3);margin-top:3px" x-text="'Event code '+filing.event_code"></div>
-                    </div>
-                    <div x-show="filing.is_response" style="background:var(--accent-bg);padding:12px 16px;border-radius:var(--radius-sm);margin:12px 0">
-                        <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">In response to</div>
-                        <div style="font-size:14px" x-text="filing.responds_to"></div>
-                    </div>
+                    <div><div class="label">Docket Text</div><div style="font-size:14px;font-weight:600" x-text="filing.event_description"></div><div class="mono" style="font-size:11px;color:var(--text-3);margin-top:2px" x-text="'Event code '+filing.event_code"></div></div>
+                    <div x-show="filing.is_response" style="background:var(--accent-bg);padding:10px 14px;border-radius:8px;margin-top:12px"><div class="label" style="color:var(--accent)">Responding to</div><div style="font-size:13px" x-text="filing.responds_to"></div></div>
                     <div class="divider"></div>
-                    <div>
-                        <div style="font-size:11px;font-weight:600;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Filing on behalf of</div>
-                        <div style="font-size:14px;font-weight:600" x-text="filing.filing_party||'Not detected'"></div>
-                    </div>
+                    <div><div class="label">Filing Party</div><div style="font-size:14px;font-weight:600" x-text="filing.filing_party||'Not detected'"></div></div>
                 </div>
             </div>
 
-            <!-- Checks -->
-            <div class="card" style="margin-bottom:16px">
-                <div class="card-header">Verification Checks</div>
-                <div class="card-body" style="padding:12px 20px">
-                    <div class="check"><div class="check-dot" :style="filing.pdf_valid?'background:var(--ok-bg);color:var(--ok)':'background:var(--bad-bg);color:var(--bad)'" x-text="filing.pdf_valid?'&#10003;':'&#10007;'"></div><span x-text="filing.pdf_valid?'PDF valid — '+filing.pdf_size_mb?.toFixed(1)+'MB, '+filing.pdf_pages+' pages, meets CM/ECF requirements':'PDF has issues'"></span></div>
-                    <div class="check"><div class="check-dot" :style="filing.redaction_issues===0?'background:var(--ok-bg);color:var(--ok)':'background:var(--warn-bg);color:var(--warn)'" x-text="filing.redaction_issues===0?'&#10003;':'!'"></div><span x-text="filing.redaction_issues===0?'No unredacted personal identifiers (Rule 5.2)':filing.redaction_issues+' potential redaction issue(s)'"></span></div>
-                    <div class="check" x-show="filing.case_number"><div class="check-dot" style="background:var(--ok-bg);color:var(--ok)">&#10003;</div><span>Case number <b class="mono" x-text="filing.case_number"></b> matches PDF caption</span></div>
-                    <div class="check" x-show="filing.event_code"><div class="check-dot" style="background:var(--ok-bg);color:var(--ok)">&#10003;</div><span>Event code <b class="mono" x-text="filing.event_code"></b> matches document type</span></div>
-                    <div class="check"><div class="check-dot" :style="filing.warnings?.some(w=>w.includes('certificate'))?'background:var(--warn-bg);color:var(--warn)':'background:var(--ok-bg);color:var(--ok)'" x-text="filing.warnings?.some(w=>w.includes('certificate'))?'!':'&#10003;'"></div><span x-text="filing.warnings?.some(w=>w.includes('certificate'))?'No certificate of service detected':'Certificate of service present'"></span></div>
-                    <div class="check"><div class="check-dot" :style="filing.confidence==='high'?'background:var(--ok-bg);color:var(--ok)':'background:var(--warn-bg);color:var(--warn)'" x-text="filing.confidence==='high'?'&#10003;':'?'"></div><span>AI confidence: <b x-text="filing.confidence"></b></span></div>
+            <div class="card">
+                <div class="card-head"><span class="card-head-title">Verification</span></div>
+                <div class="card-body" style="padding:10px 20px">
+                    <div class="check"><div class="step-dot" :class="filing.pdf_valid?'dot-ok':'dot-bad'" x-text="filing.pdf_valid?'&#10003;':'&#10007;'" style="width:20px;height:20px;font-size:10px"></div><span x-text="filing.pdf_valid?'PDF valid — '+filing.pdf_size_mb?.toFixed(1)+'MB, '+filing.pdf_pages+'p':'PDF has issues'"></span></div>
+                    <div class="check"><div class="step-dot" :class="filing.redaction_issues===0?'dot-ok':'dot-warn'" x-text="filing.redaction_issues===0?'&#10003;':'!'" style="width:20px;height:20px;font-size:10px"></div><span x-text="filing.redaction_issues===0?'No unredacted identifiers (Rule 5.2)':filing.redaction_issues+' redaction issue(s)'"></span></div>
+                    <div class="check" x-show="filing.case_number"><div class="step-dot dot-ok" style="width:20px;height:20px;font-size:10px">&#10003;</div><span>Case <b class="mono" x-text="filing.case_number"></b> matches PDF</span></div>
+                    <div class="check" x-show="filing.event_code"><div class="step-dot dot-ok" style="width:20px;height:20px;font-size:10px">&#10003;</div><span>Event <b class="mono" x-text="filing.event_code"></b> matches document</span></div>
+                    <div class="check"><div class="step-dot" :class="filing.warnings?.some(w=>w.includes('certificate'))?'dot-warn':'dot-ok'" style="width:20px;height:20px;font-size:10px" x-text="filing.warnings?.some(w=>w.includes('certificate'))?'!':'&#10003;'"></div><span x-text="filing.warnings?.some(w=>w.includes('certificate'))?'No certificate of service':'Certificate of service present'"></span></div>
                 </div>
             </div>
 
-            <!-- Warnings -->
-            <template x-for="w in (filing.warnings||[]).filter(w=>!w.includes('certificate'))" :key="w">
-                <div class="warn-banner" style="margin-bottom:8px"><b>!</b><span x-text="w"></span></div>
-            </template>
+            <template x-for="w in (filing.warnings||[]).filter(w=>!w.includes('certificate'))" :key="w"><div class="warn"><b>!</b><span x-text="w"></span></div></template>
 
-            <!-- Confirm -->
-            <div class="ai-msg" style="margin-top:20px">
-                <div class="ai-avatar">E</div>
-                <div class="ai-text" x-text="filing.ready?'Everything checks out. Ready to file?':'Some required fields are missing. Review the issues above.'"></div>
-            </div>
-            <div style="margin-left:40px;margin-top:12px;display:flex;gap:10px">
-                <button class="btn btn-dark" @click="confirm()" :disabled="!filing.ready">Confirm &amp; File</button>
-                <button class="btn btn-secondary" @click="reset()">Cancel</button>
+            <div class="ai"><div class="ai-dot">E</div><div class="ai-text" x-text="filing.ready?'Everything checks out. Confirm to file on CM/ECF.':'Some fields are missing. Review above.'"></div></div>
+            <div style="margin-left:34px;display:flex;gap:8px">
+                <button class="btn btn-primary" @click="confirm()" :disabled="!filing.ready">Confirm &amp; File</button>
+                <button class="btn btn-ghost" @click="reset()">Cancel</button>
             </div>
         </div>
         </template>
     </div>
 
-    <!-- Browser View — live screenshots of CM/ECF -->
-    <div x-show="step==='browser'" class="fade-in" style="max-width:720px;margin:0 auto">
-        <div class="ai-msg" style="margin-bottom:16px">
-            <div class="ai-avatar">E</div>
-            <div class="ai-text">Filing on CM/ECF. Watch each step below.</div>
-        </div>
-
-        <!-- Browser window frame -->
-        <div class="card" style="margin-bottom:16px">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-                <div style="display:flex;align-items:center;gap:8px">
-                    <div style="display:flex;gap:5px">
-                        <div style="width:10px;height:10px;border-radius:50%;background:#ff5f57"></div>
-                        <div style="width:10px;height:10px;border-radius:50%;background:#febc2e"></div>
-                        <div style="width:10px;height:10px;border-radius:50%;background:#28c840"></div>
-                    </div>
-                    <span class="mono" style="font-size:11px" x-text="'CM/ECF — ' + (filing?.court_id||'').toUpperCase()"></span>
-                </div>
-                <span x-show="browserStep?.status==='running'" class="pulse" style="font-size:11px;color:var(--accent)">Live</span>
+    <!-- Browser view -->
+    <div x-show="step==='browser'" style="max-width:680px">
+        <div class="ai" style="margin-bottom:12px"><div class="ai-dot">E</div><div class="ai-text">Filing on CM/ECF. Watch each step below.</div></div>
+        <div class="browser-frame" style="margin-bottom:16px">
+            <div class="browser-bar">
+                <div class="browser-dot" style="background:#ff5f57"></div><div class="browser-dot" style="background:#febc2e"></div><div class="browser-dot" style="background:#28c840"></div>
+                <span class="browser-url" x-text="'ecf.' + (filing?.court_id||'nysd') + '.uscourts.gov'"></span>
+                <span x-show="!browserDone" class="pulse" style="font-size:10px;color:var(--accent);font-weight:600">LIVE</span>
             </div>
-
-            <!-- Screenshot display -->
-            <div style="background:#f0f0f0;min-height:300px;display:flex;align-items:center;justify-content:center;position:relative">
-                <img x-show="browserScreenshot" :src="'data:image/png;base64,'+browserScreenshot" style="width:100%;display:block" />
-                <div x-show="!browserScreenshot" style="color:var(--text-4);font-size:14px">Connecting to CM/ECF...</div>
+            <div class="browser-body">
+                <img x-show="browserScreenshot" :src="'data:image/png;base64,'+browserScreenshot" />
+                <div x-show="!browserScreenshot" style="color:var(--text-3);font-size:13px">Connecting...</div>
             </div>
         </div>
-
-        <!-- Step log -->
         <div class="card">
-            <div class="card-header">Filing Progress</div>
-            <div class="card-body" style="padding:12px 20px">
-                <template x-for="s in browserSteps" :key="s.step">
-                    <div class="step fade-in" style="padding:8px 0">
-                        <div class="step-dot" :class="{'done':s.status==='done','run':s.status==='running'}">
-                            <span x-show="s.status==='done'">&#10003;</span>
-                            <span x-show="s.status==='running'" class="pulse">&bull;</span>
-                        </div>
-                        <div>
-                            <div class="step-label" style="font-size:13px" x-text="s.step"></div>
-                            <div class="step-detail" x-text="s.description"></div>
-                        </div>
-                    </div>
-                </template>
+            <div class="card-head"><span class="card-head-title">Steps</span></div>
+            <div class="card-body" style="padding:8px 20px">
+                <template x-for="s in browserSteps" :key="s.step"><div class="step-row anim" style="padding:6px 0"><div class="step-dot" :class="{'dot-ok':s.status==='done','dot-run':s.status==='running'}" style="width:20px;height:20px;font-size:10px"><span x-show="s.status==='done'">&#10003;</span><span x-show="s.status==='running'" class="pulse">&bull;</span></div><div><div style="font-size:12px;font-weight:500" x-text="s.step"></div><div style="font-size:11px;color:var(--text-3)" x-text="s.description"></div></div></div></template>
             </div>
         </div>
-
-        <!-- Done message -->
-        <div x-show="browserDone" class="ai-msg" style="margin-top:16px">
-            <div class="ai-avatar">E</div>
-            <div class="ai-text" x-text="browserDoneMsg"></div>
-        </div>
-        <div x-show="browserDone" style="margin-left:40px;margin-top:12px">
-            <button class="btn btn-dark" @click="reset()">Done</button>
-        </div>
+        <div x-show="browserDone" class="ai"><div class="ai-dot">E</div><div class="ai-text" x-text="browserDoneMsg"></div></div>
+        <div x-show="browserDone" style="margin-left:34px;margin-top:8px"><button class="btn btn-dark" @click="reset()">Done</button></div>
     </div>
 
-    <!-- Filed (non-browser path) -->
-    <div x-show="step==='filed'" class="fade-in" style="max-width:480px;margin:0 auto;text-align:center">
-        <div style="width:56px;height:56px;background:var(--ok-bg);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
-            <svg width="28" height="28" fill="none" stroke="var(--ok)" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-        </div>
-        <h1 style="margin-bottom:20px" x-text="filingResult?.status==='dry_run'?'Dry Run Complete':'Filed'"></h1>
-        <div class="card" style="text-align:left;margin-bottom:24px">
-            <template x-for="[k,v] in [['Court',filing?.court_id],['Case',filing?.case_number],['Event',filing?.event_description],['Status',filingResult?.status]].filter(x=>x[1])">
-                <div class="card-row"><div class="card-label" x-text="k"></div><div class="card-value" x-text="v"></div></div>
-            </template>
+    <!-- Filed -->
+    <div x-show="step==='filed'" style="max-width:420px">
+        <div style="width:48px;height:48px;background:var(--green-bg);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:16px"><svg width="24" height="24" fill="none" stroke="var(--green)" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+        <h2 style="font-size:18px;margin-bottom:16px" x-text="filingResult?.status==='dry_run'?'Dry Run Complete':'Filed'"></h2>
+        <div class="card" style="margin-bottom:20px">
+            <template x-for="[k,v] in [['Court',filing?.court_id],['Case',filing?.case_number],['Event',filing?.event_description],['Status',filingResult?.status]].filter(x=>x[1])"><div class="card-row"><div class="label" x-text="k"></div><div class="value" x-text="v"></div></div></template>
         </div>
         <button class="btn btn-dark" @click="reset()">File Another</button>
     </div>
 
     <!-- Error -->
-    <div x-show="step==='error'" class="fade-in" style="max-width:400px;margin:0 auto;text-align:center">
-        <div style="width:56px;height:56px;background:var(--bad-bg);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
-            <svg width="28" height="28" fill="none" stroke="var(--bad)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-        </div>
-        <h1 style="font-size:18px;margin-bottom:8px">Analysis Failed</h1>
-        <p style="font-size:14px;color:var(--text-3);margin-bottom:24px" x-text="errorMsg"></p>
+    <div x-show="step==='error'" style="max-width:380px">
+        <div style="width:48px;height:48px;background:var(--red-bg);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:16px"><svg width="24" height="24" fill="none" stroke="var(--red)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg></div>
+        <h2 style="font-size:18px;margin-bottom:8px">Failed</h2>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:20px" x-text="errorMsg"></p>
         <button class="btn btn-dark" @click="reset()">Try Again</button>
     </div>
+
+    </div>
 </div>
 </template>
 
-<!-- VALIDATE -->
+<!-- ===== VALIDATE ===== -->
 <template x-if="view==='validate'">
-<div class="fade-in">
-    <h1>Validate PDFs</h1>
-    <p class="sub">Check CM/ECF requirements. No API key needed.</p>
-    <div class="drop" style="padding:40px;margin-bottom:20px" @click="$refs.vi.click()" @dragover.prevent @drop.prevent="valDrop($event)">
-        <h3>Drop PDFs here or click</h3>
-        <p>Checks format, size, text, encryption, redaction</p>
+<div class="anim"><div class="main-header"><h1>Validate PDFs</h1></div><div class="content" style="max-width:600px">
+    <p style="color:var(--text-2);margin-bottom:16px;font-size:14px">Check CM/ECF requirements. No API key needed.</p>
+    <div class="drop" style="padding:36px" @click="$refs.vi.click()" @dragover.prevent @drop.prevent="valDrop($event)">
+        <div style="font-size:14px;font-weight:500">Drop PDFs here</div>
         <input type="file" x-ref="vi" accept=".pdf" multiple style="display:none" @change="valRun($event)">
     </div>
-    <div x-show="valR.length>0" class="card">
-        <div class="card-header" style="display:flex;justify-content:space-between"><span>Results</span><span class="mono" x-text="valOk+'/'+valR.length+' passed'"></span></div>
-        <template x-for="r in valR" :key="r.name">
-            <div style="padding:14px 20px;border-bottom:1px solid var(--border-light)">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <div style="display:flex;align-items:center;gap:10px">
-                        <div class="check-dot" :style="r.valid?'background:var(--ok-bg);color:var(--ok)':'background:var(--bad-bg);color:var(--bad)'" x-text="r.valid?'&#10003;':'&#10007;'"></div>
-                        <span style="font-size:14px;font-weight:500" x-text="r.name"></span>
-                    </div>
-                    <span class="mono" style="font-size:12px;color:var(--text-4)" x-text="r.size+', '+r.pages+'p'"></span>
-                </div>
-                <template x-for="e in r.errors"><div style="font-size:12px;color:var(--bad);margin:4px 0 0 34px" x-text="e"></div></template>
-                <template x-for="w in r.warnings"><div style="font-size:12px;color:var(--warn);margin:4px 0 0 34px" x-text="w"></div></template>
-                <div x-show="r.valid && !r.errors?.length" style="font-size:12px;color:var(--ok);margin:4px 0 0 34px">Ready for CM/ECF</div>
-            </div>
-        </template>
+    <div x-show="valR.length>0" class="card" style="margin-top:16px">
+        <div class="card-head"><span class="card-head-title">Results</span><span class="mono" style="font-size:11px;color:var(--text-3)" x-text="valOk+'/'+valR.length+' passed'"></span></div>
+        <template x-for="r in valR" :key="r.name"><div style="padding:12px 20px;border-bottom:1px solid var(--border-light)">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:8px"><div class="step-dot" :class="r.valid?'dot-ok':'dot-bad'" x-text="r.valid?'&#10003;':'&#10007;'" style="width:18px;height:18px;font-size:9px"></div><span style="font-size:13px;font-weight:500" x-text="r.name"></span></div><span class="mono" style="font-size:11px;color:var(--text-3)" x-text="r.size+', '+r.pages+'p'"></span></div>
+            <template x-for="e in r.errors"><div style="font-size:11px;color:var(--red);margin:3px 0 0 26px" x-text="e"></div></template>
+            <template x-for="w in r.warnings"><div style="font-size:11px;color:var(--amber);margin:3px 0 0 26px" x-text="w"></div></template>
+            <div x-show="r.valid&&!r.errors?.length" style="font-size:11px;color:var(--green);margin:3px 0 0 26px">Ready for CM/ECF</div>
+        </div></template>
     </div>
-</div>
+</div></div>
 </template>
 
-<!-- CERTIFICATE -->
+<!-- ===== CERTIFICATE ===== -->
 <template x-if="view==='cos'">
-<div class="fade-in">
-    <h1>Certificate of Service</h1>
-    <p class="sub">Generate and download as PDF.</p>
-    <div class="card" style="margin-bottom:16px">
+<div class="anim"><div class="main-header"><h1>Certificate of Service</h1></div><div class="content" style="max-width:600px">
+    <div class="card">
         <div class="card-body">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-                <div><label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Attorney</label><input type="text" x-model="cosAtty" placeholder="Jane Smith, Esq." style="width:100%"></div>
-                <div><label style="display:block;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Case</label><input type="text" x-model="cosCase" placeholder="1:24-cv-01234" style="width:100%"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+                <div><div class="label" style="margin-bottom:4px">Attorney</div><input type="text" x-model="cosAtty" placeholder="Jane Smith, Esq." style="width:100%"></div>
+                <div><div class="label" style="margin-bottom:4px">Case</div><input type="text" x-model="cosCase" placeholder="1:24-cv-01234" style="width:100%"></div>
             </div>
-            <div style="margin-bottom:16px">
-                <div style="display:flex;justify-content:space-between;margin-bottom:8px"><label style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Recipients</label><button @click="cosR.push({name:'',attorney_name:'',method:'CM/ECF'})" style="font-size:12px;color:var(--accent);font-weight:600;background:none;border:none;cursor:pointer">+ Add</button></div>
-                <template x-for="(r,i) in cosR" :key="i">
-                    <div style="display:flex;gap:8px;margin-bottom:8px">
-                        <input type="text" x-model="r.name" placeholder="Party" style="flex:1">
-                        <input type="text" x-model="r.attorney_name" placeholder="Attorney" style="flex:1">
-                        <select x-model="r.method" style="width:100px"><option>CM/ECF</option><option value="email">Email</option><option value="mail">Mail</option></select>
-                        <button @click="cosR.splice(i,1)" style="border:none;background:none;color:var(--text-4);cursor:pointer;font-size:18px">&times;</button>
-                    </div>
-                </template>
+            <div style="margin-bottom:14px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="label">Recipients</div><button class="btn btn-ghost" style="font-size:12px;padding:2px 6px" @click="cosR.push({name:'',attorney_name:'',method:'CM/ECF'})">+ Add</button></div>
+                <template x-for="(r,i) in cosR" :key="i"><div style="display:flex;gap:6px;margin-bottom:6px">
+                    <input type="text" x-model="r.name" placeholder="Party" style="flex:1"><input type="text" x-model="r.attorney_name" placeholder="Attorney" style="flex:1">
+                    <select x-model="r.method" style="width:90px"><option>CM/ECF</option><option value="email">Email</option><option value="mail">Mail</option></select>
+                    <button @click="cosR.splice(i,1)" style="border:none;background:none;color:var(--text-3);cursor:pointer;font-size:16px">&times;</button>
+                </div></template>
             </div>
-            <div style="display:flex;gap:8px">
-                <button class="btn btn-dark" @click="genCos()" :disabled="!cosAtty">Generate</button>
-                <button class="btn btn-secondary" x-show="cosTxt" @click="dlCos()">Download PDF</button>
-            </div>
+            <div style="display:flex;gap:8px"><button class="btn btn-primary" @click="genCos()" :disabled="!cosAtty">Generate</button><button class="btn btn-outline" x-show="cosTxt" @click="dlCos()">Download PDF</button></div>
         </div>
     </div>
-    <div x-show="cosTxt" class="card"><div class="card-header">Preview</div><pre style="padding:20px;font-size:13px;white-space:pre-wrap;line-height:1.7;color:var(--text-2)" class="mono" x-text="cosTxt"></pre></div>
-</div>
+    <div x-show="cosTxt" class="card"><div class="card-head"><span class="card-head-title">Preview</span></div><pre style="padding:20px;font-size:12px;white-space:pre-wrap;line-height:1.7;color:var(--text-2)" class="mono" x-text="cosTxt"></pre></div>
+</div></div>
 </template>
 
-<!-- COURTS -->
+<!-- ===== COURTS ===== -->
 <template x-if="view==='courts'">
-<div class="fade-in">
-    <h1>Courts</h1>
-    <p class="sub">150 federal district, bankruptcy, and appellate courts.</p>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
+<div class="anim"><div class="main-header"><h1>Courts</h1><span class="mono" style="font-size:12px;color:var(--text-3)">150 courts</span></div><div class="content">
+    <div style="display:flex;gap:8px;margin-bottom:14px">
         <input type="text" x-model="cSearch" @input.debounce.250ms="loadCourts()" placeholder="Search..." style="flex:1">
         <select x-model="cType" @change="loadCourts()"><option value="">All</option><option value="district">District</option><option value="bankruptcy">Bankruptcy</option><option value="appellate">Appellate</option></select>
     </div>
-    <div class="card">
-        <table><thead><tr><th style="width:80px">ID</th><th>Name</th><th style="width:110px">Type</th></tr></thead>
-        <tbody><template x-for="c in courts" :key="c.court_id"><tr>
-            <td class="mono" style="font-weight:600;color:var(--accent)" x-text="c.court_id"></td><td x-text="c.name"></td>
-            <td><span class="badge" :class="{'badge-blue':c.court_type==='district','badge-purple':c.court_type==='bankruptcy','badge-amber':c.court_type==='appellate'}" x-text="c.court_type"></span></td>
-        </tr></template></tbody></table>
-        <div x-show="courts.length===0" style="padding:48px;text-align:center;color:var(--text-4);font-size:14px">No courts found</div>
-    </div>
-</div>
+    <div class="card"><table><thead><tr><th style="width:80px">ID</th><th>Name</th><th style="width:100px">Type</th></tr></thead>
+    <tbody><template x-for="c in courts" :key="c.court_id"><tr><td class="mono" style="font-weight:600;color:var(--accent)" x-text="c.court_id"></td><td x-text="c.name"></td><td><span class="tag" :class="{'tag-blue':c.court_type==='district','tag-purple':c.court_type==='bankruptcy','tag-amber':c.court_type==='appellate'}" x-text="c.court_type"></span></td></tr></template></tbody></table>
+    <div x-show="courts.length===0" style="padding:40px;text-align:center;color:var(--text-3);font-size:13px">No courts found</div></div>
+</div></div>
 </template>
 
-<!-- HISTORY -->
-<template x-if="view==='history'">
-<div class="fade-in">
-    <h1>History</h1>
-    <p class="sub">Filing audit log.</p>
-    <div class="card">
-        <template x-if="hist.length>0"><table><thead><tr><th>Date</th><th>Court</th><th>Case</th><th>Event</th><th>Status</th></tr></thead>
-        <tbody><template x-for="h in hist" :key="h.id"><tr><td style="color:var(--text-3)" x-text="h.filed_at?.substring(0,10)"></td><td class="mono" x-text="h.court_id"></td><td x-text="h.case_number"></td><td style="color:var(--text-2)" x-text="h.event_description?.substring(0,40)"></td><td><span class="badge badge-ok" x-text="h.status"></span></td></tr></template></tbody></table></template>
-        <div x-show="hist.length===0" style="padding:48px;text-align:center;color:var(--text-4);font-size:14px">No filings yet</div>
-    </div>
-</div>
-</template>
-
-<!-- DRAFTS -->
+<!-- ===== DRAFTS ===== -->
 <template x-if="view==='drafts'">
-<div class="fade-in">
-    <h1>Drafts</h1>
-    <p class="sub">Resume incomplete filings.</p>
-    <div class="card">
-        <template x-if="drafts.length>0"><table><thead><tr><th>Name</th><th>Court</th><th>Case</th><th>Saved</th><th style="width:60px"></th></tr></thead>
-        <tbody><template x-for="d in drafts" :key="d.file"><tr><td style="font-weight:600" x-text="d.name"></td><td class="mono" style="color:var(--text-3)" x-text="d.court"></td><td style="color:var(--text-3)" x-text="d.case"></td><td style="color:var(--text-4)" x-text="d.saved_at?.substring(0,10)"></td><td><button @click="delDraft(d.file)" style="font-size:11px;color:var(--text-4);background:none;border:none;cursor:pointer">delete</button></td></tr></template></tbody></table></template>
-        <div x-show="drafts.length===0" style="padding:48px;text-align:center;color:var(--text-4);font-size:14px">No drafts saved</div>
-    </div>
-</div>
+<div class="anim"><div class="main-header"><h1>Drafts</h1></div><div class="content">
+    <div class="card"><template x-if="drafts.length>0"><table><thead><tr><th>Name</th><th>Court</th><th>Case</th><th>Saved</th><th style="width:50px"></th></tr></thead>
+    <tbody><template x-for="d in drafts" :key="d.file"><tr><td style="font-weight:600" x-text="d.name"></td><td class="mono" style="color:var(--text-2)" x-text="d.court"></td><td style="color:var(--text-2)" x-text="d.case"></td><td style="color:var(--text-3)" x-text="d.saved_at?.substring(0,10)"></td><td><button @click="delDraft(d.file)" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer">delete</button></td></tr></template></tbody></table></template>
+    <div x-show="drafts.length===0" style="padding:48px;text-align:center;color:var(--text-3);font-size:13px">No drafts</div></div>
+</div></div>
 </template>
 
-</main>
+<!-- ===== HISTORY ===== -->
+<template x-if="view==='history'">
+<div class="anim"><div class="main-header"><h1>Filing History</h1></div><div class="content">
+    <div class="card"><template x-if="hist.length>0"><table><thead><tr><th>Date</th><th>Court</th><th>Case</th><th>Event</th><th>Status</th></tr></thead>
+    <tbody><template x-for="h in hist" :key="h.id"><tr><td style="color:var(--text-3)" x-text="h.filed_at?.substring(0,10)"></td><td class="mono" x-text="h.court_id"></td><td x-text="h.case_number"></td><td style="color:var(--text-2)" x-text="h.event_description?.substring(0,40)"></td><td><span class="tag tag-green" x-text="h.status"></span></td></tr></template></tbody></table></template>
+    <div x-show="hist.length===0" style="padding:48px;text-align:center;color:var(--text-3);font-size:13px">No filings yet</div></div>
+</div></div>
+</template>
 
-<footer>ECFiler is a filing tool, not a legal advisor. <a href="https://github.com/jackson-jpeg/ecfiler">GitHub</a></footer>
+</div>
 
 <script>
 function app(){return{
 view:'file',step:'upload',fileName:'',filing:null,filingResult:null,errorMsg:'',liveSteps:[],
-browserSteps:[],browserScreenshot:'',browserStep:null,browserDone:false,browserDoneMsg:'',
+browserSteps:[],browserScreenshot:'',browserDone:false,browserDoneMsg:'',
 courts:[],cSearch:'',cType:'',hist:[],drafts:[],
 valR:[],valOk:0,
 cosAtty:'',cosCase:'',cosR:[{name:'',attorney_name:'',method:'CM/ECF'}],cosTxt:'',
-tabs:[{id:'file',label:'File'},{id:'validate',label:'Validate'},{id:'cos',label:'Certificate'},{id:'courts',label:'Courts'},{id:'drafts',label:'Drafts'},{id:'history',label:'History'}],
-get fields(){if(!this.filing)return[];return[['Type',this.filing.document_type],['Case',this.filing.case_number],['Court',this.filing.court_id],['Caption',this.filing.case_caption],['Event',this.filing.event_description?this.filing.event_description+' ('+this.filing.event_code+')':''],['Party',this.filing.filing_party]].filter(f=>f[1])},
 init(){this.loadCourts();this.loadHist();fetch('/api/drafts').then(r=>r.json()).then(d=>{this.drafts=d}).catch(()=>{});},
 go(id){this.view=id;if(id==='courts')this.loadCourts();if(id==='history')this.loadHist();if(id==='drafts')fetch('/api/drafts').then(r=>r.json()).then(d=>{this.drafts=d}).catch(()=>{});},
-reset(){this.step='upload';this.filing=null;this.filingResult=null;this.errorMsg='';this.fileName='';this.liveSteps=[];this.browserSteps=[];this.browserScreenshot='';this.browserDone=false;this.browserDoneMsg='';},
+reset(){this.step='upload';this.filing=null;this.filingResult=null;this.errorMsg='';this.fileName='';this.liveSteps=[];this.browserSteps=[];this.browserScreenshot='';this.browserDone=false;},
 async upload(file){if(!file)return;this.fileName=file.name;this.step='analyzing';this.liveSteps=[];
 try{const fd=new FormData();fd.append('document',file);const resp=await fetch('/api/file/stream',{method:'POST',body:fd});
-if(!resp.ok){throw new Error((await resp.text()).substring(0,200));}
+if(!resp.ok)throw new Error((await resp.text()).substring(0,200));
 const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
 while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
 const parts=buf.split('\n\n');buf=parts.pop()||'';
 for(const part of parts){const lines=part.split('\n');let ev='',data='';for(const l of lines){if(l.startsWith('event:'))ev=l.slice(6).trim();if(l.startsWith('data:'))data=l.slice(5).trim();}
 if(!data)continue;const d=JSON.parse(data);
 if(ev==='step'){const ex=this.liveSteps.find(s=>s.id===d.id);if(ex)Object.assign(ex,d);else this.liveSteps.push({...d});}
-if(ev==='result'){this.filing=d;await new Promise(r=>setTimeout(r,400));this.step='review';}
+if(ev==='result'){this.filing=d;await new Promise(r=>setTimeout(r,300));this.step='review';}
 if(ev==='error')throw new Error(d.message);}}
 }catch(e){this.errorMsg=e.message||'Failed';this.step='error';}},
 async confirm(){
-this.step='browser';this.browserSteps=[];this.browserScreenshot='';this.browserDone=false;this.browserDoneMsg='';
-try{
-const body=JSON.stringify({court_id:this.filing.court_id,case_number:this.filing.case_number,event_code:this.filing.event_code,event_description:this.filing.event_description,filing_party_name:this.filing.filing_party?.split('(')[0]?.trim()||'',filing_party_role:this.filing.filing_party?.match(/\((\w+)\)/)?.[1]||'',document_path:'',dry_run:false});
+this.step='browser';this.browserSteps=[];this.browserScreenshot='';this.browserDone=false;
+try{const body=JSON.stringify({court_id:this.filing.court_id,case_number:this.filing.case_number,event_code:this.filing.event_code,event_description:this.filing.event_description,filing_party_name:this.filing.filing_party?.split('(')[0]?.trim()||'',filing_party_role:this.filing.filing_party?.match(/\((\w+)\)/)?.[1]||'',document_path:'',dry_run:false});
 const resp=await fetch('/api/filing/browser-stream',{method:'POST',headers:{'Content-Type':'application/json'},body});
-if(!resp.ok){const t=await resp.text();throw new Error(t.substring(0,200));}
+if(!resp.ok)throw new Error((await resp.text()).substring(0,200));
 const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
 while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
 const parts=buf.split('\n\n');buf=parts.pop()||'';
-for(const part of parts){const lines=part.split('\n');let ev='',data='';
-for(const l of lines){if(l.startsWith('event:'))ev=l.slice(6).trim();if(l.startsWith('data:'))data=l.slice(5).trim();}
+for(const part of parts){const lines=part.split('\n');let ev='',data='';for(const l of lines){if(l.startsWith('event:'))ev=l.slice(6).trim();if(l.startsWith('data:'))data=l.slice(5).trim();}
 if(!data)continue;const d=JSON.parse(data);
-if(ev==='browser'){
-this.browserStep=d;
-if(d.screenshot)this.browserScreenshot=d.screenshot;
-const ex=this.browserSteps.find(s=>s.step===d.step);
-if(ex)Object.assign(ex,d);else this.browserSteps.push({...d});
-}
-if(ev==='browser_done'){this.browserDone=true;this.browserDoneMsg=d.message;this.loadHist();}
-}}
-}catch(e){this.browserDone=true;this.browserDoneMsg='Error: '+e.message;}
-},
+if(ev==='browser'){if(d.screenshot)this.browserScreenshot=d.screenshot;const ex=this.browserSteps.find(s=>s.step===d.step);if(ex)Object.assign(ex,d);else this.browserSteps.push({...d});}
+if(ev==='browser_done'){this.browserDone=true;this.browserDoneMsg=d.message;this.loadHist();}}}
+}catch(e){this.browserDone=true;this.browserDoneMsg='Error: '+e.message;}},
 valDrop(e){e.preventDefault();this.valRun({target:{files:e.dataTransfer.files}});},
 async valRun(e){const files=Array.from(e.target.files);if(!files.length)return;this.valR=[];this.valOk=0;
 for(const f of files){try{const fd=new FormData();fd.append('document',f);const r=await fetch('/api/validate',{method:'POST',body:fd});const v=await r.json();
