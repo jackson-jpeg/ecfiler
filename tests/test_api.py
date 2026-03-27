@@ -123,9 +123,9 @@ class TestValidateEndpoint:
                 "/api/validate",
                 files={"document": ("empty.pdf", f, "application/pdf")},
             )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["valid"] is False
+        # Empty files are now rejected at upload validation
+        assert response.status_code == 400
+        assert "Empty" in response.json()["detail"]
 
 
 class TestRedactionEndpoint:

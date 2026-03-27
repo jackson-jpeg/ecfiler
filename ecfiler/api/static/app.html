@@ -256,13 +256,34 @@
             </div>
 
             <!-- Step 3: Filed -->
-            <div x-show="step === 'filed'" class="text-center py-16 transition-all">
-                <div class="text-5xl mb-4">&#9989;</div>
-                <h3 class="text-2xl font-semibold text-court-green mb-2">Filed Successfully</h3>
-                <p class="text-gray-500 mb-6">Your document has been submitted to CM/ECF.</p>
-                <button @click="reset()" class="px-6 py-2.5 bg-navy text-white rounded-lg hover:bg-navy/90 transition">
-                    File Another Document
-                </button>
+            <div x-show="step === 'filed'" class="transition-all">
+                <div class="text-center mb-6">
+                    <div class="text-5xl mb-4">&#9989;</div>
+                    <h3 class="text-2xl font-semibold text-court-green mb-2" x-text="filingResult?.status === 'dry_run' ? 'Dry Run Complete' : 'Filed Successfully'"></h3>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6" x-show="filing">
+                    <div class="bg-court-green text-white px-4 py-2 text-sm font-medium">Filing Confirmation</div>
+                    <div class="divide-y text-sm">
+                        <div class="flex px-4 py-2" x-show="filing?.court_id"><span class="w-28 font-medium text-gray-500">Court</span><span x-text="filing?.court_id"></span></div>
+                        <div class="flex px-4 py-2" x-show="filing?.case_number"><span class="w-28 font-medium text-gray-500">Case</span><span x-text="filing?.case_number"></span></div>
+                        <div class="flex px-4 py-2" x-show="filing?.case_caption"><span class="w-28 font-medium text-gray-500">Caption</span><span x-text="filing?.case_caption"></span></div>
+                        <div class="flex px-4 py-2" x-show="filing?.event_description"><span class="w-28 font-medium text-gray-500">Event</span><span x-text="filing?.event_description"></span></div>
+                        <div class="flex px-4 py-2" x-show="filing?.filing_party"><span class="w-28 font-medium text-gray-500">Filed By</span><span x-text="filing?.filing_party"></span></div>
+                        <div class="flex px-4 py-2" x-show="filingResult?.docket_number"><span class="w-28 font-medium text-gray-500">Docket #</span><span x-text="filingResult?.docket_number"></span></div>
+                        <div class="flex px-4 py-2"><span class="w-28 font-medium text-gray-500">Status</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs" :class="filingResult?.status === 'dry_run' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'" x-text="filingResult?.status || 'submitted'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <p x-show="filingResult?.message" class="text-sm text-gray-500 text-center mb-4" x-text="filingResult?.message"></p>
+
+                <div class="text-center">
+                    <button @click="reset()" class="px-6 py-2.5 bg-navy text-white rounded-lg hover:bg-navy/90 transition">
+                        File Another Document
+                    </button>
+                </div>
             </div>
 
             <!-- Error -->
@@ -545,6 +566,7 @@ function ecfiler() {
         draftCount: 0,
         hasApiKey: true,
         filingChecklist: null,
+        filingResult: null,
         valResults: [],
         valPassCount: 0,
         valLoading: false,
@@ -742,6 +764,7 @@ function ecfiler() {
             this.showAttachments = false;
             this.sealingLevel = 'public';
             this.filingChecklist = null;
+            this.filingResult = null;
             this.currentAnalysisStep = 0;
         },
 

@@ -128,6 +128,37 @@ class FilingPreview(BaseModel):
 # --- Agent endpoint: the magic ---
 
 
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100MB
+
+
+async def _validate_upload(document: UploadFile) -> bytes:
+    """Validate an uploaded file: check type, size, read content."""
+    # Check content type
+    if document.content_type and document.content_type not in (
+        "application/pdf",
+        "application/octet-stream",  # Some browsers send this
+    ):
+        raise HTTPException(400, f"Only PDF files accepted, got: {document.content_type}")
+
+    # Check filename extension
+    filename = document.filename or ""
+    if filename and not filename.lower().endswith(".pdf"):
+        raise HTTPException(400, f"File must have .pdf extension, got: {filename}")
+
+    # Read with size limit
+    content = await document.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            400,
+            f"File too large: {len(content) / 1024 / 1024:.1f}MB (max {MAX_UPLOAD_BYTES // 1024 // 1024}MB)",
+        )
+
+    if len(content) == 0:
+        raise HTTPException(400, "Empty file uploaded")
+
+    return content
+
+
 @app.post("/api/file", response_model=FilingPreview)
 async def analyze_and_prepare_filing(
     document: UploadFile = File(..., description="PDF document to file"),
@@ -151,12 +182,18 @@ async def analyze_and_prepare_filing(
 
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
-        raise HTTPException(500, "ANTHROPIC_API_KEY not set")
+        raise HTTPException(
+            503,
+            "Smart filing requires an Anthropic API key. "
+            "Set ANTHROPIC_API_KEY on the server. "
+            "PDF validation and court lookup work without it.",
+        )
 
-    # Save upload to temp file
+    # Validate and read upload
+    content = await _validate_upload(document)
+
     suffix = Path(document.filename or "upload.pdf").suffix
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        content = await document.read()
         tmp.write(content)
         tmp_path = tmp.name
 
@@ -254,8 +291,8 @@ async def validate_pdf_endpoint(
     """Validate a PDF against CM/ECF filing requirements."""
     from ecfiler.pdf.validator import validate_pdf
 
+    content = await _validate_upload(document)
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        content = await document.read()
         tmp.write(content)
         tmp_path = tmp.name
 
@@ -282,8 +319,8 @@ async def scan_redaction(
     from ecfiler.pdf.redaction_check import scan_document
     from ecfiler.pdf.validator import extract_text
 
+    content = await _validate_upload(document)
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        content = await document.read()
         tmp.write(content)
         tmp_path = tmp.name
 
