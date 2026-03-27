@@ -377,6 +377,272 @@ def get_filing_history(
     return history.get_recent(limit)
 
 
+class CertificateRequest(BaseModel):
+    """Request to generate a certificate of service."""
+
+    attorney_name: str
+    case_number: str = ""
+    court_name: str = ""
+    recipients: list[dict]  # [{name, role, attorney_name, method, email, address}]
+
+
+class CertificateResponse(BaseModel):
+    text: str
+    filing_date: str
+    method: str
+    is_all_ecf: bool
+
+
+class FilingSubmitRequest(BaseModel):
+    """Request to submit a prepared filing."""
+
+    court_id: str
+    case_number: str
+    event_code: str
+    event_description: str
+    filing_party_name: str
+    filing_party_role: str
+    document_path: str  # Server-side path to the uploaded PDF
+    is_response: bool = False
+    responds_to_docket: str = ""
+    dry_run: bool = True  # Default to dry run for safety
+
+
+class FilingSubmitResponse(BaseModel):
+    status: str  # "submitted", "dry_run", "failed"
+    message: str
+    docket_number: str = ""
+    receipt_path: str = ""
+
+
+@app.post("/api/certificate-of-service", response_model=CertificateResponse)
+def generate_cos(request: CertificateRequest) -> CertificateResponse:
+    """Generate a certificate of service.
+
+    Provide the list of recipients and their service methods.
+    Returns the formatted certificate text.
+    """
+    from ecfiler.agent.certificate_of_service import (
+        ServiceRecipient,
+        generate_certificate,
+    )
+
+    recipients = [
+        ServiceRecipient(
+            name=r.get("name", ""),
+            role=r.get("role", ""),
+            attorney_name=r.get("attorney_name", ""),
+            attorney_firm=r.get("attorney_firm", ""),
+            method=r.get("method", "CM/ECF"),
+            email=r.get("email", ""),
+            address=r.get("address", ""),
+        )
+        for r in request.recipients
+    ]
+
+    cert = generate_certificate(
+        recipients=recipients,
+        attorney_name=request.attorney_name,
+        case_number=request.case_number,
+        court_name=request.court_name,
+    )
+
+    return CertificateResponse(
+        text=cert.text,
+        filing_date=cert.filing_date,
+        method=cert.method,
+        is_all_ecf=cert.is_all_ecf,
+    )
+
+
+@app.post("/api/certificate-of-service/pdf")
+async def generate_cos_pdf(request: CertificateRequest) -> FileResponse:
+    """Generate a certificate of service as a downloadable PDF."""
+    from ecfiler.agent.certificate_of_service import (
+        ServiceRecipient,
+        generate_certificate,
+        generate_certificate_pdf,
+    )
+
+    recipients = [
+        ServiceRecipient(
+            name=r.get("name", ""),
+            role=r.get("role", ""),
+            attorney_name=r.get("attorney_name", ""),
+            attorney_firm=r.get("attorney_firm", ""),
+            method=r.get("method", "CM/ECF"),
+            email=r.get("email", ""),
+            address=r.get("address", ""),
+        )
+        for r in request.recipients
+    ]
+
+    cert = generate_certificate(
+        recipients=recipients,
+        attorney_name=request.attorney_name,
+        case_number=request.case_number,
+        court_name=request.court_name,
+    )
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        generate_certificate_pdf(
+            cert,
+            tmp.name,
+            case_number=request.case_number,
+            court_name=request.court_name,
+        )
+        return FileResponse(
+            tmp.name,
+            media_type="application/pdf",
+            filename="certificate_of_service.pdf",
+        )
+
+
+@app.post("/api/filing/submit", response_model=FilingSubmitResponse)
+def submit_filing(request: FilingSubmitRequest) -> FilingSubmitResponse:
+    """Submit a prepared filing to CM/ECF.
+
+    IMPORTANT: Defaults to dry_run=true. Set dry_run=false to actually file.
+    This is the final step — the document will be filed on CM/ECF.
+    """
+    if request.dry_run:
+        return FilingSubmitResponse(
+            status="dry_run",
+            message=(
+                f"DRY RUN: Would file '{request.event_description}' "
+                f"in case {request.case_number} on court {request.court_id}. "
+                f"Set dry_run=false to actually submit."
+            ),
+        )
+
+    # Real submission would go through the browser automation workflow
+    # For now, return a placeholder indicating the API is ready
+    return FilingSubmitResponse(
+        status="pending",
+        message=(
+            "Filing submission requires PACER credentials configured on the server. "
+            "Use the CLI (ecfiler smart) or web UI for full filing with browser automation."
+        ),
+    )
+
+
+@app.post("/api/file/multi", response_model=FilingPreview)
+async def analyze_multi_document(
+    main_document: UploadFile = File(..., description="Main document PDF"),
+    attachments: list[UploadFile] = File(default=[], description="Attachment PDFs"),
+) -> FilingPreview:
+    """Upload multiple documents — main document + attachments.
+
+    Analyzes the main document for filing metadata. Validates all attachments.
+    Returns a combined filing preview.
+    """
+    import os
+
+    from ecfiler.agent.document_analyzer import analyze_document
+    from ecfiler.filing.events import search_events
+    from ecfiler.pdf.redaction_check import scan_document
+    from ecfiler.pdf.validator import extract_text, validate_pdf
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise HTTPException(500, "ANTHROPIC_API_KEY not set")
+
+    tmp_files: list[str] = []
+
+    try:
+        # Save main document
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            content = await main_document.read()
+            tmp.write(content)
+            main_path = tmp.name
+            tmp_files.append(main_path)
+
+        # Validate main doc
+        validation = validate_pdf(main_path)
+        if not validation.valid:
+            return FilingPreview(
+                document_type="unknown", case_number="", court_id="",
+                case_caption="", event_code="", event_description="",
+                filing_party="", is_response=False, responds_to=None,
+                pdf_valid=False, pdf_size_mb=validation.file_size_mb,
+                pdf_pages=validation.page_count, redaction_risk="unknown",
+                redaction_issues=0, completeness_score=0,
+                warnings=validation.errors, confidence="none", ready=False,
+            )
+
+        # Validate attachments
+        attachment_warnings: list[str] = []
+        total_pages = validation.page_count
+        total_size = validation.file_size_mb
+
+        for att in attachments:
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+                att_content = await att.read()
+                tmp.write(att_content)
+                att_path = tmp.name
+                tmp_files.append(att_path)
+
+            att_result = validate_pdf(att_path)
+            if not att_result.valid:
+                attachment_warnings.append(f"Attachment '{att.filename}' invalid: {', '.join(att_result.errors)}")
+            else:
+                total_pages += att_result.page_count
+                total_size += att_result.file_size_mb
+
+        # Analyze main document
+        text = extract_text(main_path, max_pages=30)
+        analysis = analyze_document(text, api_key=api_key)
+
+        # Redaction scan
+        redaction = scan_document(text)
+
+        # Event code
+        court_type = _infer_court_type(analysis.court_id)
+        desc = analysis.document_type_specific or analysis.document_type
+        matches = search_events(desc, court_type) if desc else []
+        event_code = matches[0].code if matches else ""
+        event_desc = matches[0].description if matches else analysis.document_type_specific
+
+        # Warnings
+        warnings: list[str] = []
+        if not analysis.has_signature:
+            warnings.append("No signature block detected")
+        if not analysis.has_certificate_of_service:
+            warnings.append("No certificate of service detected")
+        if analysis.is_response and not analysis.responds_to_docket_number:
+            warnings.append("Response filing without docket reference")
+        if attachments:
+            warnings.append(f"{len(attachments)} attachment(s): {total_size:.1f}MB total, {total_pages} pages")
+        warnings.extend(attachment_warnings)
+        warnings.extend(validation.warnings)
+
+        ready = validation.valid and analysis.completeness_score >= 60 and bool(event_code)
+
+        return FilingPreview(
+            document_type=analysis.document_type_specific or analysis.document_type,
+            case_number=analysis.case_number,
+            court_id=analysis.court_id,
+            case_caption=analysis.case_caption,
+            event_code=event_code,
+            event_description=event_desc,
+            filing_party=f"{analysis.filing_party_name} ({analysis.filing_party_role})" if analysis.filing_party_name else "",
+            is_response=analysis.is_response,
+            responds_to=analysis.responds_to if analysis.is_response else None,
+            pdf_valid=validation.valid,
+            pdf_size_mb=total_size,
+            pdf_pages=total_pages,
+            redaction_risk=redaction.risk_level,
+            redaction_issues=len(redaction.issues),
+            completeness_score=analysis.completeness_score,
+            warnings=warnings,
+            confidence=analysis.confidence,
+            ready=ready,
+        )
+    finally:
+        for f in tmp_files:
+            Path(f).unlink(missing_ok=True)
+
+
 @app.get("/api/health")
 def health() -> dict:
     """Health check."""
@@ -386,6 +652,7 @@ def health() -> dict:
     registry = CourtRegistry()
     return {
         "status": "ok",
+        "version": "0.1.0",
         "courts_loaded": registry.count,
         "has_api_key": bool(os.environ.get("ANTHROPIC_API_KEY")),
     }

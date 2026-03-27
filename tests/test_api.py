@@ -158,6 +158,94 @@ class TestRedactionEndpoint:
         assert len(data["issues"]) >= 1
 
 
+class TestCertificateEndpoint:
+    def test_generate_cos_all_ecf(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/certificate-of-service",
+            json={
+                "attorney_name": "Jane Smith",
+                "case_number": "1:24-cv-01234",
+                "recipients": [
+                    {"name": "Jones Corp", "role": "defendant", "attorney_name": "John Adams", "method": "CM/ECF"},
+                ],
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["is_all_ecf"] is True
+        assert "Jane Smith" in data["text"]
+        assert "CM/ECF" in data["text"]
+
+    def test_generate_cos_mixed(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/certificate-of-service",
+            json={
+                "attorney_name": "Jane Smith",
+                "recipients": [
+                    {"name": "ECF Party", "role": "defendant", "method": "CM/ECF"},
+                    {"name": "Mail Party", "role": "defendant", "method": "mail", "address": "123 Main St"},
+                ],
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["is_all_ecf"] is False
+        assert data["method"] == "mixed"
+
+    def test_generate_cos_pdf(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/certificate-of-service/pdf",
+            json={
+                "attorney_name": "Jane Smith",
+                "case_number": "1:24-cv-01234",
+                "court_name": "S.D.N.Y.",
+                "recipients": [
+                    {"name": "Jones", "role": "defendant", "attorney_name": "Adams", "method": "CM/ECF"},
+                ],
+            },
+        )
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+        assert len(response.content) > 100
+
+
+class TestFilingSubmitEndpoint:
+    def test_dry_run_default(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/filing/submit",
+            json={
+                "court_id": "nysd",
+                "case_number": "1:24-cv-01234",
+                "event_code": "12",
+                "event_description": "Motion to Dismiss",
+                "filing_party_name": "Smith",
+                "filing_party_role": "plaintiff",
+                "document_path": "/tmp/test.pdf",
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "dry_run"
+        assert "DRY RUN" in data["message"]
+
+    def test_explicit_dry_run(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/filing/submit",
+            json={
+                "court_id": "nysd",
+                "case_number": "1:24-cv-01234",
+                "event_code": "12",
+                "event_description": "Motion to Dismiss",
+                "filing_party_name": "Smith",
+                "filing_party_role": "plaintiff",
+                "document_path": "/tmp/test.pdf",
+                "dry_run": True,
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "dry_run"
+
+
 class TestHistoryEndpoint:
     def test_empty_history(self, client: TestClient) -> None:
         response = client.get("/api/history")
