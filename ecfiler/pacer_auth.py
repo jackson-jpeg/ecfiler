@@ -16,8 +16,8 @@ from ecfiler.logging import get_logger
 
 logger = get_logger(__name__)
 
-PACER_AUTH_URL = "https://pacer.login.uscourts.gov/csologin/loginSvc"
-PACER_QA_AUTH_URL = "https://qa-pacer.login.uscourts.gov/csologin/loginSvc"
+PACER_AUTH_URL = "https://pacer.login.uscourts.gov/services/cso-auth"
+PACER_QA_AUTH_URL = "https://qa-pacer.login.uscourts.gov/services/cso-auth"
 KEYRING_SERVICE = "ecfiler-pacer"
 
 # Token lifetime: PACER tokens are valid for ~60 minutes

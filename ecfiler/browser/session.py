@@ -114,7 +114,7 @@ class BrowserSession:
         - loginForm:loginName (username/email)
         - loginForm:password (password)
         - loginForm:clientCode (optional, identifies application)
-        - loginForm:pbtnLogin (submit button)
+        - loginForm:fbtnLogin (submit button)
 
         Returns True if login succeeded.
         """
@@ -168,7 +168,7 @@ class BrowserSession:
         # Click login button
         for submit_sel in [
             "#loginForm\\:pbtnLogin",
-            "button[name='loginForm:pbtnLogin']",
+            "button[name='loginForm:fbtnLogin']",
             "#loginForm input[type='submit']",
             "button[type='submit']",
             "input[type='submit']",
