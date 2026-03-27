@@ -1,0 +1,660 @@
+[
+    {
+        "court_id": "almd",
+        "name": "Middle District of Alabama",
+        "court_type": "district",
+        "ecf_url": "https://ecf.almd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "alnd",
+        "name": "Northern District of Alabama",
+        "court_type": "district",
+        "ecf_url": "https://ecf.alnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "alsd",
+        "name": "Southern District of Alabama",
+        "court_type": "district",
+        "ecf_url": "https://ecf.alsd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "akd",
+        "name": "District of Alaska",
+        "court_type": "district",
+        "ecf_url": "https://ecf.akd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "azd",
+        "name": "District of Arizona",
+        "court_type": "district",
+        "ecf_url": "https://ecf.azd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ared",
+        "name": "Eastern District of Arkansas",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ared.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "arwd",
+        "name": "Western District of Arkansas",
+        "court_type": "district",
+        "ecf_url": "https://ecf.arwd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "cacd",
+        "name": "Central District of California",
+        "court_type": "district",
+        "ecf_url": "https://ecf.cacd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "caed",
+        "name": "Eastern District of California",
+        "court_type": "district",
+        "ecf_url": "https://ecf.caed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "cand",
+        "name": "Northern District of California",
+        "court_type": "district",
+        "ecf_url": "https://ecf.cand.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "casd",
+        "name": "Southern District of California",
+        "court_type": "district",
+        "ecf_url": "https://ecf.casd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "cod",
+        "name": "District of Colorado",
+        "court_type": "district",
+        "ecf_url": "https://ecf.cod.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ctd",
+        "name": "District of Connecticut",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ctd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ded",
+        "name": "District of Delaware",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ded.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "dcd",
+        "name": "District of Columbia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.dcd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "flmd",
+        "name": "Middle District of Florida",
+        "court_type": "district",
+        "ecf_url": "https://ecf.flmd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "flnd",
+        "name": "Northern District of Florida",
+        "court_type": "district",
+        "ecf_url": "https://ecf.flnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "flsd",
+        "name": "Southern District of Florida",
+        "court_type": "district",
+        "ecf_url": "https://ecf.flsd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "gamd",
+        "name": "Middle District of Georgia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.gamd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "gand",
+        "name": "Northern District of Georgia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.gand.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "gasd",
+        "name": "Southern District of Georgia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.gasd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "gud",
+        "name": "District of Guam",
+        "court_type": "district",
+        "ecf_url": "https://ecf.gud.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "hid",
+        "name": "District of Hawaii",
+        "court_type": "district",
+        "ecf_url": "https://ecf.hid.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "idd",
+        "name": "District of Idaho",
+        "court_type": "district",
+        "ecf_url": "https://ecf.idd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ilcd",
+        "name": "Central District of Illinois",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ilcd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ilnd",
+        "name": "Northern District of Illinois",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ilnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ilsd",
+        "name": "Southern District of Illinois",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ilsd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "innd",
+        "name": "Northern District of Indiana",
+        "court_type": "district",
+        "ecf_url": "https://ecf.innd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "insd",
+        "name": "Southern District of Indiana",
+        "court_type": "district",
+        "ecf_url": "https://ecf.insd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "iand",
+        "name": "Northern District of Iowa",
+        "court_type": "district",
+        "ecf_url": "https://ecf.iand.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "iasd",
+        "name": "Southern District of Iowa",
+        "court_type": "district",
+        "ecf_url": "https://ecf.iasd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ksd",
+        "name": "District of Kansas",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ksd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "kyed",
+        "name": "Eastern District of Kentucky",
+        "court_type": "district",
+        "ecf_url": "https://ecf.kyed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "kywd",
+        "name": "Western District of Kentucky",
+        "court_type": "district",
+        "ecf_url": "https://ecf.kywd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "laed",
+        "name": "Eastern District of Louisiana",
+        "court_type": "district",
+        "ecf_url": "https://ecf.laed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "lamd",
+        "name": "Middle District of Louisiana",
+        "court_type": "district",
+        "ecf_url": "https://ecf.lamd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "lawd",
+        "name": "Western District of Louisiana",
+        "court_type": "district",
+        "ecf_url": "https://ecf.lawd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "med",
+        "name": "District of Maine",
+        "court_type": "district",
+        "ecf_url": "https://ecf.med.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "mdd",
+        "name": "District of Maryland",
+        "court_type": "district",
+        "ecf_url": "https://ecf.mdd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "mad",
+        "name": "District of Massachusetts",
+        "court_type": "district",
+        "ecf_url": "https://ecf.mad.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "mied",
+        "name": "Eastern District of Michigan",
+        "court_type": "district",
+        "ecf_url": "https://ecf.mied.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "miwd",
+        "name": "Western District of Michigan",
+        "court_type": "district",
+        "ecf_url": "https://ecf.miwd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "mnd",
+        "name": "District of Minnesota",
+        "court_type": "district",
+        "ecf_url": "https://ecf.mnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "msnd",
+        "name": "Northern District of Mississippi",
+        "court_type": "district",
+        "ecf_url": "https://ecf.msnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "mssd",
+        "name": "Southern District of Mississippi",
+        "court_type": "district",
+        "ecf_url": "https://ecf.mssd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "moed",
+        "name": "Eastern District of Missouri",
+        "court_type": "district",
+        "ecf_url": "https://ecf.moed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "mowd",
+        "name": "Western District of Missouri",
+        "court_type": "district",
+        "ecf_url": "https://ecf.mowd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "mtd",
+        "name": "District of Montana",
+        "court_type": "district",
+        "ecf_url": "https://ecf.mtd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ned",
+        "name": "District of Nebraska",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ned.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nvd",
+        "name": "District of Nevada",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nvd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nhd",
+        "name": "District of New Hampshire",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nhd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "njd",
+        "name": "District of New Jersey",
+        "court_type": "district",
+        "ecf_url": "https://ecf.njd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nmd",
+        "name": "District of New Mexico",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nmd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nyed",
+        "name": "Eastern District of New York",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nyed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nynd",
+        "name": "Northern District of New York",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nynd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nysd",
+        "name": "Southern District of New York",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nysd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nywd",
+        "name": "Western District of New York",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nywd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nced",
+        "name": "Eastern District of North Carolina",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nced.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ncmd",
+        "name": "Middle District of North Carolina",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ncmd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ncwd",
+        "name": "Western District of North Carolina",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ncwd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ndd",
+        "name": "District of North Dakota",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ndd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "nmid",
+        "name": "District of Northern Mariana Islands",
+        "court_type": "district",
+        "ecf_url": "https://ecf.nmid.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ohnd",
+        "name": "Northern District of Ohio",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ohnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ohsd",
+        "name": "Southern District of Ohio",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ohsd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "oked",
+        "name": "Eastern District of Oklahoma",
+        "court_type": "district",
+        "ecf_url": "https://ecf.oked.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "oknd",
+        "name": "Northern District of Oklahoma",
+        "court_type": "district",
+        "ecf_url": "https://ecf.oknd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "okwd",
+        "name": "Western District of Oklahoma",
+        "court_type": "district",
+        "ecf_url": "https://ecf.okwd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ord",
+        "name": "District of Oregon",
+        "court_type": "district",
+        "ecf_url": "https://ecf.ord.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "paed",
+        "name": "Eastern District of Pennsylvania",
+        "court_type": "district",
+        "ecf_url": "https://ecf.paed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "pamd",
+        "name": "Middle District of Pennsylvania",
+        "court_type": "district",
+        "ecf_url": "https://ecf.pamd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "pawd",
+        "name": "Western District of Pennsylvania",
+        "court_type": "district",
+        "ecf_url": "https://ecf.pawd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "prd",
+        "name": "District of Puerto Rico",
+        "court_type": "district",
+        "ecf_url": "https://ecf.prd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "rid",
+        "name": "District of Rhode Island",
+        "court_type": "district",
+        "ecf_url": "https://ecf.rid.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "scd",
+        "name": "District of South Carolina",
+        "court_type": "district",
+        "ecf_url": "https://ecf.scd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "sdd",
+        "name": "District of South Dakota",
+        "court_type": "district",
+        "ecf_url": "https://ecf.sdd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "tned",
+        "name": "Eastern District of Tennessee",
+        "court_type": "district",
+        "ecf_url": "https://ecf.tned.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "tnmd",
+        "name": "Middle District of Tennessee",
+        "court_type": "district",
+        "ecf_url": "https://ecf.tnmd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "tnwd",
+        "name": "Western District of Tennessee",
+        "court_type": "district",
+        "ecf_url": "https://ecf.tnwd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "txed",
+        "name": "Eastern District of Texas",
+        "court_type": "district",
+        "ecf_url": "https://ecf.txed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "txnd",
+        "name": "Northern District of Texas",
+        "court_type": "district",
+        "ecf_url": "https://ecf.txnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "txsd",
+        "name": "Southern District of Texas",
+        "court_type": "district",
+        "ecf_url": "https://ecf.txsd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "txwd",
+        "name": "Western District of Texas",
+        "court_type": "district",
+        "ecf_url": "https://ecf.txwd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "utd",
+        "name": "District of Utah",
+        "court_type": "district",
+        "ecf_url": "https://ecf.utd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "vtd",
+        "name": "District of Vermont",
+        "court_type": "district",
+        "ecf_url": "https://ecf.vtd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "vid",
+        "name": "District of the Virgin Islands",
+        "court_type": "district",
+        "ecf_url": "https://ecf.vid.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "vaed",
+        "name": "Eastern District of Virginia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.vaed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "vawd",
+        "name": "Western District of Virginia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.vawd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "waed",
+        "name": "Eastern District of Washington",
+        "court_type": "district",
+        "ecf_url": "https://ecf.waed.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "wawd",
+        "name": "Western District of Washington",
+        "court_type": "district",
+        "ecf_url": "https://ecf.wawd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "wvnd",
+        "name": "Northern District of West Virginia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.wvnd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "wvsd",
+        "name": "Southern District of West Virginia",
+        "court_type": "district",
+        "ecf_url": "https://ecf.wvsd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "wied",
+        "name": "Eastern District of Wisconsin",
+        "court_type": "district",
+        "ecf_url": "https://ecf.wied.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "wiwd",
+        "name": "Western District of Wisconsin",
+        "court_type": "district",
+        "ecf_url": "https://ecf.wiwd.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "wyd",
+        "name": "District of Wyoming",
+        "court_type": "district",
+        "ecf_url": "https://ecf.wyd.uscourts.gov",
+        "quirks": []
+    }
+]

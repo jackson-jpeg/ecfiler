@@ -1,0 +1,93 @@
+[
+    {
+        "court_id": "ca1",
+        "name": "First Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca1.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca2",
+        "name": "Second Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca2.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca3",
+        "name": "Third Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca3.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca4",
+        "name": "Fourth Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca4.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca5",
+        "name": "Fifth Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca5.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca6",
+        "name": "Sixth Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca6.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca7",
+        "name": "Seventh Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca7.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca8",
+        "name": "Eighth Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca8.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca9",
+        "name": "Ninth Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca9.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca10",
+        "name": "Tenth Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca10.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "ca11",
+        "name": "Eleventh Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.ca11.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "cadc",
+        "name": "D.C. Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.cadc.uscourts.gov",
+        "quirks": []
+    },
+    {
+        "court_id": "cafc",
+        "name": "Federal Circuit Court of Appeals",
+        "court_type": "appellate",
+        "ecf_url": "https://ecf.cafc.uscourts.gov",
+        "quirks": []
+    }
+]

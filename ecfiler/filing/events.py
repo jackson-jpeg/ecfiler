@@ -1,0 +1,136 @@
+"""Event code lookup and management.
+
+Event codes are the CM/ECF identifiers for types of filings
+(e.g., "Motion to Dismiss", "Reply Brief", "Notice of Appearance").
+"""
+
+from __future__ import annotations
+
+from ecfiler.filing.models import EventCode
+
+# Common event codes shared across most district courts.
+# Individual courts may have additional or differently-named codes.
+COMMON_DISTRICT_EVENTS: list[dict[str, str]] = [
+    # Motions
+    {"code": "12", "description": "Motion to Dismiss", "category": "Motions"},
+    {"code": "13", "description": "Motion for Summary Judgment", "category": "Motions"},
+    {"code": "14", "description": "Motion to Compel", "category": "Motions"},
+    {"code": "15", "description": "Motion in Limine", "category": "Motions"},
+    {"code": "16", "description": "Motion for Extension of Time", "category": "Motions"},
+    {"code": "17", "description": "Motion to Seal", "category": "Motions"},
+    {"code": "18", "description": "Motion for Leave to File", "category": "Motions"},
+    {"code": "19", "description": "Motion for Reconsideration", "category": "Motions"},
+    {"code": "20", "description": "Motion for Default Judgment", "category": "Motions"},
+    {"code": "21", "description": "Motion to Remand", "category": "Motions"},
+    {"code": "22", "description": "Motion to Stay", "category": "Motions"},
+    {"code": "23", "description": "Motion for Preliminary Injunction", "category": "Motions"},
+    {"code": "24", "description": "Motion for Temporary Restraining Order", "category": "Motions"},
+    {"code": "25", "description": "Motion to Withdraw", "category": "Motions"},
+    # Briefs & Memoranda
+    {"code": "100", "description": "Memorandum of Law in Support", "category": "Briefs"},
+    {"code": "101", "description": "Memorandum of Law in Opposition", "category": "Briefs"},
+    {"code": "102", "description": "Reply Memorandum of Law", "category": "Briefs"},
+    {"code": "103", "description": "Brief in Support", "category": "Briefs"},
+    {"code": "104", "description": "Brief in Opposition", "category": "Briefs"},
+    {"code": "105", "description": "Reply Brief", "category": "Briefs"},
+    {"code": "106", "description": "Amicus Brief", "category": "Briefs"},
+    {"code": "107", "description": "Sur-Reply", "category": "Briefs"},
+    # Notices
+    {"code": "200", "description": "Notice of Appearance", "category": "Notices"},
+    {"code": "201", "description": "Notice of Motion", "category": "Notices"},
+    {"code": "202", "description": "Notice of Appeal", "category": "Notices"},
+    {"code": "203", "description": "Notice of Removal", "category": "Notices"},
+    {"code": "204", "description": "Notice of Settlement", "category": "Notices"},
+    {"code": "205", "description": "Notice of Voluntary Dismissal", "category": "Notices"},
+    # Responses
+    {"code": "300", "description": "Answer", "category": "Responses"},
+    {"code": "301", "description": "Response/Opposition to Motion", "category": "Responses"},
+    {"code": "302", "description": "Reply to Response", "category": "Responses"},
+    {"code": "303", "description": "Objection", "category": "Responses"},
+    # Initiating Documents
+    {"code": "400", "description": "Complaint", "category": "Initiating"},
+    {"code": "401", "description": "Amended Complaint", "category": "Initiating"},
+    {"code": "402", "description": "Petition", "category": "Initiating"},
+    {"code": "403", "description": "Counterclaim", "category": "Initiating"},
+    {"code": "404", "description": "Cross-Claim", "category": "Initiating"},
+    {"code": "405", "description": "Third-Party Complaint", "category": "Initiating"},
+    # Other
+    {"code": "500", "description": "Stipulation", "category": "Other"},
+    {"code": "501", "description": "Proposed Order", "category": "Other"},
+    {"code": "502", "description": "Affidavit/Declaration", "category": "Other"},
+    {"code": "503", "description": "Certificate of Service", "category": "Other"},
+    {"code": "504", "description": "Consent Motion", "category": "Other"},
+    {"code": "505", "description": "Status Report", "category": "Other"},
+    {"code": "506", "description": "Discovery Material", "category": "Other"},
+    {"code": "507", "description": "Exhibit", "category": "Other"},
+    {"code": "508", "description": "Letter/Correspondence", "category": "Other"},
+]
+
+COMMON_BANKRUPTCY_EVENTS: list[dict[str, str]] = [
+    {"code": "B1", "description": "Voluntary Petition", "category": "Petitions"},
+    {"code": "B2", "description": "Involuntary Petition", "category": "Petitions"},
+    {"code": "B3", "description": "Schedules", "category": "Schedules"},
+    {"code": "B4", "description": "Statement of Financial Affairs", "category": "Schedules"},
+    {"code": "B5", "description": "Means Test", "category": "Schedules"},
+    {"code": "B6", "description": "Creditor Matrix", "category": "Creditors"},
+    {"code": "B7", "description": "Proof of Claim", "category": "Claims"},
+    {"code": "B8", "description": "Motion for Relief from Stay", "category": "Motions"},
+    {"code": "B9", "description": "Plan of Reorganization", "category": "Plans"},
+    {"code": "B10", "description": "Disclosure Statement", "category": "Plans"},
+    {"code": "B11", "description": "Objection to Claim", "category": "Claims"},
+    {"code": "B12", "description": "Motion to Dismiss", "category": "Motions"},
+    {"code": "B13", "description": "Motion to Convert", "category": "Motions"},
+    {"code": "B14", "description": "Reaffirmation Agreement", "category": "Other"},
+    {"code": "B15", "description": "Motion for Hardship Discharge", "category": "Motions"},
+]
+
+COMMON_APPELLATE_EVENTS: list[dict[str, str]] = [
+    {"code": "A1", "description": "Opening Brief", "category": "Briefs"},
+    {"code": "A2", "description": "Answering Brief", "category": "Briefs"},
+    {"code": "A3", "description": "Reply Brief", "category": "Briefs"},
+    {"code": "A4", "description": "Petition for Review", "category": "Petitions"},
+    {"code": "A5", "description": "Petition for Rehearing", "category": "Petitions"},
+    {"code": "A6", "description": "Petition for Rehearing En Banc", "category": "Petitions"},
+    {"code": "A7", "description": "Motion for Extension of Time", "category": "Motions"},
+    {"code": "A8", "description": "Motion to Dismiss Appeal", "category": "Motions"},
+    {"code": "A9", "description": "Motion for Stay Pending Appeal", "category": "Motions"},
+    {"code": "A10", "description": "Joint Appendix", "category": "Appendices"},
+    {"code": "A11", "description": "Supplemental Appendix", "category": "Appendices"},
+    {"code": "A12", "description": "Amicus Curiae Brief", "category": "Briefs"},
+    {"code": "A13", "description": "Certificate of Compliance", "category": "Other"},
+    {"code": "A14", "description": "Corporate Disclosure Statement", "category": "Other"},
+    {"code": "A15", "description": "Motion for Oral Argument", "category": "Motions"},
+]
+
+
+def get_common_events(court_type: str) -> list[EventCode]:
+    """Get common event codes for a court type."""
+    if court_type == "bankruptcy":
+        raw = COMMON_BANKRUPTCY_EVENTS
+    elif court_type == "appellate":
+        raw = COMMON_APPELLATE_EVENTS
+    else:
+        raw = COMMON_DISTRICT_EVENTS
+
+    return [
+        EventCode(
+            code=e["code"],
+            description=e["description"],
+            category=e.get("category", ""),
+        )
+        for e in raw
+    ]
+
+
+def search_events(query: str, court_type: str) -> list[EventCode]:
+    """Search event codes by description."""
+    query_lower = query.lower()
+    events = get_common_events(court_type)
+    return [e for e in events if query_lower in e.description.lower()]
+
+
+def get_event_categories(court_type: str) -> list[str]:
+    """Get unique event categories for a court type."""
+    events = get_common_events(court_type)
+    categories = sorted(set(e.category for e in events if e.category))
+    return categories
