@@ -490,13 +490,13 @@ function ecfiler() {
                 this.filing=await r.json();
                 if(this.filing.event_description){try{const c=await fetch('/api/checklist/'+encodeURIComponent(this.filing.event_description));this.filingChecklist=await c.json();}catch(e){}}
                 await new Promise(r=>setTimeout(r,400)); this.step='review';
-            } catch(e) { clearInterval(si); this.errorMessage=e.message||'Analysis failed'; this.step='error'; }
+            } catch(e) { clearInterval(si); this.errorMessage=this._parseError(e); this.step='error'; }
         },
         async confirmFiling() {
             try {
                 const r=await fetch('/api/filing/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court_id:this.filing.court_id,case_number:this.filing.case_number,event_code:this.filing.event_code,event_description:this.filing.event_description,filing_party_name:this.filing.filing_party?.split('(')[0]?.trim()||'',filing_party_role:this.filing.filing_party?.match(/\((\w+)\)/)?.[1]||'',document_path:'',is_response:this.filing.is_response,responds_to_docket:this.filing.responds_to||'',dry_run:false})});
                 this.filingResult=await r.json(); this.step='filed'; this.loadHistory();
-            } catch(e) { this.errorMessage=e.message; this.step='error'; }
+            } catch(e) { this.errorMessage=this._parseError(e); this.step='error'; }
         },
         reset() { this.step='upload';this.filing=null;this.filingResult=null;this.errorMessage='';this.fileName='';this.attachments=[];this.showAttachments=false;this.sealingLevel='public';this.filingChecklist=null; },
         async validateFiles(e) {
@@ -513,6 +513,15 @@ function ecfiler() {
         async deleteDraft(n){try{await fetch('/api/drafts/'+encodeURIComponent(n),{method:'DELETE'});this.loadDrafts();}catch(e){}},
         async checkHealth(){try{const r=await fetch('/api/health');const d=await r.json();this.hasApiKey=d.has_api_key;}catch(e){}},
         async generateCos(){try{const r=await fetch('/api/certificate-of-service',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attorney_name:this.cosAttorney,case_number:this.cosCaseNumber,recipients:this.cosRecipients.filter(r=>r.name||r.attorney_name)})});const d=await r.json();this.cosText=d.text;}catch(e){}},
+        _parseError(e) {
+            if (e instanceof TypeError && e.message === 'Failed to fetch') return 'Cannot reach the server. Check your connection.';
+            const msg = e.message || String(e);
+            try { const d = JSON.parse(msg); return d.detail || msg; } catch(_) {}
+            if (msg.includes('503')) return 'Smart filing requires an API key on the server.';
+            if (msg.includes('400')) return 'Invalid file. Make sure you uploaded a PDF.';
+            if (msg.includes('500')) return 'Server error. Try again.';
+            return msg.length > 200 ? msg.substring(0, 200) + '...' : msg;
+        },
         async downloadCosPdf(){try{const r=await fetch('/api/certificate-of-service/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attorney_name:this.cosAttorney,case_number:this.cosCaseNumber,recipients:this.cosRecipients.filter(r=>r.name||r.attorney_name)})});const b=await r.blob();const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='certificate_of_service.pdf';a.click();URL.revokeObjectURL(u);}catch(e){}}
     };
 }

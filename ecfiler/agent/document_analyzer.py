@@ -25,44 +25,50 @@ logger = get_logger(__name__)
 
 ANALYSIS_PROMPT = """\
 You are a legal document analyst for a federal court e-filing system. \
-Analyze the following document and extract structured filing metadata.
+Your job is to extract structured metadata from a legal document so it \
+can be filed on CM/ECF. Be precise — this data drives automated filing.
 
-Extract ALL of the following from the document text. If a field cannot \
-be determined, set it to null. Be precise — this data will be used to \
-file the document on CM/ECF.
-
-Return a JSON object with these exact keys:
+Return ONLY a JSON object with these keys (null for fields you cannot determine):
 
 {
   "document_type": "motion | brief | notice | complaint | answer | response | reply | stipulation | petition | order | other",
-  "document_type_specific": "e.g., 'Motion to Dismiss', 'Reply Brief in Support of Motion for Summary Judgment'",
-  "case_number": "extracted case number, e.g., '1:24-cv-01234-ABC'",
-  "court_name": "full court name if mentioned, e.g., 'United States District Court for the Southern District of New York'",
-  "court_id": "PACER court ID if determinable, e.g., 'nysd'",
-  "case_caption": "full case caption, e.g., 'SMITH v. JONES CORP'",
-  "filing_party_name": "who is filing this (from signature block or 'Respectfully submitted' section)",
-  "filing_party_role": "plaintiff | defendant | petitioner | respondent | debtor | movant | other",
-  "attorney_name": "attorney name from signature block",
-  "attorney_bar_number": "bar number if present",
-  "attorney_firm": "firm name if present",
-  "is_response": true/false,
-  "responds_to": "description of what this responds to, e.g., 'Defendant's Motion to Dismiss (Dkt. #45)'",
-  "responds_to_docket_number": "docket number being responded to, if mentioned",
+  "document_type_specific": "the exact filing title, e.g., 'Motion to Dismiss for Failure to State a Claim'",
+  "case_number": "exact case number from the caption, e.g., '1:24-cv-01234-ABC' or '24-12345'",
+  "court_name": "full court name, e.g., 'United States District Court for the Southern District of New York'",
+  "court_id": "PACER court ID — use state abbreviation + district: nysd, nyed, cacd, cand, txsd, ilnd, flsd, dcd, etc. For bankruptcy add 'b': nysb, cacb. For appellate: ca2, ca9, cadc.",
+  "case_caption": "full caption, e.g., 'SMITH v. JONES CORPORATION'",
+  "filing_party_name": "the party on whose behalf this is filed — look for 'Respectfully submitted' or 'Dated:' sections",
+  "filing_party_role": "plaintiff | defendant | petitioner | respondent | debtor | creditor | movant | appellant | appellee | other",
+  "attorney_name": "from the /s/ signature block or 'Submitted by' line",
+  "attorney_bar_number": "bar number, bar ID, or attorney ID if present near signature",
+  "attorney_firm": "law firm name if present",
+  "is_response": "true if this is an opposition, response, reply, answer, objection, or sur-reply to another filing. false otherwise.",
+  "responds_to": "if is_response, describe what it responds to, e.g., 'Defendant's Motion to Dismiss (Dkt. 45)'",
+  "responds_to_docket_number": "just the docket number, e.g., '45'. Look for 'Dkt.', 'Docket', 'ECF No.', 'Doc.', 'D.E.'",
   "suggested_event_code_category": "Motions | Briefs | Notices | Responses | Initiating | Other",
-  "references_docket_entries": ["list of docket numbers referenced in the document"],
-  "has_certificate_of_service": true/false,
-  "has_proposed_order": true/false,
-  "has_signature": true/false,
-  "page_count_stated": null or number (if document states its own page/word count),
-  "word_count_stated": null or number,
-  "confidence": "high | medium | low"
+  "references_docket_entries": ["list of docket numbers referenced anywhere in the document"],
+  "has_certificate_of_service": "true if the document contains a Certificate of Service section",
+  "has_proposed_order": "true if a proposed order is embedded or referenced as attached",
+  "has_signature": "true if there is a /s/ signature line or wet signature",
+  "page_count_stated": "number if the document states its own page count (e.g., in a certificate of compliance), else null",
+  "word_count_stated": "number if stated, else null",
+  "confidence": "high | medium | low — based on how much you could extract"
 }
 
-IMPORTANT:
-- Extract the case number exactly as written (including judge initials)
-- For court_id, use the PACER convention: nysd, cacd, txsd, etc.
-- is_response should be true for oppositions, replies, answers, objections, responses
-- Check the last pages carefully for certificate of service and signature blocks
+EXTRACTION TIPS:
+- The case number is usually on the first page in the caption. Federal format: \
+[division]:[year]-[type]-[number]-[judge initials], e.g., 1:24-cv-01234-ABC.
+- Court name is in the header/caption: "UNITED STATES DISTRICT COURT FOR THE ..."
+- Court ID mapping: Southern District of New York = nysd, Central District of California = cacd, \
+Northern District of Illinois = ilnd, District of Delaware = ded, Eastern District of Virginia = vaed.
+- The filing party is whoever submitted the document — look at the end, \
+not the caption (caption lists all parties, signature block shows who filed).
+- For is_response: oppositions ("in opposition to"), replies ("in reply to"), \
+answers to complaints, objections, and sur-replies are all responses.
+- Docket references appear as: "Dkt. 45", "ECF No. 45", "Doc. 45", "D.E. 45", "[Dkt. 45]".
+- Certificate of service is usually the last section. Look for "CERTIFICATE OF SERVICE" \
+or "I hereby certify".
+- The /s/ signature pattern: /s/ [Name] or /s/[Name].
 """
 
 
