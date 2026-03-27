@@ -156,7 +156,31 @@ class FilingWorkflow:
 
         console.print(f"  [dim]Looking up case {case_number}...[/dim]")
 
-        # For now, return basic info. Full PACER lookup comes in browser step.
+        # Try PACER Case Locator API for case details
+        try:
+            from ecfiler.pacer_auth import PacerAuth
+            from ecfiler.pacer_search import PacerSearch
+
+            auth = PacerAuth(self.config.pacer.username)
+            token = auth.get_token()
+            search = PacerSearch(token)
+            result = search.get_case(court_id, case_number)
+            search.close()
+            auth.close()
+
+            if result:
+                console.print(f"  [green]✓[/green] {result.display}")
+                return CaseInfo(
+                    case_number=result.case_number,
+                    title=result.case_title,
+                    judge=result.judge,
+                    status="open" if result.is_open else "closed",
+                )
+            else:
+                console.print("  [yellow]Case not found in PACER — continuing with manual entry[/yellow]")
+        except Exception as e:
+            console.print(f"  [dim]PACER lookup unavailable ({type(e).__name__}) — continuing[/dim]")
+
         return CaseInfo(case_number=case_number)
 
     def _step_select_event(self, court_id: str, court_type: str) -> EventCode:
