@@ -2,6 +2,8 @@
 
 Automated document filing for Federal CM/ECF court systems, powered by Claude API.
 
+**[Try the App](https://ecfiler-production.up.railway.app)** | **[Landing Page](https://ecfiler.vercel.app)** | **[API Docs](https://ecfiler-production.up.railway.app/docs)**
+
 ECFiler is the first open-source tool for filing documents on CM/ECF. It uses Playwright browser automation (CM/ECF has no filing API) with Claude AI for intelligent event code selection, redaction scanning, and filing validation. Every filing requires explicit attorney confirmation before submission.
 
 ## Features
@@ -17,10 +19,14 @@ ECFiler is the first open-source tool for filing documents on CM/ECF. It uses Pl
 
 ## Quick Start
 
-### Option A: Web UI (recommended)
+### Option A: Try it now (hosted)
+
+Visit **https://ecfiler-production.up.railway.app** — drop a PDF and go. No install needed.
+
+### Option B: Self-host
 
 ```bash
-git clone <repo-url> && cd ecfiler
+git clone https://github.com/jackson-jpeg/ecfiler.git && cd ecfiler
 export ANTHROPIC_API_KEY=sk-ant-...
 
 # With Docker
@@ -32,7 +38,7 @@ pip install -e ".[web,dev]"
 ecfiler serve
 ```
 
-Open http://localhost:8000 — drop a PDF and go.
+Open http://localhost:8000.
 
 ### Option B: Smart CLI
 
