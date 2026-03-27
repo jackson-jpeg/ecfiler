@@ -617,5 +617,17 @@ def batch_validate(pdf_paths: tuple[str, ...], redaction: bool) -> None:
     console.print(f"\n  {passed} passed, {failed} failed out of {len(pdf_paths)} files")
 
 
+@main.command("mcp")
+def run_mcp_server() -> None:
+    """Start the MCP server for AI tool integration.
+
+    Runs on stdio. Configure in Claude Code settings:
+    {"mcpServers": {"ecfiler": {"command": "python", "args": ["-m", "ecfiler.mcp_server"]}}}
+    """
+    from ecfiler.mcp_server import main as mcp_main
+
+    mcp_main()
+
+
 if __name__ == "__main__":
     main()
