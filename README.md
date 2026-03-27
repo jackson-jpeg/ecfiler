@@ -6,34 +6,47 @@ ECFiler is the first open-source tool for filing documents on CM/ECF. It uses Pl
 
 ## Features
 
+- **Smart Filing** — drop a PDF, AI extracts case, court, party, event type. Zero form-filling.
 - **150 federal courts** — 94 district, 43 bankruptcy, 13 appellate
 - **7 safety gates** — PDF validation, redaction scan, event code verification, completeness check, attorney CONFIRM, final submit watchdog, receipt capture
-- **Claude AI** — plain English to event codes, Rule 5.2 redaction scanning, filing package validation
-- **Dry-run mode** — full workflow without submitting
+- **Web UI + CLI + API** — three interfaces, same engine
+- **Claude AI** — document analysis, event code matching, redaction scanning, filing validation
 - **Filing history** — SQLite audit log of all filings
 
 ## Quick Start
 
+### Option A: Web UI (recommended)
+
 ```bash
-# Clone and install
-git clone <repo-url>
-cd ecfiler
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-
-# Install Playwright browsers
-playwright install chromium
-
-# Set your Anthropic API key
+git clone <repo-url> && cd ecfiler
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# Run ECFiler
-python -m ecfiler
+# With Docker
+docker compose up
 
-# Or with options
-python -m ecfiler --dry-run          # Test without filing
-python -m ecfiler --court nysd       # Override default court
+# Or without Docker
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[web,dev]"
+ecfiler serve
+```
+
+Open http://localhost:8000 — drop a PDF and go.
+
+### Option B: Smart CLI
+
+```bash
+# One command — AI reads the document, you just confirm
+ecfiler smart ./motion_to_dismiss.pdf
+```
+
+### Option C: Interactive TUI
+
+```bash
+ecfiler                              # Interactive menu
+ecfiler --dry-run                    # Test without filing
+ecfiler courts --search california   # Find courts
+ecfiler validate brief.pdf           # Check a PDF
+ecfiler demo                         # Demo walkthrough
 ```
 
 ## Setup

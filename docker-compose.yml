@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  ecfiler:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ecfiler-data:/root/.ecfiler
+    restart: unless-stopped
+
+volumes:
+  ecfiler-data:

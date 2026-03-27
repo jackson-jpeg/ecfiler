@@ -15,8 +15,11 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 app = FastAPI(
     title="ECFiler API",
@@ -31,6 +34,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", include_in_schema=False)
+def serve_ui() -> FileResponse:
+    """Serve the ECFiler web UI."""
+    return FileResponse(STATIC_DIR / "app.html")
 
 
 # --- Models ---

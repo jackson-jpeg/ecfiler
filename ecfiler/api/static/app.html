@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECFiler — Smart Filing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#1B2A4A',
+                        gold: '#C4952A',
+                        court: { green: '#2D7D46', red: '#B22234' },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+        .pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+        .drop-zone.dragover { border-color: #C4952A; background: rgba(196,149,42,0.05); }
+        [x-cloak] { display: none !important; }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen" x-data="ecfiler()" x-cloak>
+
+<!-- Header -->
+<header class="bg-navy text-white px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+        <h1 class="text-xl font-bold tracking-wide">EC<span class="text-gold">Filer</span></h1>
+        <span class="text-gray-400 text-sm hidden sm:inline">Smart Filing for Federal Courts</span>
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+        <button @click="view = 'file'" :class="view === 'file' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">File</button>
+        <button @click="view = 'courts'" :class="view === 'courts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Courts</button>
+        <button @click="view = 'history'" :class="view === 'history' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">History</button>
+        <a href="/docs" target="_blank" class="text-gray-400 hover:text-white transition">API</a>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="max-w-4xl mx-auto px-4 py-8">
+
+    <!-- ===== FILE VIEW ===== -->
+    <template x-if="view === 'file'">
+        <div>
+            <!-- Step 0: Drop Zone -->
+            <div x-show="step === 'upload'" class="transition-all">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-semibold text-navy mb-2">Drop a document. We'll handle the rest.</h2>
+                    <p class="text-gray-500">ECFiler reads your PDF, extracts the filing details, and prepares everything for one-click submission.</p>
+                </div>
+
+                <div
+                    class="drop-zone border-2 border-dashed border-gray-300 rounded-xl p-16 text-center cursor-pointer hover:border-gold transition-colors"
+                    @click="$refs.fileInput.click()"
+                    @dragover.prevent="$event.currentTarget.classList.add('dragover')"
+                    @dragleave.prevent="$event.currentTarget.classList.remove('dragover')"
+                    @drop.prevent="handleDrop($event)"
+                >
+                    <div class="text-5xl mb-4 text-gray-300">&#128196;</div>
+                    <p class="text-lg text-gray-600 mb-1">Drop your PDF here</p>
+                    <p class="text-sm text-gray-400">or click to browse</p>
+                    <input type="file" x-ref="fileInput" accept=".pdf" class="hidden" @change="handleFileSelect($event)">
+                </div>
+
+                <div class="mt-6 grid grid-cols-3 gap-4 text-center text-sm text-gray-500">
+                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                        <div class="font-semibold text-navy">150</div>
+                        <div>Federal Courts</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                        <div class="font-semibold text-navy">7</div>
+                        <div>Safety Gates</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                        <div class="font-semibold text-navy">AI</div>
+                        <div>Auto-Extraction</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Analyzing -->
+            <div x-show="step === 'analyzing'" class="text-center py-16 transition-all">
+                <div class="relative inline-block mb-6">
+                    <div class="w-16 h-16 rounded-full bg-gold/20 pulse-ring absolute inset-0"></div>
+                    <div class="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center relative">
+                        <svg class="animate-spin h-8 w-8 text-gold" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-xl font-semibold text-navy mb-2">Analyzing your document...</h3>
+                <p class="text-gray-500 mb-4" x-text="fileName"></p>
+
+                <div class="max-w-md mx-auto space-y-2 text-left text-sm">
+                    <template x-for="(s, i) in analysisSteps" :key="i">
+                        <div class="flex items-center gap-2" :class="i <= currentAnalysisStep ? 'text-navy' : 'text-gray-300'">
+                            <span x-show="i < currentAnalysisStep" class="text-court-green">&#10003;</span>
+                            <span x-show="i === currentAnalysisStep" class="text-gold animate-pulse">&#9679;</span>
+                            <span x-show="i > currentAnalysisStep" class="text-gray-300">&#9675;</span>
+                            <span x-text="s"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Step 2: Review -->
+            <div x-show="step === 'review'" class="transition-all">
+                <template x-if="filing">
+                    <div>
+                        <!-- Completeness bar -->
+                        <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-600">AI Extraction Completeness</span>
+                                <span class="text-sm font-bold" :class="filing.completeness_score >= 80 ? 'text-court-green' : filing.completeness_score >= 50 ? 'text-gold' : 'text-court-red'" x-text="filing.completeness_score + '%'"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all duration-1000" :class="filing.completeness_score >= 80 ? 'bg-court-green' : filing.completeness_score >= 50 ? 'bg-gold' : 'bg-court-red'" :style="'width:' + filing.completeness_score + '%'"></div>
+                            </div>
+                        </div>
+
+                        <!-- Filing details -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+                            <div class="bg-navy text-white px-4 py-2 text-sm font-medium">Filing Details — AI Extracted</div>
+                            <div class="divide-y">
+                                <template x-for="field in filingFields" :key="field.label">
+                                    <div class="flex px-4 py-3 text-sm">
+                                        <div class="w-40 font-medium text-gray-500" x-text="field.label"></div>
+                                        <div class="flex-1 flex items-center gap-2">
+                                            <span x-show="field.value" class="text-court-green text-xs">&#10003;</span>
+                                            <span x-show="!field.value" class="text-court-red text-xs">?</span>
+                                            <span :class="field.value ? 'text-navy' : 'text-gray-400 italic'" x-text="field.value || 'Not detected — click to enter'"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Validation -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+                            <div class="bg-navy text-white px-4 py-2 text-sm font-medium">Validation</div>
+                            <div class="p-4 space-y-2 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <span :class="filing.pdf_valid ? 'text-court-green' : 'text-court-red'" x-text="filing.pdf_valid ? '&#10003;' : '&#10007;'"></span>
+                                    <span>PDF Valid</span>
+                                    <span class="text-gray-400" x-text="filing.pdf_size_mb.toFixed(1) + 'MB, ' + filing.pdf_pages + ' pages'"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span :class="filing.redaction_issues === 0 ? 'text-court-green' : 'text-gold'" x-text="filing.redaction_issues === 0 ? '&#10003;' : '&#9888;'"></span>
+                                    <span x-text="filing.redaction_issues === 0 ? 'No redaction issues' : filing.redaction_issues + ' potential redaction issue(s)'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Warnings -->
+                        <template x-if="filing.warnings.length > 0">
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                                <div class="text-sm font-medium text-yellow-800 mb-2">&#9888; Warnings</div>
+                                <template x-for="w in filing.warnings" :key="w">
+                                    <div class="text-sm text-yellow-700 py-0.5" x-text="w"></div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Confirm / Cancel -->
+                        <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 text-center">
+                            <div class="text-lg font-bold text-court-red mb-1">Attorney Approval Required</div>
+                            <p class="text-sm text-gray-600 mb-4">Review all details above. This will file on CM/ECF.</p>
+                            <div class="flex justify-center gap-3">
+                                <button
+                                    @click="confirmFiling()"
+                                    :disabled="!filing.ready"
+                                    class="px-8 py-2.5 bg-navy text-white font-semibold rounded-lg hover:bg-navy/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                                >
+                                    CONFIRM &amp; FILE
+                                </button>
+                                <button @click="reset()" class="px-6 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                                    Cancel
+                                </button>
+                            </div>
+                            <p x-show="!filing.ready" class="text-xs text-court-red mt-2">Missing required fields — complete all fields before filing</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Step 3: Filed -->
+            <div x-show="step === 'filed'" class="text-center py-16 transition-all">
+                <div class="text-5xl mb-4">&#9989;</div>
+                <h3 class="text-2xl font-semibold text-court-green mb-2">Filed Successfully</h3>
+                <p class="text-gray-500 mb-6">Your document has been submitted to CM/ECF.</p>
+                <button @click="reset()" class="px-6 py-2.5 bg-navy text-white rounded-lg hover:bg-navy/90 transition">
+                    File Another Document
+                </button>
+            </div>
+
+            <!-- Error -->
+            <div x-show="step === 'error'" class="text-center py-16 transition-all">
+                <div class="text-5xl mb-4">&#10060;</div>
+                <h3 class="text-xl font-semibold text-court-red mb-2">Analysis Failed</h3>
+                <p class="text-gray-500 mb-2" x-text="errorMessage"></p>
+                <button @click="reset()" class="px-6 py-2.5 bg-navy text-white rounded-lg hover:bg-navy/90 transition mt-4">
+                    Try Again
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ===== COURTS VIEW ===== -->
+    <template x-if="view === 'courts'">
+        <div>
+            <h2 class="text-xl font-semibold text-navy mb-4">Federal Courts</h2>
+            <div class="flex gap-2 mb-4">
+                <input type="text" x-model="courtSearch" @input.debounce.300ms="searchCourts()" placeholder="Search by name or ID..." class="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:border-gold outline-none">
+                <select x-model="courtTypeFilter" @change="searchCourts()" class="px-3 py-2 border rounded-lg text-sm bg-white">
+                    <option value="">All Types</option>
+                    <option value="district">District</option>
+                    <option value="bankruptcy">Bankruptcy</option>
+                    <option value="appellate">Appellate</option>
+                </select>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 text-left">
+                        <tr>
+                            <th class="px-4 py-2 font-medium text-gray-500">ID</th>
+                            <th class="px-4 py-2 font-medium text-gray-500">Name</th>
+                            <th class="px-4 py-2 font-medium text-gray-500">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <template x-for="court in courts" :key="court.court_id">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 font-mono text-navy font-medium" x-text="court.court_id"></td>
+                                <td class="px-4 py-2" x-text="court.name"></td>
+                                <td class="px-4 py-2">
+                                    <span class="px-2 py-0.5 rounded-full text-xs" :class="{
+                                        'bg-blue-100 text-blue-700': court.court_type === 'district',
+                                        'bg-purple-100 text-purple-700': court.court_type === 'bankruptcy',
+                                        'bg-amber-100 text-amber-700': court.court_type === 'appellate',
+                                    }" x-text="court.court_type"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <div x-show="courts.length === 0" class="p-8 text-center text-gray-400">No courts found</div>
+            </div>
+        </div>
+    </template>
+
+    <!-- ===== HISTORY VIEW ===== -->
+    <template x-if="view === 'history'">
+        <div>
+            <h2 class="text-xl font-semibold text-navy mb-4">Filing History</h2>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <template x-if="history.length > 0">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-left">
+                            <tr>
+                                <th class="px-4 py-2 font-medium text-gray-500">Date</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Court</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Case</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Event</th>
+                                <th class="px-4 py-2 font-medium text-gray-500">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            <template x-for="h in history" :key="h.id">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-2 text-gray-500" x-text="h.filed_at?.substring(0,10)"></td>
+                                    <td class="px-4 py-2 font-mono" x-text="h.court_id"></td>
+                                    <td class="px-4 py-2" x-text="h.case_number"></td>
+                                    <td class="px-4 py-2" x-text="h.event_description?.substring(0,40)"></td>
+                                    <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700" x-text="h.status"></span></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+                <div x-show="history.length === 0" class="p-12 text-center text-gray-400">
+                    <div class="text-3xl mb-2">&#128203;</div>
+                    <p>No filings yet. Drop a document to get started.</p>
+                </div>
+            </div>
+        </div>
+    </template>
+
+</main>
+
+<!-- Footer -->
+<footer class="text-center text-xs text-gray-400 py-6 border-t mt-12">
+    ECFiler is a mechanical filing tool, not a legal advisor. The attorney is responsible for all filings.
+</footer>
+
+<script>
+function ecfiler() {
+    return {
+        view: 'file',
+        step: 'upload',
+        fileName: '',
+        filing: null,
+        errorMessage: '',
+        courts: [],
+        courtSearch: '',
+        courtTypeFilter: '',
+        history: [],
+        currentAnalysisStep: 0,
+        analysisSteps: [
+            'Validating PDF format and structure',
+            'Extracting document text',
+            'AI analyzing case, court, and parties',
+            'Scanning for redaction issues',
+            'Matching CM/ECF event code',
+            'Preparing filing preview',
+        ],
+
+        get filingFields() {
+            if (!this.filing) return [];
+            return [
+                { label: 'Document Type', value: this.filing.document_type },
+                { label: 'Case Number', value: this.filing.case_number },
+                { label: 'Court', value: this.filing.court_id },
+                { label: 'Caption', value: this.filing.case_caption },
+                { label: 'Event Code', value: this.filing.event_description ? `${this.filing.event_description} (${this.filing.event_code})` : '' },
+                { label: 'Filing Party', value: this.filing.filing_party },
+                { label: 'Response To', value: this.filing.is_response ? this.filing.responds_to : null },
+                { label: 'Confidence', value: this.filing.confidence },
+            ].filter(f => f.value !== null);
+        },
+
+        init() {
+            this.searchCourts();
+            this.loadHistory();
+        },
+
+        handleDrop(event) {
+            event.currentTarget.classList.remove('dragover');
+            const file = event.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                this.analyzeFile(file);
+            }
+        },
+
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) this.analyzeFile(file);
+        },
+
+        async analyzeFile(file) {
+            this.fileName = file.name;
+            this.step = 'analyzing';
+            this.currentAnalysisStep = 0;
+
+            // Animate steps
+            const stepInterval = setInterval(() => {
+                if (this.currentAnalysisStep < this.analysisSteps.length - 1) {
+                    this.currentAnalysisStep++;
+                }
+            }, 1500);
+
+            try {
+                const formData = new FormData();
+                formData.append('document', file);
+
+                const response = await fetch('/api/file', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                clearInterval(stepInterval);
+                this.currentAnalysisStep = this.analysisSteps.length;
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                this.filing = data;
+
+                // Small delay for the final step animation
+                await new Promise(r => setTimeout(r, 500));
+                this.step = 'review';
+
+            } catch (err) {
+                clearInterval(stepInterval);
+                this.errorMessage = err.message || 'Failed to analyze document';
+                this.step = 'error';
+            }
+        },
+
+        confirmFiling() {
+            // In production, this would call POST /api/filing/submit
+            this.step = 'filed';
+            this.loadHistory();
+        },
+
+        reset() {
+            this.step = 'upload';
+            this.filing = null;
+            this.errorMessage = '';
+            this.fileName = '';
+            this.currentAnalysisStep = 0;
+        },
+
+        async searchCourts() {
+            const params = new URLSearchParams();
+            if (this.courtSearch) params.set('search', this.courtSearch);
+            if (this.courtTypeFilter) params.set('court_type', this.courtTypeFilter);
+            try {
+                const res = await fetch('/api/courts?' + params);
+                this.courts = await res.json();
+            } catch (e) { console.error(e); }
+        },
+
+        async loadHistory() {
+            try {
+                const res = await fetch('/api/history');
+                this.history = await res.json();
+            } catch (e) { console.error(e); }
+        },
+    };
+}
+</script>
+</body>
+</html>

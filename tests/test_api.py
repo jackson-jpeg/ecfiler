@@ -36,6 +36,22 @@ def sample_pdf(tmp_path: Path) -> Path:
     return pdf_path
 
 
+class TestUIServing:
+    def test_root_serves_ui(self, client: TestClient) -> None:
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "ECFiler" in response.text
+        assert "Smart Filing" in response.text
+
+    def test_ui_has_drop_zone(self, client: TestClient) -> None:
+        response = client.get("/")
+        assert "Drop your PDF here" in response.text
+
+    def test_ui_has_alpine(self, client: TestClient) -> None:
+        response = client.get("/")
+        assert "alpinejs" in response.text
+
+
 class TestHealthEndpoint:
     def test_health(self, client: TestClient) -> None:
         response = client.get("/api/health")
