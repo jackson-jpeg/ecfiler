@@ -209,6 +209,37 @@ class BaseCourt:
             page.select_option(selector, value=fee_status)
             logger.info("Selected fee status: %s", fee_status)
 
+    def select_sealing_level(self, page: Page, level: str) -> None:
+        """Select document sealing/restriction level.
+
+        Args:
+            level: "public", "sealed", "restricted", "ex_parte"
+        """
+        if level == "public":
+            return  # Default, no action needed
+
+        # Look for sealing-related controls
+        for selector in [
+            "select[name*='seal']",
+            "select[name*='restrict']",
+            "input[type='checkbox'][name*='seal']",
+            "#sealDocument",
+        ]:
+            el = page.query_selector(selector)
+            if el:
+                tag = el.evaluate("el => el.tagName")
+                if tag == "SELECT":
+                    page.select_option(selector, label=level.replace("_", " ").title())
+                elif tag == "INPUT":
+                    el.check()
+                logger.info("Set sealing level: %s", level)
+                return
+
+        logger.warning(
+            "Sealing controls not found — document will be filed as public. "
+            "For sealed filings, verify the court's sealing procedure."
+        )
+
     def select_related_entry(self, page: Page, docket_number: str) -> None:
         """Select a related docket entry.
 

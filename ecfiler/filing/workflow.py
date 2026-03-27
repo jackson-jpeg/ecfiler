@@ -92,6 +92,9 @@ class FilingWorkflow:
                 status=FilingStatus.DOCUMENTS_VALIDATED,
             )
 
+            # Step 6b: Pre-flight checks (catch problems before browser starts)
+            self._step_preflight()
+
             # Step 7: Claude validation (Safety Gate 3 & 4)
             self._step_ai_validation()
 
@@ -653,6 +656,28 @@ class FilingWorkflow:
             default=False,
         ):
             raise KeyboardInterrupt("Case opening data rejected by attorney")
+
+    def _step_preflight(self) -> None:
+        """Step 6b: Run pre-flight checks before browser automation."""
+        if not self.filing:
+            return
+
+        from ecfiler.filing.preflight import run_preflight
+
+        console.print("\n  [dim]Running pre-flight checks...[/dim]")
+        result = run_preflight(self.filing)
+
+        for err in result.errors:
+            console.print(f"  [red]✗ {err}[/red]")
+        for warn in result.warnings:
+            console.print(f"  [yellow]⚠ {warn}[/yellow]")
+
+        if result.passed:
+            console.print(f"  [green]✓[/green] Pre-flight checks passed")
+        else:
+            console.print(f"\n  [red]Pre-flight checks FAILED ({len(result.errors)} errors)[/red]")
+            if not Confirm.ask("  Continue anyway?", default=False):
+                raise KeyboardInterrupt("Pre-flight checks failed")
 
     def _step_ai_validation(self) -> None:
         """Step 7: Claude validates the filing package (Safety Gates 3 & 4)."""

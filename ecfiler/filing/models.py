@@ -42,6 +42,15 @@ class DocumentValidation(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class SealingLevel(str, Enum):
+    """Document sealing/restriction level for CM/ECF."""
+
+    PUBLIC = "public"  # Normal public filing
+    SEALED = "sealed"  # Filed under seal — not publicly accessible
+    RESTRICTED = "restricted"  # Restricted access (e.g., Social Security cases)
+    EX_PARTE = "ex_parte"  # Ex parte submission — opposing party not served
+
+
 class Document(BaseModel):
     """A document to be filed."""
 
@@ -49,6 +58,9 @@ class Document(BaseModel):
     description: str = ""
     is_main: bool = True  # Main document vs attachment
     validation: DocumentValidation | None = None
+    sealing: SealingLevel = SealingLevel.PUBLIC
+    is_amended: bool = False  # True if this amends a prior filing
+    amends_docket_number: str = ""  # Docket # of the document being amended
 
     @property
     def filename(self) -> str:
@@ -57,6 +69,15 @@ class Document(BaseModel):
     @property
     def is_valid(self) -> bool:
         return self.validation is not None and self.validation.valid
+
+    @property
+    def is_sealed(self) -> bool:
+        return self.sealing in (SealingLevel.SEALED, SealingLevel.RESTRICTED)
+
+    @property
+    def requires_leave(self) -> bool:
+        """Whether filing this document requires leave of court."""
+        return self.sealing == SealingLevel.SEALED
 
 
 class CaseInfo(BaseModel):
