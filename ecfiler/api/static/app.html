@@ -39,6 +39,7 @@
         <button @click="view = 'drafts'; loadDrafts()" :class="view === 'drafts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">
             Drafts <span x-show="draftCount > 0" class="bg-gold text-navy text-xs px-1 rounded-full" x-text="draftCount"></span>
         </button>
+        <button @click="view = 'validate'" :class="view === 'validate' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Validate</button>
         <button @click="view = 'cos'" :class="view === 'cos' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Cert of Service</button>
         <button @click="view = 'courts'" :class="view === 'courts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Courts</button>
         <button @click="view = 'history'" :class="view === 'history' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">History</button>
@@ -382,6 +383,70 @@
         </div>
     </template>
 
+    <!-- ===== VALIDATE VIEW ===== -->
+    <template x-if="view === 'validate'">
+        <div>
+            <h2 class="text-xl font-semibold text-navy mb-2">PDF Validator</h2>
+            <p class="text-sm text-gray-500 mb-4">Check if your PDF meets CM/ECF filing requirements. Works offline — no API key needed.</p>
+
+            <div
+                class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-gold transition-colors mb-4"
+                @click="$refs.valInput.click()"
+                @dragover.prevent="$event.currentTarget.classList.add('dragover')"
+                @dragleave.prevent="$event.currentTarget.classList.remove('dragover')"
+                @drop.prevent="validateDrop($event)"
+            >
+                <p class="text-gray-600">Drop PDF(s) here or click to browse</p>
+                <p class="text-xs text-gray-400 mt-1">Checks: valid PDF, file size, searchable text, encryption, form fields, redaction</p>
+                <input type="file" x-ref="valInput" accept=".pdf" multiple class="hidden" @change="validateFiles($event)">
+            </div>
+
+            <!-- Validation results -->
+            <div x-show="valResults.length > 0" class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="bg-navy text-white px-4 py-2 text-sm font-medium flex justify-between">
+                    <span>Validation Results</span>
+                    <span x-text="valPassCount + '/' + valResults.length + ' passed'"></span>
+                </div>
+                <template x-for="(r, i) in valResults" :key="i">
+                    <div class="border-b last:border-0 p-4">
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-2">
+                                <span :class="r.valid ? 'text-court-green' : 'text-court-red'" x-text="r.valid ? '&#10003;' : '&#10007;'" class="font-bold"></span>
+                                <span class="font-medium text-sm" x-text="r.name"></span>
+                            </div>
+                            <span class="text-xs text-gray-400" x-text="r.size + ', ' + r.pages + ' pages'"></span>
+                        </div>
+                        <template x-for="e in r.errors" :key="e">
+                            <div class="text-xs text-court-red ml-6" x-text="e"></div>
+                        </template>
+                        <template x-for="w in r.warnings" :key="w">
+                            <div class="text-xs text-amber-600 ml-6" x-text="w"></div>
+                        </template>
+                        <!-- Redaction issues -->
+                        <template x-if="r.redaction && r.redaction.issues.length > 0">
+                            <div class="ml-6 mt-1">
+                                <template x-for="issue in r.redaction.issues" :key="issue.text">
+                                    <div class="text-xs text-amber-600">
+                                        &#9888; <span x-text="issue.type"></span>: <span x-text="issue.text"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <div x-show="r.valid && (!r.redaction || r.redaction.issues.length === 0)" class="text-xs text-court-green ml-6">Ready for CM/ECF</div>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="valLoading" class="text-center py-8 text-gray-400">
+                <svg class="animate-spin h-6 w-6 mx-auto mb-2 text-gold" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Validating...
+            </div>
+        </div>
+    </template>
+
     <!-- ===== CERTIFICATE OF SERVICE VIEW ===== -->
     <template x-if="view === 'cos'">
         <div>
@@ -464,6 +529,9 @@ function ecfiler() {
         savedDrafts: [],
         draftCount: 0,
         hasApiKey: true,
+        valResults: [],
+        valPassCount: 0,
+        valLoading: false,
         currentAnalysisStep: 0,
         analysisSteps: [
             'Validating PDF format and structure',
@@ -512,6 +580,53 @@ function ecfiler() {
             for (const file of event.target.files) {
                 this.attachments.push(file);
             }
+        },
+
+        validateDrop(event) {
+            event.currentTarget.classList.remove('dragover');
+            this.validateFiles({target: {files: event.dataTransfer.files}});
+        },
+
+        async validateFiles(event) {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+            this.valResults = [];
+            this.valLoading = true;
+            this.valPassCount = 0;
+
+            for (const file of files) {
+                try {
+                    // Validate
+                    const valForm = new FormData();
+                    valForm.append('document', file);
+                    const valRes = await fetch('/api/validate', {method: 'POST', body: valForm});
+                    const val = await valRes.json();
+
+                    // Redaction scan
+                    let redaction = null;
+                    if (val.valid) {
+                        const redForm = new FormData();
+                        redForm.append('document', file);
+                        const redRes = await fetch('/api/redaction-scan', {method: 'POST', body: redForm});
+                        redaction = await redRes.json();
+                    }
+
+                    const result = {
+                        name: file.name,
+                        valid: val.valid,
+                        size: val.file_size_mb?.toFixed(1) + 'MB',
+                        pages: val.page_count,
+                        errors: val.errors || [],
+                        warnings: val.warnings || [],
+                        redaction: redaction,
+                    };
+                    this.valResults.push(result);
+                    if (result.valid) this.valPassCount++;
+                } catch (e) {
+                    this.valResults.push({name: file.name, valid: false, size: '?', pages: 0, errors: ['Upload failed: ' + e.message], warnings: [], redaction: null});
+                }
+            }
+            this.valLoading = false;
         },
 
         async analyzeFile(file) {
