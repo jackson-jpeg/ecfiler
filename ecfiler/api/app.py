@@ -576,6 +576,33 @@ async def generate_cos_pdf(request: CertificateRequest) -> FileResponse:
         )
 
 
+@app.post("/api/filing/browser-stream")
+async def stream_browser_view(request: FilingSubmitRequest) -> StreamingResponse:
+    """Stream live browser screenshots as ECFiler navigates CM/ECF.
+
+    Returns SSE events with base64 screenshots at each step:
+    - event: browser — step with screenshot
+    - event: browser_done — filing complete or failed
+
+    Uses mock CM/ECF server for demo. Set mock=false in request for real filing.
+    """
+    from ecfiler.api.browser_stream import stream_browser_filing
+
+    return StreamingResponse(
+        stream_browser_filing(
+            court_id=request.court_id,
+            case_number=request.case_number,
+            event_code=request.event_code,
+            event_description=request.event_description,
+            filing_party=request.filing_party_name,
+            document_path=request.document_path,
+            mock=True,  # Always mock for now — real CM/ECF needs PACER auth
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.post("/api/filing/submit", response_model=FilingSubmitResponse)
 def submit_filing(request: FilingSubmitRequest) -> FilingSubmitResponse:
     """Submit a prepared filing to CM/ECF.

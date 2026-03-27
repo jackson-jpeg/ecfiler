@@ -261,7 +261,64 @@ footer a { color: var(--text-3); }
         </template>
     </div>
 
-    <!-- Filed -->
+    <!-- Browser View — live screenshots of CM/ECF -->
+    <div x-show="step==='browser'" class="fade-in" style="max-width:720px;margin:0 auto">
+        <div class="ai-msg" style="margin-bottom:16px">
+            <div class="ai-avatar">E</div>
+            <div class="ai-text">Filing on CM/ECF. Watch each step below.</div>
+        </div>
+
+        <!-- Browser window frame -->
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <div style="display:flex;gap:5px">
+                        <div style="width:10px;height:10px;border-radius:50%;background:#ff5f57"></div>
+                        <div style="width:10px;height:10px;border-radius:50%;background:#febc2e"></div>
+                        <div style="width:10px;height:10px;border-radius:50%;background:#28c840"></div>
+                    </div>
+                    <span class="mono" style="font-size:11px" x-text="'CM/ECF — ' + (filing?.court_id||'').toUpperCase()"></span>
+                </div>
+                <span x-show="browserStep?.status==='running'" class="pulse" style="font-size:11px;color:var(--accent)">Live</span>
+            </div>
+
+            <!-- Screenshot display -->
+            <div style="background:#f0f0f0;min-height:300px;display:flex;align-items:center;justify-content:center;position:relative">
+                <img x-show="browserScreenshot" :src="'data:image/png;base64,'+browserScreenshot" style="width:100%;display:block" />
+                <div x-show="!browserScreenshot" style="color:var(--text-4);font-size:14px">Connecting to CM/ECF...</div>
+            </div>
+        </div>
+
+        <!-- Step log -->
+        <div class="card">
+            <div class="card-header">Filing Progress</div>
+            <div class="card-body" style="padding:12px 20px">
+                <template x-for="s in browserSteps" :key="s.step">
+                    <div class="step fade-in" style="padding:8px 0">
+                        <div class="step-dot" :class="{'done':s.status==='done','run':s.status==='running'}">
+                            <span x-show="s.status==='done'">&#10003;</span>
+                            <span x-show="s.status==='running'" class="pulse">&bull;</span>
+                        </div>
+                        <div>
+                            <div class="step-label" style="font-size:13px" x-text="s.step"></div>
+                            <div class="step-detail" x-text="s.description"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Done message -->
+        <div x-show="browserDone" class="ai-msg" style="margin-top:16px">
+            <div class="ai-avatar">E</div>
+            <div class="ai-text" x-text="browserDoneMsg"></div>
+        </div>
+        <div x-show="browserDone" style="margin-left:40px;margin-top:12px">
+            <button class="btn btn-dark" @click="reset()">Done</button>
+        </div>
+    </div>
+
+    <!-- Filed (non-browser path) -->
     <div x-show="step==='filed'" class="fade-in" style="max-width:480px;margin:0 auto;text-align:center">
         <div style="width:56px;height:56px;background:var(--ok-bg);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
             <svg width="28" height="28" fill="none" stroke="var(--ok)" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -402,6 +459,7 @@ footer a { color: var(--text-3); }
 <script>
 function app(){return{
 view:'file',step:'upload',fileName:'',filing:null,filingResult:null,errorMsg:'',liveSteps:[],
+browserSteps:[],browserScreenshot:'',browserStep:null,browserDone:false,browserDoneMsg:'',
 courts:[],cSearch:'',cType:'',hist:[],drafts:[],
 valR:[],valOk:0,
 cosAtty:'',cosCase:'',cosR:[{name:'',attorney_name:'',method:'CM/ECF'}],cosTxt:'',
@@ -409,7 +467,7 @@ tabs:[{id:'file',label:'File'},{id:'validate',label:'Validate'},{id:'cos',label:
 get fields(){if(!this.filing)return[];return[['Type',this.filing.document_type],['Case',this.filing.case_number],['Court',this.filing.court_id],['Caption',this.filing.case_caption],['Event',this.filing.event_description?this.filing.event_description+' ('+this.filing.event_code+')':''],['Party',this.filing.filing_party]].filter(f=>f[1])},
 init(){this.loadCourts();this.loadHist();fetch('/api/drafts').then(r=>r.json()).then(d=>{this.drafts=d}).catch(()=>{});},
 go(id){this.view=id;if(id==='courts')this.loadCourts();if(id==='history')this.loadHist();if(id==='drafts')fetch('/api/drafts').then(r=>r.json()).then(d=>{this.drafts=d}).catch(()=>{});},
-reset(){this.step='upload';this.filing=null;this.filingResult=null;this.errorMsg='';this.fileName='';this.liveSteps=[];},
+reset(){this.step='upload';this.filing=null;this.filingResult=null;this.errorMsg='';this.fileName='';this.liveSteps=[];this.browserSteps=[];this.browserScreenshot='';this.browserDone=false;this.browserDoneMsg='';},
 async upload(file){if(!file)return;this.fileName=file.name;this.step='analyzing';this.liveSteps=[];
 try{const fd=new FormData();fd.append('document',file);const resp=await fetch('/api/file/stream',{method:'POST',body:fd});
 if(!resp.ok){throw new Error((await resp.text()).substring(0,200));}
@@ -422,7 +480,28 @@ if(ev==='step'){const ex=this.liveSteps.find(s=>s.id===d.id);if(ex)Object.assign
 if(ev==='result'){this.filing=d;await new Promise(r=>setTimeout(r,400));this.step='review';}
 if(ev==='error')throw new Error(d.message);}}
 }catch(e){this.errorMsg=e.message||'Failed';this.step='error';}},
-async confirm(){try{const r=await fetch('/api/filing/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court_id:this.filing.court_id,case_number:this.filing.case_number,event_code:this.filing.event_code,event_description:this.filing.event_description,filing_party_name:this.filing.filing_party?.split('(')[0]?.trim()||'',filing_party_role:this.filing.filing_party?.match(/\((\w+)\)/)?.[1]||'',document_path:'',dry_run:false})});this.filingResult=await r.json();this.step='filed';this.loadHist();}catch(e){this.errorMsg=e.message;this.step='error';}},
+async confirm(){
+this.step='browser';this.browserSteps=[];this.browserScreenshot='';this.browserDone=false;this.browserDoneMsg='';
+try{
+const body=JSON.stringify({court_id:this.filing.court_id,case_number:this.filing.case_number,event_code:this.filing.event_code,event_description:this.filing.event_description,filing_party_name:this.filing.filing_party?.split('(')[0]?.trim()||'',filing_party_role:this.filing.filing_party?.match(/\((\w+)\)/)?.[1]||'',document_path:'',dry_run:false});
+const resp=await fetch('/api/filing/browser-stream',{method:'POST',headers:{'Content-Type':'application/json'},body});
+if(!resp.ok){const t=await resp.text();throw new Error(t.substring(0,200));}
+const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
+while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
+const parts=buf.split('\n\n');buf=parts.pop()||'';
+for(const part of parts){const lines=part.split('\n');let ev='',data='';
+for(const l of lines){if(l.startsWith('event:'))ev=l.slice(6).trim();if(l.startsWith('data:'))data=l.slice(5).trim();}
+if(!data)continue;const d=JSON.parse(data);
+if(ev==='browser'){
+this.browserStep=d;
+if(d.screenshot)this.browserScreenshot=d.screenshot;
+const ex=this.browserSteps.find(s=>s.step===d.step);
+if(ex)Object.assign(ex,d);else this.browserSteps.push({...d});
+}
+if(ev==='browser_done'){this.browserDone=true;this.browserDoneMsg=d.message;this.loadHist();}
+}}
+}catch(e){this.browserDone=true;this.browserDoneMsg='Error: '+e.message;}
+},
 valDrop(e){e.preventDefault();this.valRun({target:{files:e.dataTransfer.files}});},
 async valRun(e){const files=Array.from(e.target.files);if(!files.length)return;this.valR=[];this.valOk=0;
 for(const f of files){try{const fd=new FormData();fd.append('document',f);const r=await fetch('/api/validate',{method:'POST',body:fd});const v=await r.json();
