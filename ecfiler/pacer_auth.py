@@ -59,35 +59,46 @@ class PacerAuth:
             )
         return password
 
-    def authenticate(self) -> PacerToken:
+    def authenticate(self, retries: int = 2) -> PacerToken:
         """Authenticate with PACER and obtain a session token.
 
-        Returns a cached token if still valid.
+        Returns a cached token if still valid. Retries on transient failures.
         """
         if self._token and not self._token.is_expired:
             return self._token
 
         password = self.get_password()
+        last_error: Exception | None = None
 
-        try:
-            response = self._client.post(
-                self.base_url,
-                json={
-                    "loginId": self.username,
-                    "password": password,
-                    "clientCode": "ecfiler",
-                    "redactFlag": "1",
-                },
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                },
-            )
-            response.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            raise PacerAuthError(f"PACER auth request failed: {e}") from e
-        except httpx.RequestError as e:
-            raise PacerAuthError(f"Cannot reach PACER auth service: {e}") from e
+        for attempt in range(1, retries + 2):
+            try:
+                response = self._client.post(
+                    self.base_url,
+                    json={
+                        "loginId": self.username,
+                        "password": password,
+                        "clientCode": "ecfiler",
+                        "redactFlag": "1",
+                    },
+                    headers={
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                )
+                response.raise_for_status()
+                break
+            except httpx.HTTPStatusError as e:
+                # Don't retry auth failures (wrong password, etc.)
+                raise PacerAuthError(f"PACER auth request failed: {e}") from e
+            except httpx.RequestError as e:
+                last_error = e
+                if attempt <= retries:
+                    import time
+                    time.sleep(2 * attempt)
+                    continue
+                raise PacerAuthError(
+                    f"Cannot reach PACER auth service after {retries + 1} attempts: {e}"
+                ) from e
 
         data = response.json()
 

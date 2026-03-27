@@ -113,16 +113,17 @@ def get_dropdown_options(page: Page, selector: str) -> list[dict[str, str]]:
         List of {"value": "...", "text": "..."} dicts
     """
     options = page.evaluate(
-        f"""
-        () => {{
-            const select = document.querySelector('{selector}');
+        """
+        (sel) => {
+            const select = document.querySelector(sel);
             if (!select) return [];
-            return Array.from(select.options).map(o => ({{
+            return Array.from(select.options).map(o => ({
                 value: o.value,
                 text: o.textContent.trim()
-            }}));
-        }}
-    """
+            }));
+        }
+    """,
+        selector,
     )
     return options or []
 

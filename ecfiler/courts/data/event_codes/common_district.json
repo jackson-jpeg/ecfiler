@@ -1,0 +1,65 @@
+{
+  "description": "Common event codes shared across most US District Courts",
+  "court_type": "district",
+  "categories": {
+    "Motions": [
+      {"code": "12", "description": "Motion to Dismiss"},
+      {"code": "13", "description": "Motion for Summary Judgment"},
+      {"code": "14", "description": "Motion to Compel"},
+      {"code": "15", "description": "Motion in Limine"},
+      {"code": "16", "description": "Motion for Extension of Time"},
+      {"code": "17", "description": "Motion to Seal"},
+      {"code": "18", "description": "Motion for Leave to File"},
+      {"code": "19", "description": "Motion for Reconsideration"},
+      {"code": "20", "description": "Motion for Default Judgment"},
+      {"code": "21", "description": "Motion to Remand"},
+      {"code": "22", "description": "Motion to Stay"},
+      {"code": "23", "description": "Motion for Preliminary Injunction"},
+      {"code": "24", "description": "Motion for Temporary Restraining Order"},
+      {"code": "25", "description": "Motion to Withdraw"}
+    ],
+    "Briefs": [
+      {"code": "100", "description": "Memorandum of Law in Support"},
+      {"code": "101", "description": "Memorandum of Law in Opposition"},
+      {"code": "102", "description": "Reply Memorandum of Law"},
+      {"code": "103", "description": "Brief in Support"},
+      {"code": "104", "description": "Brief in Opposition"},
+      {"code": "105", "description": "Reply Brief"},
+      {"code": "106", "description": "Amicus Brief"},
+      {"code": "107", "description": "Sur-Reply"}
+    ],
+    "Notices": [
+      {"code": "200", "description": "Notice of Appearance"},
+      {"code": "201", "description": "Notice of Motion"},
+      {"code": "202", "description": "Notice of Appeal"},
+      {"code": "203", "description": "Notice of Removal"},
+      {"code": "204", "description": "Notice of Settlement"},
+      {"code": "205", "description": "Notice of Voluntary Dismissal"}
+    ],
+    "Responses": [
+      {"code": "300", "description": "Answer"},
+      {"code": "301", "description": "Response/Opposition to Motion"},
+      {"code": "302", "description": "Reply to Response"},
+      {"code": "303", "description": "Objection"}
+    ],
+    "Initiating": [
+      {"code": "400", "description": "Complaint"},
+      {"code": "401", "description": "Amended Complaint"},
+      {"code": "402", "description": "Petition"},
+      {"code": "403", "description": "Counterclaim"},
+      {"code": "404", "description": "Cross-Claim"},
+      {"code": "405", "description": "Third-Party Complaint"}
+    ],
+    "Other": [
+      {"code": "500", "description": "Stipulation"},
+      {"code": "501", "description": "Proposed Order"},
+      {"code": "502", "description": "Affidavit/Declaration"},
+      {"code": "503", "description": "Certificate of Service"},
+      {"code": "504", "description": "Consent Motion"},
+      {"code": "505", "description": "Status Report"},
+      {"code": "506", "description": "Discovery Material"},
+      {"code": "507", "description": "Exhibit"},
+      {"code": "508", "description": "Letter/Correspondence"}
+    ]
+  }
+}

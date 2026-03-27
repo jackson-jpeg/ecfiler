@@ -475,9 +475,18 @@ class FilingWorkflow:
                 auth = PacerAuth(self.config.pacer.username)
                 token = auth.get_token()
                 browser.inject_pacer_token(token, court.profile.domain)
-            except Exception:
-                console.print("  [yellow]Token auth failed, trying form login...[/yellow]")
-                password = self.config.pacer.get_password() if hasattr(self.config.pacer, 'get_password') else ""
+            except Exception as e:
+                console.print(f"  [yellow]Token auth failed ({e}), trying form login...[/yellow]")
+                from ecfiler.pacer_auth import PacerAuth as PacerAuthFallback
+
+                try:
+                    fallback_auth = PacerAuthFallback(self.config.pacer.username)
+                    password = fallback_auth.get_password()
+                except Exception:
+                    raise RuntimeError(
+                        "PACER login failed: no stored password. "
+                        "Run 'ecfiler' and choose 'Setup Credentials' first."
+                    )
                 if not browser.login_via_form(
                     court.profile.login_url,
                     self.config.pacer.username,

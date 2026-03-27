@@ -93,7 +93,31 @@ def load_config(config_path: str | None = None) -> AppConfig:
     with open(path, "rb") as f:
         raw = tomllib.load(f)
 
-    return _parse_config(raw)
+    cfg = _parse_config(raw)
+    _validate_config(cfg)
+    return cfg
+
+
+def _validate_config(cfg: AppConfig) -> None:
+    """Validate configuration values. Warns on issues, raises on critical errors."""
+    import sys
+
+    if cfg.pdf.max_file_size_mb <= 0:
+        print("Warning: max_file_size_mb must be positive, using default 100", file=sys.stderr)
+        cfg.pdf.max_file_size_mb = 100
+
+    if cfg.pdf.max_file_size_mb > 100:
+        print(
+            f"Warning: max_file_size_mb={cfg.pdf.max_file_size_mb} exceeds CM/ECF 100MB limit",
+            file=sys.stderr,
+        )
+
+    valid_model_prefixes = ("claude-", "claude-")
+    if cfg.general.claude_model and not cfg.general.claude_model.startswith("claude"):
+        print(
+            f"Warning: claude_model '{cfg.general.claude_model}' doesn't look like a Claude model ID",
+            file=sys.stderr,
+        )
 
 
 def _parse_config(raw: dict) -> AppConfig:
