@@ -351,5 +351,58 @@ def save_template_cmd(
     console.print(f"  [dim]Use with: ecfiler quick {name} <case_number> <pdf_path>[/dim]")
 
 
+@main.command("smart")
+@click.argument("pdf_path", type=click.Path(exists=True))
+@click.option("--dry-run", is_flag=True, help="Stop before submitting")
+@click.pass_context
+def smart_file(ctx: click.Context, pdf_path: str, dry_run: bool) -> None:
+    """Smart file — drop a PDF, AI figures out the rest.
+
+    Analyzes your document to auto-extract case number, court, party,
+    event type, and response context. You just review and confirm.
+
+    Example: ecfiler smart ./motion_to_dismiss.pdf
+    """
+    from ecfiler.agent.smart_filer import SmartFiler
+    from ecfiler.config import load_config
+
+    config = load_config(ctx.obj.get("config"))
+    if dry_run or ctx.obj.get("dry_run"):
+        config.general.dry_run = True
+
+    filer = SmartFiler(config)
+    filer.file(pdf_path, dry_run=config.general.dry_run)
+
+
+@main.command("serve")
+@click.option("--host", default="127.0.0.1", help="Bind address")
+@click.option("--port", default=8000, help="Port number")
+@click.option("--reload", "do_reload", is_flag=True, help="Auto-reload on code changes")
+def serve(host: str, port: int, do_reload: bool) -> None:
+    """Start the ECFiler API server.
+
+    Runs the FastAPI backend at http://host:port.
+    API docs at http://host:port/docs.
+
+    Example: ecfiler serve --port 8080
+    """
+    import uvicorn
+
+    from rich.console import Console
+
+    console = Console()
+    console.print(f"\n  [bold cyan]ECFiler API Server[/bold cyan]")
+    console.print(f"  [dim]http://{host}:{port}[/dim]")
+    console.print(f"  [dim]API docs: http://{host}:{port}/docs[/dim]")
+    console.print(f"  [dim]Health: http://{host}:{port}/api/health[/dim]\n")
+
+    uvicorn.run(
+        "ecfiler.api.app:app",
+        host=host,
+        port=port,
+        reload=do_reload,
+    )
+
+
 if __name__ == "__main__":
     main()
