@@ -643,6 +643,34 @@ async def analyze_multi_document(
             Path(f).unlink(missing_ok=True)
 
 
+@app.get("/api/nature-of-suit")
+def get_nature_of_suit(
+    category: str | None = Query(None, description="Filter by category"),
+    search: str | None = Query(None, description="Search by description"),
+) -> list[dict]:
+    """Get nature of suit codes for civil case opening (JS-44).
+
+    These are the official codes from the federal Civil Cover Sheet form.
+    """
+    from ecfiler.filing.civil_cover_sheet import (
+        get_nature_of_suit_categories,
+        get_nature_of_suit_codes,
+        search_nature_of_suit,
+    )
+
+    if search:
+        return search_nature_of_suit(search)
+    return get_nature_of_suit_codes(category)
+
+
+@app.get("/api/nature-of-suit/categories")
+def get_nos_categories() -> list[str]:
+    """Get nature of suit category names."""
+    from ecfiler.filing.civil_cover_sheet import get_nature_of_suit_categories
+
+    return get_nature_of_suit_categories()
+
+
 @app.get("/api/health")
 def health() -> dict:
     """Health check."""

@@ -36,6 +36,7 @@
     </div>
     <div class="flex items-center gap-4 text-sm">
         <button @click="view = 'file'" :class="view === 'file' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">File</button>
+        <button @click="view = 'cos'" :class="view === 'cos' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Cert of Service</button>
         <button @click="view = 'courts'" :class="view === 'courts' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">Courts</button>
         <button @click="view = 'history'" :class="view === 'history' ? 'text-gold' : 'text-gray-300 hover:text-white'" class="transition">History</button>
         <a href="/docs" target="_blank" class="text-gray-400 hover:text-white transition">API</a>
@@ -327,6 +328,59 @@
         </div>
     </template>
 
+    <!-- ===== CERTIFICATE OF SERVICE VIEW ===== -->
+    <template x-if="view === 'cos'">
+        <div>
+            <h2 class="text-xl font-semibold text-navy mb-4">Certificate of Service Generator</h2>
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Attorney Name</label>
+                        <input type="text" x-model="cosAttorney" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:border-gold outline-none" placeholder="Jane Smith, Esq.">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Case Number</label>
+                        <input type="text" x-model="cosCaseNumber" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-gold focus:border-gold outline-none" placeholder="1:24-cv-01234">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-medium text-gray-600">Service Recipients</label>
+                        <button @click="cosRecipients.push({name:'', role:'defendant', attorney_name:'', method:'CM/ECF', email:'', address:''})" class="text-xs text-gold hover:underline">+ Add Recipient</button>
+                    </div>
+                    <template x-for="(r, i) in cosRecipients" :key="i">
+                        <div class="flex gap-2 mb-2 items-start">
+                            <input x-model="r.name" placeholder="Party name" class="flex-1 px-2 py-1.5 border rounded text-sm">
+                            <input x-model="r.attorney_name" placeholder="Attorney" class="flex-1 px-2 py-1.5 border rounded text-sm">
+                            <select x-model="r.method" class="px-2 py-1.5 border rounded text-sm bg-white">
+                                <option value="CM/ECF">CM/ECF</option>
+                                <option value="email">Email</option>
+                                <option value="mail">U.S. Mail</option>
+                                <option value="hand">Hand Delivery</option>
+                            </select>
+                            <input x-show="r.method === 'email'" x-model="r.email" placeholder="email@..." class="flex-1 px-2 py-1.5 border rounded text-sm">
+                            <input x-show="r.method === 'mail'" x-model="r.address" placeholder="Address..." class="flex-1 px-2 py-1.5 border rounded text-sm">
+                            <button @click="cosRecipients.splice(i, 1)" class="text-gray-400 hover:text-court-red text-sm px-1">&times;</button>
+                        </div>
+                    </template>
+                    <div x-show="cosRecipients.length === 0" class="text-sm text-gray-400 py-2">Add at least one recipient</div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button @click="generateCos()" :disabled="!cosAttorney || cosRecipients.length === 0" class="px-4 py-2 bg-navy text-white text-sm rounded-lg hover:bg-navy/90 disabled:opacity-40 transition">Generate</button>
+                    <button @click="downloadCosPdf()" x-show="cosText" class="px-4 py-2 border border-navy text-navy text-sm rounded-lg hover:bg-gray-50 transition">Download PDF</button>
+                </div>
+            </div>
+
+            <!-- Generated certificate -->
+            <div x-show="cosText" class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="bg-navy text-white px-4 py-2 text-sm font-medium">Generated Certificate</div>
+                <pre class="p-4 text-sm whitespace-pre-wrap font-mono text-gray-700 leading-relaxed" x-text="cosText"></pre>
+            </div>
+        </div>
+    </template>
+
 </main>
 
 <!-- Footer -->
@@ -349,6 +403,10 @@ function ecfiler() {
         attachments: [],
         showAttachments: false,
         sealingLevel: 'public',
+        cosAttorney: '',
+        cosCaseNumber: '',
+        cosRecipients: [{name:'', role:'defendant', attorney_name:'', method:'CM/ECF', email:'', address:''}],
+        cosText: '',
         currentAnalysisStep: 0,
         analysisSteps: [
             'Validating PDF format and structure',
@@ -480,6 +538,43 @@ function ecfiler() {
             try {
                 const res = await fetch('/api/history');
                 this.history = await res.json();
+            } catch (e) { console.error(e); }
+        },
+
+        async generateCos() {
+            try {
+                const res = await fetch('/api/certificate-of-service', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        attorney_name: this.cosAttorney,
+                        case_number: this.cosCaseNumber,
+                        recipients: this.cosRecipients.filter(r => r.name || r.attorney_name),
+                    }),
+                });
+                const data = await res.json();
+                this.cosText = data.text;
+            } catch (e) { console.error(e); }
+        },
+
+        async downloadCosPdf() {
+            try {
+                const res = await fetch('/api/certificate-of-service/pdf', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        attorney_name: this.cosAttorney,
+                        case_number: this.cosCaseNumber,
+                        recipients: this.cosRecipients.filter(r => r.name || r.attorney_name),
+                    }),
+                });
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'certificate_of_service.pdf';
+                a.click();
+                URL.revokeObjectURL(url);
             } catch (e) { console.error(e); }
         },
     };
