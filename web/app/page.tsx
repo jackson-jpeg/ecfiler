@@ -1,13 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { InteractiveDemo } from "@/components/demo";
+
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-reveal all sections
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    const sections = el.querySelectorAll("section");
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("reveal"); observer.unobserve(e.target); } }),
+      { threshold: 0.1 }
+    );
+    sections.forEach((s) => observer.observe(s));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#fafaf8]">
+    <div ref={pageRef} className="min-h-screen bg-[#fafaf8]">
       {/* Nav */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-[#e8e5e0] sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
@@ -99,7 +115,7 @@ export default function LandingPage() {
             <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Built for federal practice</h2>
             <p className="text-[17px] text-[#525252] max-w-lg mx-auto">Every feature prevents filing errors and saves attorney time.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto reveal-stagger">
             {[
               {t:"207 federal courts",d:"Every district, bankruptcy, and appellate court. BAPs and special courts included.",icon:"M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21"},
               {t:"AI event code matching",d:"Describe your filing in English. ECFiler matches the correct CM/ECF event code from hundreds of options.",icon:"M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"},

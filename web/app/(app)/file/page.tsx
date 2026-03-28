@@ -153,7 +153,7 @@ export default function WorkspacePage() {
               {/* Drop zone — 3 cols */}
               <div className="lg:col-span-3">
                 <div
-                  className="bg-white border border-[#d4d0ca] rounded-2xl p-10 text-center cursor-pointer hover:border-[#1e3a5f] hover:shadow-lg hover:shadow-[#1e3a5f]/5 transition-all group h-full flex flex-col items-center justify-center min-h-[260px] shadow-sm"
+                  className="bg-white border border-[#d4d0ca] rounded-2xl p-10 text-center cursor-pointer hover:border-[#1e3a5f] hover:shadow-lg hover:shadow-[#1e3a5f]/5 transition-all group h-full flex flex-col items-center justify-center min-h-[260px] shadow-sm drop-glow"
                   onClick={() => fileRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
                   onDragLeave={(e) => { e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
@@ -299,7 +299,7 @@ export default function WorkspacePage() {
               </div>
               <div className="px-6 py-4">
                 {steps.map((s, i) => (
-                  <div key={s.id} className="flex items-start gap-4 py-3 border-b border-[#f0eee9] last:border-0">
+                  <div key={s.id} className="flex items-start gap-4 py-3 border-b border-[#f0eee9] last:border-0 step-enter">
                     <div className="relative">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold transition-all ${
                         s.status === "done" ? "bg-[#f0fdf4] text-[#15803d] shadow-sm shadow-green-200/50" :
