@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { InteractiveDemo } from "@/components/demo";
 
 export default function LandingPage() {
   return (
@@ -41,51 +42,9 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        {/* Product showcase */}
+        {/* Interactive product demo */}
         <div className="max-w-5xl mx-auto px-8 pb-24">
-          <div className="rounded-2xl border border-[#c4bfb6] overflow-hidden shadow-2xl shadow-black/10 bg-white">
-            <div className="bg-[#e8e5e0] px-5 py-3 flex items-center gap-3 border-b border-[#d4d0ca]">
-              <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-[#ff5f57]" /><div className="w-3 h-3 rounded-full bg-[#febc2e]" /><div className="w-3 h-3 rounded-full bg-[#28c840]" /></div>
-              <div className="flex-1 mx-12"><div className="bg-white rounded-lg px-4 py-1.5 text-[12px] text-[#525252] font-mono text-center border border-[#d4d0ca] shadow-inner">ecfiler.com/file</div></div>
-            </div>
-            <div className="bg-[#f0eee9] p-8 md:p-10">
-              <div className="flex gap-6">
-                <div className="hidden md:block w-48 shrink-0">
-                  <div className="bg-[#0f1f35] rounded-xl p-4">
-                    <div className="flex items-center gap-2.5 mb-5 px-1"><div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md" /><span className="text-white font-semibold text-[12px]">ECFiler</span></div>
-                    <div className="text-[9px] text-white/20 uppercase tracking-[0.12em] px-2 mb-2">Filing</div>
-                    {["Filing Dashboard", "Drafts", "History"].map((item, i) => (<div key={item} className={`text-[11px] px-2.5 py-2 rounded-lg mb-0.5 ${i === 0 ? "bg-white/[0.08] text-white font-medium" : "text-white/30"}`}>{item}</div>))}
-                    <div className="text-[9px] text-white/20 uppercase tracking-[0.12em] px-2 mb-2 mt-4">Tools</div>
-                    {["PDF Validator", "Certificate of Service", "Court Directory"].map((item) => (<div key={item} className="text-[11px] px-2.5 py-2 text-white/30">{item}</div>))}
-                  </div>
-                </div>
-                <div className="flex-1 space-y-4">
-                  <div className="bg-white rounded-xl border border-[#d4d0ca] overflow-hidden shadow-sm">
-                    <div className="px-5 py-3 border-b border-[#e8e5e0] flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-[#525252] uppercase tracking-wide">AI Analysis Complete</span>
-                      <span className="text-[11px] px-2.5 py-0.5 bg-[#f0fdf4] text-[#15803d] rounded-full font-semibold">100% extracted</span>
-                    </div>
-                    <div className="p-5 space-y-3">
-                      {[["Validated PDF", "2.3MB, 15 pages, searchable"],["Identified case", "1:24-cv-01234-ABC, S.D.N.Y."],["Matched event", "Motion to Dismiss (Code 12)"],["No redaction issues", "Rule 5.2 scan clean"]].map(([label, detail]) => (
-                        <div key={label} className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-[#15803d] bg-[#f0fdf4]">&#10003;</div>
-                          <span className="text-[13px] font-medium text-[#1a1a1a]">{label}</span>
-                          <span className="text-[12px] text-[#8a8a8a] font-mono">{detail}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-[#d4d0ca] p-5 flex items-center justify-between shadow-sm">
-                    <div>
-                      <div className="text-[15px] font-semibold text-[#1a1a1a]">Motion to Dismiss for Failure to State a Claim</div>
-                      <div className="text-[12px] text-[#8a8a8a] font-mono mt-1">NYSD &middot; Jones Corporation (defendant) &middot; $0 filing fee</div>
-                    </div>
-                    <div className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[12px] font-semibold rounded-lg shadow-sm shrink-0 ml-6">Confirm &amp; File</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <InteractiveDemo />
         </div>
       </section>
 
