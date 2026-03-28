@@ -1,0 +1,55 @@
+{
+  "description": "Common event codes for US Circuit Courts of Appeals",
+  "court_type": "appellate",
+  "categories": {
+    "Briefs": [
+      {"code": "AB1", "description": "Opening/Appellant Brief"},
+      {"code": "AB2", "description": "Answering/Appellee Brief"},
+      {"code": "AB3", "description": "Reply Brief"},
+      {"code": "AB4", "description": "Amicus Brief"},
+      {"code": "AB5", "description": "Supplemental Brief"},
+      {"code": "AB6", "description": "Cross-Appeal Brief"},
+      {"code": "AB7", "description": "En Banc Brief"}
+    ],
+    "Motions": [
+      {"code": "AM1", "description": "Motion for Extension of Time"},
+      {"code": "AM2", "description": "Motion to Dismiss Appeal"},
+      {"code": "AM3", "description": "Motion for Stay Pending Appeal"},
+      {"code": "AM4", "description": "Motion for Summary Disposition"},
+      {"code": "AM5", "description": "Motion for Leave to File"},
+      {"code": "AM6", "description": "Motion for Rehearing"},
+      {"code": "AM7", "description": "Motion for Rehearing En Banc"},
+      {"code": "AM8", "description": "Motion for Expedited Briefing"},
+      {"code": "AM9", "description": "Motion to Seal"},
+      {"code": "AM10", "description": "Motion for Appointment of Counsel"},
+      {"code": "AM11", "description": "Motion to Consolidate Appeals"},
+      {"code": "AM12", "description": "Motion to Intervene"},
+      {"code": "AM13", "description": "Emergency Motion"}
+    ],
+    "Notices and Filings": [
+      {"code": "AN1", "description": "Notice of Appeal"},
+      {"code": "AN2", "description": "Notice of Cross-Appeal"},
+      {"code": "AN3", "description": "Petition for Review"},
+      {"code": "AN4", "description": "Petition for Writ of Mandamus"},
+      {"code": "AN5", "description": "Notice of Appearance"},
+      {"code": "AN6", "description": "Certificate of Interested Persons"},
+      {"code": "AN7", "description": "Representation Statement"},
+      {"code": "AN8", "description": "Docketing Statement"},
+      {"code": "AN9", "description": "Corporate Disclosure Statement"}
+    ],
+    "Appendices and Records": [
+      {"code": "AA1", "description": "Appendix/Joint Appendix"},
+      {"code": "AA2", "description": "Supplemental Appendix"},
+      {"code": "AA3", "description": "Excerpts of Record"},
+      {"code": "AA4", "description": "Designation of Record"},
+      {"code": "AA5", "description": "Transcript Order Form"},
+      {"code": "AA6", "description": "Certificate of Compliance (Word Count)"}
+    ],
+    "Responses": [
+      {"code": "AR1", "description": "Response to Motion"},
+      {"code": "AR2", "description": "Response to Order"},
+      {"code": "AR3", "description": "Response to Petition"},
+      {"code": "AR4", "description": "Answer to Petition for Review"}
+    ]
+  }
+}

@@ -2,14 +2,62 @@
 
 Event codes are the CM/ECF identifiers for types of filings
 (e.g., "Motion to Dismiss", "Reply Brief", "Notice of Appearance").
+
+Data is loaded from JSON files in courts/data/event_codes/.
+Hardcoded fallbacks kept for cases where JSON loading fails.
 """
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from ecfiler.filing.models import EventCode
 
+_EVENT_CODES_DIR = Path(__file__).parent.parent / "courts" / "data" / "event_codes"
+_CACHE: dict[str, list[dict[str, str]]] = {}
+
+
+def _load_from_json(court_type: str) -> list[dict[str, str]]:
+    """Load event codes from JSON file, flattening categories."""
+    if court_type in _CACHE:
+        return _CACHE[court_type]
+
+    filename_map = {
+        "district": "common_district.json",
+        "bankruptcy": "common_bankruptcy.json",
+        "appellate": "common_appellate.json",
+    }
+    filename = filename_map.get(court_type, "common_district.json")
+    path = _EVENT_CODES_DIR / filename
+
+    if path.exists():
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            events = []
+            for category, codes in data.get("categories", {}).items():
+                for code in codes:
+                    events.append({
+                        "code": code["code"],
+                        "description": code["description"],
+                        "category": category,
+                    })
+            _CACHE[court_type] = events
+            return events
+        except Exception:
+            pass
+
+    # Fallback to hardcoded
+    if court_type == "bankruptcy":
+        return COMMON_BANKRUPTCY_EVENTS
+    elif court_type == "appellate":
+        return COMMON_APPELLATE_EVENTS
+    return COMMON_DISTRICT_EVENTS
+
+
+# Hardcoded fallbacks (kept for reliability)
 # Common event codes shared across most district courts.
-# Individual courts may have additional or differently-named codes.
 COMMON_DISTRICT_EVENTS: list[dict[str, str]] = [
     # Motions
     {"code": "12", "description": "Motion to Dismiss", "category": "Motions"},
@@ -141,13 +189,11 @@ COMMON_APPELLATE_EVENTS: list[dict[str, str]] = [
 
 
 def get_common_events(court_type: str) -> list[EventCode]:
-    """Get common event codes for a court type."""
-    if court_type == "bankruptcy":
-        raw = COMMON_BANKRUPTCY_EVENTS
-    elif court_type == "appellate":
-        raw = COMMON_APPELLATE_EVENTS
-    else:
-        raw = COMMON_DISTRICT_EVENTS
+    """Get common event codes for a court type.
+
+    Loads from JSON files first, falls back to hardcoded data.
+    """
+    raw = _load_from_json(court_type)
 
     return [
         EventCode(

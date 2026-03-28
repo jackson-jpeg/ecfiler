@@ -1,0 +1,70 @@
+{
+  "description": "Common event codes for US Bankruptcy Courts",
+  "court_type": "bankruptcy",
+  "categories": {
+    "Petitions": [
+      {"code": "BK7", "description": "Chapter 7 Petition"},
+      {"code": "BK11", "description": "Chapter 11 Petition"},
+      {"code": "BK12", "description": "Chapter 12 Petition"},
+      {"code": "BK13", "description": "Chapter 13 Petition"},
+      {"code": "BKV", "description": "Voluntary Petition"},
+      {"code": "BKI", "description": "Involuntary Petition"},
+      {"code": "BKCONV", "description": "Conversion of Case"}
+    ],
+    "Motions": [
+      {"code": "BM1", "description": "Motion for Relief from Stay"},
+      {"code": "BM2", "description": "Motion to Dismiss"},
+      {"code": "BM3", "description": "Motion to Convert"},
+      {"code": "BM4", "description": "Motion for Extension of Time"},
+      {"code": "BM5", "description": "Motion to Sell Property"},
+      {"code": "BM6", "description": "Motion to Avoid Lien"},
+      {"code": "BM7", "description": "Motion to Employ Professional"},
+      {"code": "BM8", "description": "Motion for Approval of Fees"},
+      {"code": "BM9", "description": "Motion to Assume or Reject Lease"},
+      {"code": "BM10", "description": "Motion for Adequate Protection"},
+      {"code": "BM11", "description": "Motion to Reopen Case"},
+      {"code": "BM12", "description": "Motion for Discharge"},
+      {"code": "BM13", "description": "Motion to Redact"},
+      {"code": "BM14", "description": "Motion for Cash Collateral"},
+      {"code": "BM15", "description": "Motion for DIP Financing"}
+    ],
+    "Schedules and Statements": [
+      {"code": "BS1", "description": "Schedules A/B - Property"},
+      {"code": "BS2", "description": "Schedule C - Exemptions"},
+      {"code": "BS3", "description": "Schedule D - Secured Claims"},
+      {"code": "BS4", "description": "Schedule E/F - Unsecured Claims"},
+      {"code": "BS5", "description": "Schedule I - Income"},
+      {"code": "BS6", "description": "Schedule J - Expenses"},
+      {"code": "BS7", "description": "Statement of Financial Affairs"},
+      {"code": "BS8", "description": "Means Test (Chapter 7)"},
+      {"code": "BS9", "description": "Chapter 13 Plan"},
+      {"code": "BS10", "description": "Amended Schedules"},
+      {"code": "BS11", "description": "Creditor Matrix"}
+    ],
+    "Claims and Objections": [
+      {"code": "BC1", "description": "Proof of Claim"},
+      {"code": "BC2", "description": "Amended Proof of Claim"},
+      {"code": "BC3", "description": "Objection to Claim"},
+      {"code": "BC4", "description": "Withdrawal of Claim"},
+      {"code": "BC5", "description": "Transfer of Claim"}
+    ],
+    "Plans and Disclosure": [
+      {"code": "BP1", "description": "Chapter 11 Plan"},
+      {"code": "BP2", "description": "Amended Chapter 11 Plan"},
+      {"code": "BP3", "description": "Disclosure Statement"},
+      {"code": "BP4", "description": "Chapter 13 Plan"},
+      {"code": "BP5", "description": "Modified Chapter 13 Plan"},
+      {"code": "BP6", "description": "Ballot/Vote on Plan"}
+    ],
+    "Other": [
+      {"code": "BO1", "description": "Adversary Proceeding Complaint"},
+      {"code": "BO2", "description": "Notice of Appearance"},
+      {"code": "BO3", "description": "Certificate of Credit Counseling"},
+      {"code": "BO4", "description": "Certificate of Debtor Education"},
+      {"code": "BO5", "description": "Reaffirmation Agreement"},
+      {"code": "BO6", "description": "Monthly Operating Report"},
+      {"code": "BO7", "description": "Status Report"},
+      {"code": "BO8", "description": "Notice of No Distribution"}
+    ]
+  }
+}
