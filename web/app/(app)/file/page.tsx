@@ -7,6 +7,15 @@ import { streamAnalysis, streamBrowser, getHistory, type FilingPreview, type Ana
 
 type Phase = "ready" | "analyzing" | "review" | "filing" | "done" | "error";
 
+interface Exhibit {
+  id: string;
+  file: File;
+  label: string;
+  description: string;
+}
+
+const EXHIBIT_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
 export default function WorkspacePage() {
   const [phase, setPhase] = useState<Phase>("ready");
   const [fileName, setFileName] = useState("");
@@ -23,15 +32,42 @@ export default function WorkspacePage() {
   const [docketText, setDocketText] = useState("");
   const [isSealed, setIsSealed] = useState(false);
   const [isRedacted, setIsRedacted] = useState(false);
+  const [exhibits, setExhibits] = useState<Exhibit[]>([]);
+  const [showCertService, setShowCertService] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const exhibitRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {}); }, []);
 
   const reset = () => {
     setPhase("ready"); setFileName(""); setSteps([]); setFiling(null);
     setBrowserSteps([]); setScreenshot(""); setBrowserDone(false); setError("");
+    setExhibits([]); setIsSealed(false); setIsRedacted(false); setDocketText(""); setShowCertService(false);
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
   };
+
+  const addExhibits = useCallback((files: FileList) => {
+    setExhibits((prev) => {
+      const newExhibits: Exhibit[] = Array.from(files).map((f, i) => ({
+        id: `${Date.now()}-${i}`,
+        file: f,
+        label: `Exhibit ${EXHIBIT_LABELS[prev.length + i] || String(prev.length + i + 1)}`,
+        description: f.name.replace(/\.pdf$/i, "").replace(/[_-]/g, " "),
+      }));
+      return [...prev, ...newExhibits];
+    });
+  }, []);
+
+  const removeExhibit = useCallback((id: string) => {
+    setExhibits((prev) => {
+      const filtered = prev.filter((e) => e.id !== id);
+      return filtered.map((e, i) => ({ ...e, label: `Exhibit ${EXHIBIT_LABELS[i] || String(i + 1)}` }));
+    });
+  }, []);
+
+  const updateExhibitDesc = useCallback((id: string, description: string) => {
+    setExhibits((prev) => prev.map((e) => e.id === id ? { ...e, description } : e));
+  }, []);
 
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name); setPhase("analyzing"); setSteps([]);
@@ -58,6 +94,18 @@ export default function WorkspacePage() {
       }
     } catch (e: unknown) { setBrowserDone(true); setBrowserMsg(e instanceof Error ? e.message : "Failed"); }
   }, [filing]);
+
+  // Keyboard shortcut: Cmd+Enter to file
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && phase === "review" && filing?.ready) {
+        e.preventDefault();
+        handleConfirm();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [phase, filing, handleConfirm]);
 
   return (
     <div className="min-h-screen bg-[#f5f3ee]">
@@ -204,8 +252,20 @@ export default function WorkspacePage() {
 
             <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-lg shadow-black/5">
               <div className="px-6 py-4 border-b border-[#f0eee9] bg-[#fafaf8]">
-                <div className="text-[16px] font-bold text-[#1a1a1a]">Analyzing Document</div>
-                <div className="text-[12px] text-[#8a8a8a] font-mono mt-0.5">{fileName}</div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[16px] font-bold text-[#1a1a1a]">Analyzing Document</div>
+                    <div className="text-[12px] text-[#8a8a8a] font-mono mt-0.5">{fileName}</div>
+                  </div>
+                  <div className="text-[11px] text-[#8a8a8a] font-medium">{steps.filter(s => s.status === "done").length}/{steps.length || "..."} steps</div>
+                </div>
+                {/* Progress bar */}
+                <div className="mt-3 h-1 bg-[#e8e5e0] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#1e3a5f] to-[#3b82f6] rounded-full transition-all duration-500"
+                    style={{ width: steps.length ? `${(steps.filter(s => s.status === "done").length / Math.max(steps.length, 6)) * 100}%` : "5%" }}
+                  />
+                </div>
               </div>
               <div className="px-6 py-4">
                 {steps.map((s, i) => (
@@ -251,7 +311,7 @@ export default function WorkspacePage() {
               {[
                 { label: "PDF", value: `${filing.pdf_size_mb?.toFixed(1)}MB · ${filing.pdf_pages}p`, ok: filing.pdf_valid },
                 { label: "Redaction", value: filing.redaction_issues === 0 ? "Clean" : `${filing.redaction_issues} issue(s)`, ok: filing.redaction_issues === 0 },
-                { label: "Fee", value: filing.filing_fee_text || filing.filing_fee === 0 ? "$0" : "Unknown", ok: true },
+                { label: "Fee", value: filing.filing_fee_text || (filing.filing_fee ? `$${filing.filing_fee}` : "None"), ok: true },
               ].map(({ label, value, ok }) => (
                 <div key={label} className={`rounded-xl border p-4 ${ok ? "bg-[#f0fdf4] border-[#bbf7d0]" : "bg-[#fffbeb] border-[#fde68a]"}`}>
                   <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-1">{label}</div>
@@ -281,25 +341,57 @@ export default function WorkspacePage() {
               ))}
             </div>
 
-            {/* Docket Text — editable, this is what CM/ECF displays */}
-            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
-              <div className="px-5 py-3 border-b border-[#f0eee9] flex items-center justify-between">
+            {/* Docket Text — the hero of the review screen */}
+            <div className="bg-white rounded-2xl border-2 border-[#1e3a5f]/20 overflow-hidden shadow-lg shadow-[#1e3a5f]/5 mb-5">
+              <div className="px-6 py-4 bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Docket Text</span>
-                  <span className="text-[10px] text-[#c4c4c4] ml-2">This is exactly what appears on the court docket</span>
+                  <div className="text-[13px] font-semibold text-white">Docket Text</div>
+                  <div className="text-[11px] text-white/50 mt-0.5">This is exactly what appears on the court docket — edit before filing</div>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 bg-[#f0eee9] text-[#8a8a8a] rounded font-mono">editable</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] px-2.5 py-1 bg-white/10 text-white/70 rounded-md font-mono border border-white/10">editable</span>
+                </div>
               </div>
-              <div className="p-5">
+              <div className="p-6">
                 <textarea
                   value={docketText}
                   onChange={(e) => setDocketText(e.target.value)}
-                  rows={2}
-                  className="w-full px-4 py-3 border border-[#e8e5e0] rounded-xl text-[14px] font-medium text-[#1a1a1a] outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 resize-none bg-[#fafaf8]"
+                  rows={3}
+                  className="w-full px-5 py-4 border border-[#e8e5e0] rounded-xl text-[16px] font-semibold text-[#1a1a1a] outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 resize-none bg-[#fafaf8] leading-relaxed"
+                  placeholder="Enter docket text..."
                 />
-                <div className="flex items-center gap-4 mt-3">
-                  <div className="text-[11px] text-[#8a8a8a]">Suggested: <button onClick={() => setDocketText(filing.event_description)} className="text-[#1e3a5f] font-medium hover:underline">{filing.event_description}</button></div>
-                  {filing.is_response && filing.responds_to && <div className="text-[11px] text-[#8a8a8a]">Related to: <span className="font-mono">Dkt. #{filing.responds_to}</span></div>}
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setDocketText(filing.event_description)} className="text-[12px] px-3 py-1.5 bg-[#f0f4fa] text-[#1e3a5f] font-medium rounded-lg hover:bg-[#dbeafe] transition border border-[#1e3a5f]/10">
+                      Reset to AI suggestion
+                    </button>
+                    {filing.is_response && filing.responds_to && (
+                      <span className="text-[11px] text-[#8a8a8a] bg-[#f5f3ee] px-2.5 py-1 rounded-md">
+                        In response to: <span className="font-mono font-medium text-[#525252]">{filing.responds_to}</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-[#c4c4c4]">{docketText.length} chars</div>
+                </div>
+              </div>
+              {/* Live preview */}
+              <div className="px-6 py-4 bg-[#fafaf8] border-t border-[#f0eee9]">
+                <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">CM/ECF Docket Preview</div>
+                <div className="flex items-start gap-3">
+                  <div className="text-[12px] font-mono text-[#c4c4c4] shrink-0 pt-0.5">#--</div>
+                  <div>
+                    <div className="text-[13px] text-[#1a1a1a]">
+                      <span className="font-semibold">{docketText || "..."}</span>
+                      {" "}filed by {filing.filing_party || "Unknown"}.
+                      {filing.case_number && <span className="text-[#8a8a8a]"> ({filing.case_number})</span>}
+                    </div>
+                    <div className="text-[11px] text-[#8a8a8a] mt-0.5">
+                      {exhibits.length > 0
+                        ? `(Attachments: ${exhibits.map((_, i) => `# ${i + 1} ${exhibits[i].label}`).join(", ")})`
+                        : "(Attachments: # 1)"}
+                      {isSealed ? " (SEALED)" : ""}{isRedacted ? " (REDACTED)" : ""}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -333,6 +425,74 @@ export default function WorkspacePage() {
               </div>
             </div>
 
+            {/* Exhibits & Attachments */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
+              <div className="px-5 py-3 border-b border-[#f0eee9] flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Attachments &amp; Exhibits</span>
+                <button onClick={() => exhibitRef.current?.click()} className="text-[11px] text-[#1e3a5f] font-semibold hover:underline">+ Add files</button>
+              </div>
+              <input ref={exhibitRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => e.target.files && addExhibits(e.target.files)} />
+              {exhibits.length === 0 ? (
+                <div
+                  className="px-5 py-8 text-center cursor-pointer hover:bg-[#fafaf8] transition border-2 border-dashed border-transparent hover:border-[#e8e5e0] mx-4 my-4 rounded-xl"
+                  onClick={() => exhibitRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("!border-[#1e3a5f]", "!bg-[#f0f4fa]"); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]"); }}
+                  onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]"); if (e.dataTransfer.files.length) addExhibits(e.dataTransfer.files); }}
+                >
+                  <div className="text-[13px] text-[#8a8a8a]">Drop exhibits here or click to browse</div>
+                  <div className="text-[11px] text-[#c4c4c4] mt-1">Auto-labeled as Exhibit A, B, C...</div>
+                </div>
+              ) : (
+                <div className="p-4 space-y-2">
+                  {exhibits.map((ex) => (
+                    <div key={ex.id} className="flex items-center gap-3 p-3 bg-[#fafaf8] rounded-xl border border-[#f0eee9] group">
+                      <div className="w-9 h-9 bg-[#1e3a5f] text-white rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0">{ex.label.split(" ")[1]}</div>
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="text"
+                          value={ex.description}
+                          onChange={(e) => updateExhibitDesc(ex.id, e.target.value)}
+                          className="w-full text-[13px] font-medium text-[#1a1a1a] bg-transparent outline-none border-b border-transparent focus:border-[#1e3a5f] transition pb-0.5"
+                          placeholder="Description..."
+                        />
+                        <div className="text-[10px] text-[#8a8a8a] font-mono mt-0.5">{ex.file.name} &middot; {(ex.file.size / 1024 / 1024).toFixed(1)}MB</div>
+                      </div>
+                      <button onClick={() => removeExhibit(ex.id)} className="text-[#c4c4c4] hover:text-[#b91c1c] transition opacity-0 group-hover:opacity-100 text-lg shrink-0">&times;</button>
+                    </div>
+                  ))}
+                  <button onClick={() => exhibitRef.current?.click()} className="w-full py-2.5 border border-dashed border-[#d4d0ca] rounded-xl text-[12px] text-[#8a8a8a] hover:text-[#1e3a5f] hover:border-[#1e3a5f] transition">+ Add more exhibits</button>
+                </div>
+              )}
+            </div>
+
+            {/* Certificate of Service */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
+              <div className="px-5 py-3 border-b border-[#f0eee9] flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Certificate of Service</span>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <div className={`relative w-9 h-5 rounded-full transition ${showCertService ? "bg-[#1e3a5f]" : "bg-[#d4d0ca]"}`}>
+                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${showCertService ? "left-[18px]" : "left-0.5"}`} />
+                  </div>
+                  <input type="checkbox" checked={showCertService} onChange={(e) => setShowCertService(e.target.checked)} className="hidden" />
+                  <span className="text-[12px] text-[#525252] font-medium">{showCertService ? "Included" : "Not included"}</span>
+                </label>
+              </div>
+              {showCertService && (
+                <div className="px-5 py-4">
+                  <div className="bg-[#fafaf8] border border-[#f0eee9] rounded-xl p-4">
+                    <div className="text-[11px] text-[#8a8a8a] font-medium mb-2">Auto-generated certificate</div>
+                    <div className="text-[12px] text-[#525252] leading-relaxed font-serif italic">
+                      I hereby certify that on {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })},
+                      I electronically filed the foregoing {docketText || filing.event_description} with the Clerk of Court
+                      using the CM/ECF system, which will send notification of such filing to all counsel of record.
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-[#c4c4c4] mt-2">Will be appended as the final page of the filing</div>
+                </div>
+              )}
+            </div>
+
             {/* Verification */}
             <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
               <div className="px-5 py-3 border-b border-[#f0eee9]">
@@ -364,19 +524,31 @@ export default function WorkspacePage() {
             ))}
 
             {/* Actions */}
-            <div className="bg-white rounded-2xl border border-[#e8e5e0] p-6 shadow-sm">
+            <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-6 shadow-xl shadow-[#1e3a5f]/15">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[14px] font-bold text-[#1a1a1a]">{filing.ready ? "Ready to file" : "Missing required fields"}</div>
-                  <div className="text-[12px] text-[#8a8a8a] mt-0.5">{filing.ready ? "Everything verified. Submit to CM/ECF." : "Review the issues above."}</div>
+                  <div className="text-[14px] font-bold text-white">{filing.ready ? "Ready to file" : "Missing required fields"}</div>
+                  <div className="text-[12px] text-white/50 mt-0.5">
+                    {filing.ready
+                      ? `${filing.court_id?.toUpperCase()} · ${filing.case_number}${exhibits.length > 0 ? ` · ${exhibits.length} attachment${exhibits.length > 1 ? "s" : ""}` : ""}${filing.filing_fee ? ` · $${filing.filing_fee} fee` : ""}`
+                      : "Review the issues above."}
+                  </div>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={reset} className="px-5 py-2.5 text-[13px] text-[#8a8a8a] hover:text-[#525252] transition border border-[#e8e5e0] rounded-xl hover:bg-[#fafaf8]">Cancel</button>
-                  <button onClick={handleConfirm} disabled={!filing.ready} className="px-8 py-2.5 bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-lg shadow-[#1e3a5f]/20">
+                <div className="flex items-center gap-3">
+                  <button onClick={reset} className="px-5 py-2.5 text-[13px] text-white/50 hover:text-white transition border border-white/10 rounded-xl hover:bg-white/5">Cancel</button>
+                  <button onClick={handleConfirm} disabled={!filing.ready} className="px-8 py-3 bg-white text-[#1e3a5f] text-[14px] font-bold rounded-xl hover:bg-[#f0f4fa] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-lg">
                     Confirm &amp; File
                   </button>
                 </div>
               </div>
+              {filing.ready && (
+                <div className="mt-3 flex items-center gap-2 text-[10px] text-white/30">
+                  <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono border border-white/10">⌘</kbd>
+                  <span>+</span>
+                  <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono border border-white/10">Enter</kbd>
+                  <span>to file</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -411,10 +583,46 @@ export default function WorkspacePage() {
 
             {browserDone && (
               <div className="flex items-center gap-4">
-                <button onClick={reset} className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-sm">Done</button>
+                <button onClick={() => setPhase("done")} className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-sm">View Receipt</button>
                 <span className="text-[13px] text-[#525252]">{browserMsg}</span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Done */}
+        {phase === "done" && filing && (
+          <div className="max-w-xl mx-auto text-center py-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-200/30">
+              <svg className="w-10 h-10 text-[#15803d]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </div>
+            <h2 className="text-[24px] font-bold text-[#1a1a1a] mb-2">Filing Submitted</h2>
+            <p className="text-[14px] text-[#525252] mb-8">Your document has been filed on CM/ECF.</p>
+
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-8 text-left">
+              {[
+                { label: "Court", value: filing.court_id?.toUpperCase() },
+                { label: "Case", value: filing.case_number },
+                { label: "Document", value: docketText || filing.event_description },
+                ...(exhibits.length > 0 ? [{ label: "Attachments", value: `${exhibits.length} exhibit${exhibits.length > 1 ? "s" : ""}` }] : []),
+              ].filter(f => f.value).map(({ label, value }) => (
+                <div key={label} className="flex px-5 py-3 border-b border-[#f0eee9] last:border-0">
+                  <div className="w-[100px] shrink-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide pt-0.5">{label}</div>
+                  <div className="text-[13px] text-[#1a1a1a] font-medium">{value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-center gap-3">
+              <button onClick={reset} className="px-8 py-3 bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20">
+                File Another Document
+              </button>
+              <button onClick={() => setShowHistory(true)} className="px-5 py-3 border border-[#e8e5e0] text-[13px] text-[#525252] font-medium rounded-xl hover:bg-[#fafaf8] transition">
+                View History
+              </button>
+            </div>
           </div>
         )}
 

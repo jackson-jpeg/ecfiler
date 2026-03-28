@@ -3,20 +3,20 @@
 import { useState, useEffect } from "react";
 
 const STEPS = [
-  { label: "Validating PDF", detail: "2.3MB, 15 pages, searchable" },
-  { label: "Reading document", detail: "3,847 characters extracted" },
-  { label: "AI analyzing", detail: "Case 1:24-cv-01234 — SDNY — Jones Corp" },
-  { label: "Scanning redaction", detail: "No issues found (Rule 5.2)" },
-  { label: "Matching event code", detail: "Motion to Dismiss (Code 12)" },
+  { label: "Validating PDF", detail: "2.3MB, 15 pages, searchable, no encryption" },
+  { label: "Extracting text", detail: "3,847 characters from 15 pages" },
+  { label: "AI document analysis", detail: "Identified: Motion to Dismiss for Failure to State a Claim" },
+  { label: "Redaction scan", detail: "No unredacted identifiers (Rule 5.2 clean)" },
+  { label: "Matching event code", detail: "Event 12 — Motion to Dismiss (97% confidence)" },
+  { label: "Verification complete", detail: "Case 1:24-cv-01234-ABC — S.D.N.Y." },
 ];
 
-const FIELDS = [
-  { label: "Document", value: "Motion to Dismiss for Failure to State a Claim" },
-  { label: "Case", value: "1:24-cv-01234-ABC", mono: true },
-  { label: "Court", value: "S.D.N.Y. (nysd)" },
-  { label: "Docket Text", value: "Motion to Dismiss", bold: true },
-  { label: "Filing Party", value: "Jones Corporation (defendant)" },
-  { label: "Fee", value: "$0.00 — No filing fee" },
+const CHECKS = [
+  { ok: true, text: "PDF valid — 2.3MB, 15 pages, searchable" },
+  { ok: true, text: "No unredacted identifiers (Rule 5.2)" },
+  { ok: true, text: "Case 1:24-cv-01234-ABC matches document" },
+  { ok: true, text: "Event code 12 matches document type" },
+  { ok: true, warn: true, text: "Certificate of service detected" },
 ];
 
 export function InteractiveDemo() {
@@ -26,22 +26,15 @@ export function InteractiveDemo() {
   useEffect(() => {
     if (phase !== "analyzing") return;
     if (visibleSteps >= STEPS.length) {
-      const t = setTimeout(() => setPhase("review"), 600);
+      const t = setTimeout(() => setPhase("review"), 500);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setVisibleSteps((v) => v + 1), 800);
+    const t = setTimeout(() => setVisibleSteps((v) => v + 1), 700);
     return () => clearTimeout(t);
   }, [phase, visibleSteps]);
 
-  const start = () => {
-    setPhase("analyzing");
-    setVisibleSteps(0);
-  };
-
-  const reset = () => {
-    setPhase("idle");
-    setVisibleSteps(0);
-  };
+  const start = () => { setPhase("analyzing"); setVisibleSteps(0); };
+  const reset = () => { setPhase("idle"); setVisibleSteps(0); };
 
   return (
     <div className="rounded-2xl border border-[#9e9a94] overflow-hidden shadow-2xl shadow-black/20 bg-white">
@@ -59,34 +52,32 @@ export function InteractiveDemo() {
         </div>
       </div>
 
-      {/* App content */}
-      <div className="flex" style={{ minHeight: 380 }}>
-        {/* Mini sidebar */}
-        <div className="hidden md:block w-[180px] bg-[#0f1f35] p-3 shrink-0">
-          <div className="flex items-center gap-2 mb-5 px-2 pt-1">
-            <div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md flex items-center justify-center text-white text-[9px] font-bold">E</div>
-            <span className="text-white font-semibold text-[11px]">ECFiler</span>
+      {/* App content — matches actual app layout */}
+      <div className="bg-[#f5f3ee]" style={{ minHeight: 420 }}>
+        {/* Top bar */}
+        <div className="bg-white border-b border-[#e8e5e0] px-5 h-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md flex items-center justify-center text-white text-[7px] font-bold">E</div>
+              <span className="text-[11px] font-semibold text-[#1a1a1a]">ECFiler</span>
+            </div>
+            <div className="h-3 w-px bg-[#e8e5e0]" />
+            <span className="text-[10px] text-[#8a8a8a]">History</span>
+            <span className="text-[10px] text-[#8a8a8a]">Courts</span>
           </div>
-          <div className="text-[8px] text-white/20 uppercase tracking-[0.15em] px-2 mb-1.5">Filing</div>
-          {["Filing Dashboard", "Drafts", "History"].map((item, i) => (
-            <div key={item} className={`text-[10px] px-2 py-[6px] rounded-md mb-px ${i === 0 ? "bg-white/[0.08] text-white font-medium" : "text-white/25"}`}>{item}</div>
-          ))}
-          <div className="text-[8px] text-white/20 uppercase tracking-[0.15em] px-2 mb-1.5 mt-4">Tools</div>
-          {["PDF Validator", "Certificate of Service", "Court Directory", "Settings"].map((item) => (
-            <div key={item} className="text-[10px] px-2 py-[6px] text-white/25">{item}</div>
-          ))}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#8a8a8a]">Settings</span>
+            <div className="w-5 h-5 bg-[#e8e5e0] rounded-full" />
+          </div>
         </div>
 
-        {/* Main area */}
-        <div className="flex-1 bg-[#eae7e1] p-6">
+        <div className="p-5">
           {/* Idle — drop zone */}
           {phase === "idle" && (
             <div>
-              <div className="text-[14px] font-bold text-[#1a1a1a] mb-1">Filing Dashboard</div>
-              <div className="text-[11px] text-[#8a8a8a] mb-5">Drop a document to start filing.</div>
               <div
                 onClick={start}
-                className="border-2 border-dashed border-[#a8a49e] rounded-xl p-10 text-center cursor-pointer hover:border-[#1e3a5f] hover:bg-white/50 transition-all group"
+                className="border-2 border-dashed border-[#c4bfb6] rounded-xl p-8 text-center cursor-pointer hover:border-[#1e3a5f] hover:bg-white/70 hover:shadow-lg transition-all group"
               >
                 <div className="w-10 h-10 bg-[#e8e5e0] group-hover:bg-[#dbeafe] rounded-xl flex items-center justify-center mx-auto mb-3 transition">
                   <svg className="w-5 h-5 text-[#8a8a8a] group-hover:text-[#1e3a5f] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -94,7 +85,27 @@ export function InteractiveDemo() {
                   </svg>
                 </div>
                 <div className="text-[12px] font-semibold text-[#525252] group-hover:text-[#1e3a5f] transition">Click to try the demo</div>
-                <div className="text-[10px] text-[#8a8a8a] mt-0.5">See how AI analyzes a federal court filing</div>
+                <div className="text-[10px] text-[#8a8a8a] mt-1">See how AI analyzes a federal court filing in real-time</div>
+                <div className="flex flex-wrap justify-center gap-1 mt-3">
+                  {["Motions", "Briefs", "Complaints", "Notices", "Exhibits"].map((t) => (
+                    <span key={t} className="text-[8px] px-1.5 py-0.5 bg-[#e8e5e0] text-[#8a8a8a] rounded font-medium">{t}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Mini stats */}
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="bg-white rounded-lg border border-[#e8e5e0] p-2.5 text-center">
+                  <div className="text-[14px] font-bold text-[#1e3a5f]">207</div>
+                  <div className="text-[8px] text-[#8a8a8a] font-medium">Federal Courts</div>
+                </div>
+                <div className="bg-white rounded-lg border border-[#e8e5e0] p-2.5 text-center">
+                  <div className="text-[14px] font-bold text-[#1e3a5f]">6</div>
+                  <div className="text-[8px] text-[#8a8a8a] font-medium">AI Checks</div>
+                </div>
+                <div className="bg-white rounded-lg border border-[#e8e5e0] p-2.5 text-center">
+                  <div className="text-[14px] font-bold text-[#15803d]">100%</div>
+                  <div className="text-[8px] text-[#8a8a8a] font-medium">Accuracy</div>
+                </div>
               </div>
             </div>
           )}
@@ -102,30 +113,39 @@ export function InteractiveDemo() {
           {/* Analyzing */}
           {phase === "analyzing" && (
             <div>
-              <div className="text-[14px] font-bold text-[#1a1a1a] mb-1">Analyzing</div>
-              <div className="text-[11px] text-[#8a8a8a] mb-4 font-mono">motion_to_dismiss.pdf</div>
-              <div className="bg-white rounded-xl border border-[#d4d0ca] overflow-hidden shadow-sm">
+              <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden shadow-sm">
+                <div className="px-4 py-3 border-b border-[#f0eee9] bg-[#fafaf8]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[13px] font-bold text-[#1a1a1a]">Analyzing Document</div>
+                      <div className="text-[10px] text-[#8a8a8a] font-mono">motion_to_dismiss.pdf</div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 bg-[#1e3a5f] rounded-full animate-pulse" />
+                      <span className="text-[10px] font-medium text-[#1e3a5f]">Processing</span>
+                    </div>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="mt-2 h-1 bg-[#e8e5e0] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#1e3a5f] to-[#3b82f6] rounded-full transition-all duration-500"
+                      style={{ width: `${(visibleSteps / STEPS.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
                 {STEPS.slice(0, visibleSteps).map((step, i) => (
-                  <div key={step.label} className="flex items-center gap-3 px-4 py-3 border-b border-[#f0eee9] last:border-0" style={{ animation: "fadeIn 0.3s ease-out" }}>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                      i < visibleSteps - 1 ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#e1effe] text-[#1e3a5f]"
+                  <div key={step.label} className="flex items-center gap-3 px-4 py-2.5 border-b border-[#f0eee9] last:border-0" style={{ animation: "fadeIn 0.3s ease-out" }}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
+                      i < visibleSteps - 1 ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#1e3a5f] text-white"
                     }`}>
                       {i < visibleSteps - 1 ? "✓" : <span className="animate-pulse">●</span>}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[12px] font-medium text-[#1a1a1a]">{step.label}</span>
-                      {i < visibleSteps - 1 && <span className="text-[10px] text-[#8a8a8a] font-mono ml-2">{step.detail}</span>}
+                      <span className="text-[11px] font-medium text-[#1a1a1a]">{step.label}</span>
+                      {i < visibleSteps - 1 && <span className="text-[9px] text-[#8a8a8a] font-mono ml-2">{step.detail}</span>}
                     </div>
                   </div>
                 ))}
-                {visibleSteps < STEPS.length && (
-                  <div className="px-4 py-3 flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-[#e1effe] flex items-center justify-center">
-                      <span className="w-1.5 h-1.5 bg-[#1e3a5f] rounded-full animate-pulse" />
-                    </div>
-                    <span className="text-[12px] text-[#8a8a8a]">{STEPS[visibleSteps]?.label}...</span>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -133,26 +153,66 @@ export function InteractiveDemo() {
           {/* Review */}
           {phase === "review" && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-[14px] font-bold text-[#1a1a1a]">Review Filing</div>
-                  <div className="text-[11px] text-[#8a8a8a]">Confirm before submitting to CM/ECF.</div>
+              {/* Docket text hero — matches real app */}
+              <div className="bg-white rounded-xl border-2 border-[#1e3a5f]/20 overflow-hidden shadow-md mb-3">
+                <div className="px-4 py-2.5 bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold text-white">Docket Text</div>
+                    <div className="text-[8px] text-white/40">Edit before filing</div>
+                  </div>
+                  <span className="text-[8px] px-2 py-0.5 bg-white/10 text-white/60 rounded font-mono border border-white/10">editable</span>
                 </div>
-                <span className="text-[10px] px-2.5 py-1 bg-[#f0fdf4] text-[#15803d] rounded-full font-semibold border border-[#bbf7d0]">100% extracted</span>
+                <div className="p-4">
+                  <div className="w-full px-3 py-2.5 border border-[#e8e5e0] rounded-lg text-[13px] font-semibold text-[#1a1a1a] bg-[#fafaf8]">
+                    Motion to Dismiss for Failure to State a Claim
+                  </div>
+                </div>
+                <div className="px-4 py-2.5 bg-[#fafaf8] border-t border-[#f0eee9]">
+                  <div className="text-[8px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-1">CM/ECF Docket Preview</div>
+                  <div className="text-[10px] text-[#1a1a1a]">
+                    <span className="text-[#c4c4c4] font-mono">#--</span>{" "}
+                    <span className="font-semibold">Motion to Dismiss for Failure to State a Claim</span>{" "}
+                    filed by Jones Corporation (defendant). <span className="text-[#8a8a8a]">(1:24-cv-01234-ABC)</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-white rounded-xl border border-[#d4d0ca] overflow-hidden shadow-sm mb-3">
-                {FIELDS.map(({ label, value, mono, bold }) => (
-                  <div key={label} className="flex px-4 py-2.5 border-b border-[#f0eee9] last:border-0">
-                    <div className="w-[90px] shrink-0 text-[9px] font-semibold text-[#8a8a8a] uppercase tracking-wide pt-0.5">{label}</div>
-                    <div className={`text-[12px] ${bold ? "font-semibold" : ""} ${mono ? "font-mono" : ""} text-[#1a1a1a]`}>{value}</div>
+
+              {/* Quick info */}
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {[
+                  { label: "Court", value: "S.D.N.Y.", color: "text-[#1e3a5f]" },
+                  { label: "Case", value: "1:24-cv-01234", color: "text-[#1a1a1a]" },
+                  { label: "Fee", value: "$0.00", color: "text-[#15803d]" },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="bg-white rounded-lg border border-[#e8e5e0] p-2.5">
+                    <div className="text-[8px] font-semibold text-[#8a8a8a] uppercase tracking-wide">{label}</div>
+                    <div className={`text-[12px] font-bold ${color} font-mono`}>{value}</div>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={reset} className="px-5 py-2 bg-[#1e3a5f] text-white text-[11px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm">
-                  Confirm &amp; File
-                </button>
-                <button onClick={reset} className="text-[11px] text-[#8a8a8a] hover:text-[#525252] transition">Try again</button>
+
+              {/* Checks */}
+              <div className="bg-white rounded-xl border border-[#e8e5e0] p-3 mb-3">
+                {CHECKS.map(({ ok, text }) => (
+                  <div key={text} className="flex items-center gap-2 py-1">
+                    <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${ok ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#fef2f2] text-[#b91c1c]"}`}>✓</div>
+                    <span className="text-[10px] text-[#1a1a1a]">{text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action bar */}
+              <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold text-white">Ready to file</div>
+                  <div className="text-[8px] text-white/40">SDNY · 1:24-cv-01234 · No fee</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={reset} className="px-3 py-1.5 text-[10px] text-white/40 hover:text-white transition border border-white/10 rounded-lg">Cancel</button>
+                  <button onClick={reset} className="px-4 py-1.5 bg-white text-[#1e3a5f] text-[10px] font-bold rounded-lg hover:bg-[#f0f4fa] transition shadow">
+                    Confirm &amp; File
+                  </button>
+                </div>
               </div>
             </div>
           )}
