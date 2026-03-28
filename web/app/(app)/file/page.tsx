@@ -78,45 +78,107 @@ export default function WorkspacePage() {
       {/* Main workspace */}
       <div className="max-w-3xl mx-auto px-6 py-10">
 
-        {/* Ready state — drop zone */}
+        {/* Ready state */}
         {phase === "ready" && (
           <div>
-            <div className="text-center mb-8">
-              <h1 className="text-[28px] font-bold tracking-tight text-[#1a1a1a] mb-2">New Filing</h1>
-              <p className="text-[15px] text-[#525252]">Drop your document. AI handles everything else.</p>
-            </div>
-            <div
-              className="bg-white border-2 border-dashed border-[#c4bfb6] rounded-2xl p-16 text-center cursor-pointer hover:border-[#1e3a5f] hover:bg-[#f8f7f4] transition-all group"
-              onClick={() => fileRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("!border-[#1e3a5f]", "!bg-[#f0f4fa]"); }}
-              onDragLeave={(e) => { e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]"); }}
-              onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]"); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-            >
-              <div className="w-16 h-16 bg-[#f0eee9] group-hover:bg-[#e1effe] rounded-2xl flex items-center justify-center mx-auto mb-5 transition">
-                <svg className="w-8 h-8 text-[#8a8a8a] group-hover:text-[#1e3a5f] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                </svg>
+            {/* Two-column layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+              {/* Drop zone — 3 cols */}
+              <div className="lg:col-span-3">
+                <div
+                  className="bg-white border border-[#d4d0ca] rounded-2xl p-10 text-center cursor-pointer hover:border-[#1e3a5f] hover:shadow-lg hover:shadow-[#1e3a5f]/5 transition-all group h-full flex flex-col items-center justify-center min-h-[260px] shadow-sm"
+                  onClick={() => fileRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
+                  onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                >
+                  <div className="w-14 h-14 bg-[#f0eee9] group-hover:bg-[#dbeafe] rounded-2xl flex items-center justify-center mx-auto mb-4 transition">
+                    <svg className="w-7 h-7 text-[#8a8a8a] group-hover:text-[#1e3a5f] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                    </svg>
+                  </div>
+                  <div className="text-[15px] font-semibold text-[#1a1a1a] mb-1">Drop your PDF here</div>
+                  <div className="text-[13px] text-[#8a8a8a] mb-4">or click to browse</div>
+                  <div className="flex flex-wrap justify-center gap-1.5">
+                    {["Motions", "Briefs", "Complaints", "Notices", "Petitions", "Exhibits"].map((t) => (
+                      <span key={t} className="text-[10px] px-2 py-0.5 bg-[#f0eee9] text-[#8a8a8a] rounded-md font-medium">{t}</span>
+                    ))}
+                  </div>
+                  <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+                </div>
               </div>
-              <div className="text-[15px] font-semibold text-[#1a1a1a] mb-1">Drop your PDF here</div>
-              <div className="text-[13px] text-[#8a8a8a]">or click to browse &middot; motions, briefs, complaints, exhibits</div>
-              <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+
+              {/* Right panel — 2 cols */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* Stats */}
+                <div className="bg-white border border-[#e8e5e0] rounded-2xl p-5 shadow-sm">
+                  <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Your Activity</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#f5f3ee] rounded-xl p-3 text-center">
+                      <div className="text-[22px] font-bold text-[#1e3a5f]">{history.length}</div>
+                      <div className="text-[10px] text-[#8a8a8a] font-medium">Filings</div>
+                    </div>
+                    <div className="bg-[#f5f3ee] rounded-xl p-3 text-center">
+                      <div className="text-[22px] font-bold text-[#1e3a5f]">207</div>
+                      <div className="text-[10px] text-[#8a8a8a] font-medium">Courts</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* How it works */}
+                <div className="bg-white border border-[#e8e5e0] rounded-2xl p-5 shadow-sm">
+                  <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">How It Works</div>
+                  <div className="space-y-3">
+                    {[
+                      { n: "1", text: "Drop a PDF — motion, brief, complaint, or any filing" },
+                      { n: "2", text: "AI extracts case, court, event code, and party" },
+                      { n: "3", text: "Review verification checks and confirm" },
+                    ].map((s) => (
+                      <div key={s.n} className="flex gap-3">
+                        <div className="w-5 h-5 bg-[#1e3a5f] text-white rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">{s.n}</div>
+                        <div className="text-[12px] text-[#525252] leading-relaxed">{s.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick links */}
+                <div className="bg-white border border-[#e8e5e0] rounded-2xl p-5 shadow-sm">
+                  <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Quick Actions</div>
+                  <div className="space-y-1.5">
+                    <button onClick={() => setShowCourts(true)} className="w-full text-left px-3 py-2 rounded-lg text-[12px] text-[#525252] hover:bg-[#f5f3ee] hover:text-[#1a1a1a] transition flex items-center gap-2">
+                      <span className="text-[#8a8a8a]">🏛</span> Search courts
+                    </button>
+                    <Link href="/settings" className="block px-3 py-2 rounded-lg text-[12px] text-[#525252] hover:bg-[#f5f3ee] hover:text-[#1a1a1a] transition flex items-center gap-2">
+                      <span className="text-[#8a8a8a]">⚙</span> PACER credentials
+                    </Link>
+                    <button onClick={() => setShowHistory(true)} className="w-full text-left px-3 py-2 rounded-lg text-[12px] text-[#525252] hover:bg-[#f5f3ee] hover:text-[#1a1a1a] transition flex items-center gap-2">
+                      <span className="text-[#8a8a8a]">📋</span> Filing history
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Recent filings inline */}
+            {/* Recent filings — full width */}
             {history.length > 0 && (
-              <div className="mt-8">
-                <div className="text-[11px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Recent Filings</div>
-                <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden">
-                  {history.slice(0, 5).map((h, i) => (
-                    <div key={i} className="flex items-center justify-between px-5 py-3 border-b border-[#f0eee9] last:border-0">
-                      <div>
-                        <div className="text-[13px] font-medium text-[#1a1a1a]">{String(h.event_description || "Filing")}</div>
-                        <div className="text-[11px] text-[#8a8a8a] font-mono">{String(h.court_id || "")} &middot; {String(h.case_number || "")}</div>
-                      </div>
-                      <div className="text-[11px] text-[#c4c4c4]">{String(h.filed_at || "").substring(0, 10)}</div>
-                    </div>
-                  ))}
+              <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm">
+                <div className="px-5 py-3 border-b border-[#f0eee9] flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Recent Filings</span>
+                  <button onClick={() => setShowHistory(true)} className="text-[11px] text-[#1e3a5f] font-medium hover:underline">View all</button>
                 </div>
+                {history.slice(0, 5).map((h, i) => (
+                  <div key={i} className="flex items-center justify-between px-5 py-3 border-b border-[#f0eee9] last:border-0 hover:bg-[#fafaf8] transition">
+                    <div>
+                      <div className="text-[13px] font-medium text-[#1a1a1a]">{String(h.event_description || "Filing")}</div>
+                      <div className="text-[11px] text-[#8a8a8a] font-mono">{String(h.court_id || "")} &middot; {String(h.case_number || "")}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] px-2 py-0.5 bg-[#f0fdf4] text-[#15803d] rounded-full font-semibold">{String(h.status || "filed")}</span>
+                      <span className="text-[11px] text-[#c4c4c4]">{String(h.filed_at || "").substring(0, 10)}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
