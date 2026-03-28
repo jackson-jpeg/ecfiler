@@ -66,12 +66,15 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-white via-[#fafaf8] to-[#f5f0e8]/30" />
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-24 pb-16">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full text-[12px] font-semibold text-[#15803d] mb-8">
+            <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full text-[12px] font-semibold text-[#15803d] mb-8">
               <span className="w-2 h-2 bg-[#15803d] rounded-full animate-pulse" />
-              207 federal courts supported
+              207 federal courts &middot; District, Bankruptcy &amp; Appellate
             </div>
-            <h1 className="text-[32px] sm:text-[42px] md:text-[52px] leading-[1.08] font-bold tracking-[-0.035em] text-[#1a1a1a] mb-6">The intelligent way to<br />file on CM/ECF</h1>
-            <p className="text-[16px] sm:text-[18px] md:text-[20px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop your filing. AI extracts the case, court, event code, and party. Review what CM/ECF will receive. Confirm with one click.</p>
+            <h1 className="text-[32px] sm:text-[42px] md:text-[52px] leading-[1.08] font-bold tracking-[-0.035em] text-[#1a1a1a] mb-6">
+              Stop wrestling with<br />
+              <span className="bg-gradient-to-r from-[#1e3a5f] to-[#3b82f6] bg-clip-text text-transparent">CM/ECF forms</span>
+            </h1>
+            <p className="text-[16px] sm:text-[18px] md:text-[20px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop a PDF. AI reads the document, extracts case number, court, event code, and filing party. You review, edit the docket text, and file with one click.</p>
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
               <Link href="/sign-up" className="w-full sm:w-auto px-8 py-3.5 bg-[#1e3a5f] text-white text-[15px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20 text-center">Start Filing &mdash; Free</Link>
               <Link href="/what-is-cmecf" className="w-full sm:w-auto px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl border border-[#e8e5e0] hover:border-[#d4d0ca] hover:bg-[#fafaf8] transition text-center">Learn More</Link>
