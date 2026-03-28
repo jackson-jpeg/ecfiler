@@ -44,16 +44,16 @@ export function InteractiveDemo() {
   };
 
   return (
-    <div className="rounded-2xl border border-[#b8b3aa] overflow-hidden shadow-2xl shadow-black/12 bg-white">
+    <div className="rounded-2xl border border-[#9e9a94] overflow-hidden shadow-2xl shadow-black/20 bg-white">
       {/* Browser chrome */}
-      <div className="bg-[#ddd9d3] px-5 py-2.5 flex items-center gap-3 border-b border-[#c4bfb6]">
+      <div className="bg-[#c8c4be] px-5 py-2.5 flex items-center gap-3 border-b border-[#a8a49e]">
         <div className="flex gap-[6px]">
           <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57]" />
           <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e]" />
           <div className="w-[11px] h-[11px] rounded-full bg-[#28c840]" />
         </div>
         <div className="flex-1 mx-8">
-          <div className="bg-white rounded-md px-4 py-[5px] text-[11px] text-[#525252] font-mono text-center border border-[#c4bfb6]">
+          <div className="bg-white rounded-md px-4 py-[5px] text-[11px] text-[#525252] font-mono text-center border border-[#a8a49e]">
             ecfiler.com/file
           </div>
         </div>
@@ -78,7 +78,7 @@ export function InteractiveDemo() {
         </div>
 
         {/* Main area */}
-        <div className="flex-1 bg-[#f5f3ee] p-6">
+        <div className="flex-1 bg-[#eae7e1] p-6">
           {/* Idle — drop zone */}
           {phase === "idle" && (
             <div>
@@ -86,7 +86,7 @@ export function InteractiveDemo() {
               <div className="text-[11px] text-[#8a8a8a] mb-5">Drop a document to start filing.</div>
               <div
                 onClick={start}
-                className="border-2 border-dashed border-[#c4bfb6] rounded-xl p-10 text-center cursor-pointer hover:border-[#1e3a5f] hover:bg-white/50 transition-all group"
+                className="border-2 border-dashed border-[#a8a49e] rounded-xl p-10 text-center cursor-pointer hover:border-[#1e3a5f] hover:bg-white/50 transition-all group"
               >
                 <div className="w-10 h-10 bg-[#e8e5e0] group-hover:bg-[#dbeafe] rounded-xl flex items-center justify-center mx-auto mb-3 transition">
                   <svg className="w-5 h-5 text-[#8a8a8a] group-hover:text-[#1e3a5f] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

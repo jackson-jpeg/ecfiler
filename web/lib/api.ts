@@ -19,6 +19,8 @@ export interface FilingPreview {
   warnings: string[];
   confidence: string;
   ready: boolean;
+  filing_fee?: number;
+  filing_fee_text?: string;
 }
 
 export interface AnalysisStep {
