@@ -196,6 +196,34 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* For attorneys — trust section */}
+      <section className="bg-white border-y border-[#e8e5e0]">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
+          <div className="text-center mb-12">
+            <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Built by attorneys, for attorneys</h2>
+            <p className="text-[17px] text-[#525252] max-w-lg mx-auto">We understand federal practice because we live it.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z", title: "Saves 10+ min per filing", desc: "No more navigating CM/ECF forms. Drop a PDF and file." },
+              { icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z", title: "7 safety checks", desc: "PDF, redaction, event code, CoS, signature — verified before submission." },
+              { icon: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z", title: "Your PACER credentials", desc: "Encrypted storage. You control access. We never see your password." },
+              { icon: "M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z", title: "Full transparency", desc: "See every step. Edit the docket text. Nothing is filed without your approval." },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="text-center p-5">
+                <div className="w-12 h-12 bg-[#f0f4fa] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-[#1e3a5f]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+                  </svg>
+                </div>
+                <h3 className="text-[14px] font-bold text-[#1a1a1a] mb-1.5">{title}</h3>
+                <p className="text-[12px] text-[#525252] leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="bg-white border-y border-[#e8e5e0]">
         <div className="max-w-5xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
