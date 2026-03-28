@@ -81,8 +81,17 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        {/* Interactive product demo */}
-        <div className="max-w-5xl mx-auto px-5 sm:px-8 pb-24">
+      </section>
+
+      {/* Interactive product demo — full-contrast, outside the faded hero */}
+      <section className="relative bg-[#0f1f35] py-16 sm:py-20">
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px" }} />
+        <div className="relative max-w-5xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-10">
+            <div className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3">Live Demo</div>
+            <h2 className="text-[24px] sm:text-[30px] font-bold text-white tracking-tight">See it in action</h2>
+            <p className="text-[14px] sm:text-[16px] text-white/50 mt-2 max-w-lg mx-auto">Watch AI analyze a motion, verify it with 3 safety passes, and file it on CM/ECF — all in under a minute.</p>
+          </div>
           <InteractiveDemo />
         </div>
       </section>
