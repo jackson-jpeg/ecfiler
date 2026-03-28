@@ -80,12 +80,65 @@ export default function LandingPage() {
             <p className="text-[17px] text-[#525252] max-w-lg mx-auto">Every feature prevents filing errors and saves attorney time.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {[{t:"207 federal courts",d:"Every district, bankruptcy, and appellate court. BAPs and special courts included."},{t:"AI event code matching",d:"Describe your filing in English. ECFiler matches the correct CM/ECF event code."},{t:"Rule 5.2 redaction scanning",d:"Detects unredacted SSNs, DOBs, financial accounts, and minor names."},{t:"PDF pre-flight validation",d:"Checks size, searchable text, encryption before CM/ECF can reject your filing."},{t:"Certificate of service",d:"Generate properly formatted certificates. Download as PDF."},{t:"Filing fee lookup",d:"Know the exact fee before you file. IFP waiver status displayed."}].map(({t,d}) => (
-              <div key={t} className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-7 hover:border-[#d4d0ca] hover:shadow-md transition-all duration-200">
+            {[
+              {t:"207 federal courts",d:"Every district, bankruptcy, and appellate court. BAPs and special courts included.",icon:"M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21"},
+              {t:"AI event code matching",d:"Describe your filing in English. ECFiler matches the correct CM/ECF event code from hundreds of options.",icon:"M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"},
+              {t:"Rule 5.2 redaction scan",d:"AI detects unredacted SSNs, DOBs, financial accounts, and minor names before you file.",icon:"M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"},
+              {t:"PDF pre-flight checks",d:"Validates size, searchable text, encryption, and PDF/A compliance before CM/ECF can reject your filing.",icon:"M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"},
+              {t:"Sealed & redacted filings",d:"File under seal or submit redacted versions with proper CM/ECF flags. One checkbox.",icon:"M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"},
+              {t:"Exhibit management",d:"Drag and drop multiple exhibits. Auto-labeled as Exhibit A, B, C with editable descriptions.",icon:"M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"},
+              {t:"Filing fee awareness",d:"Know the exact fee before you file — $405 complaints, $338 Chapter 7, $505 appeals. All built in.",icon:"M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"},
+            ].map(({t,d,icon}) => (
+              <div key={t} className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-7 hover:border-[#d4d0ca] hover:shadow-md transition-all duration-200 group">
+                <div className="w-10 h-10 bg-[#f0f4fa] group-hover:bg-[#dbeafe] rounded-xl flex items-center justify-center mb-4 transition">
+                  <svg className="w-5 h-5 text-[#1e3a5f]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+                  </svg>
+                </div>
                 <h3 className="text-[15px] font-bold text-[#1a1a1a] mb-2">{t}</h3>
                 <p className="text-[13px] text-[#525252] leading-[1.7]">{d}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How filing works today vs ECFiler */}
+      <section className="bg-[#fafaf8]">
+        <div className="max-w-6xl mx-auto px-8 py-24">
+          <div className="text-center mb-16">
+            <h2 className="text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Filing shouldn&apos;t take 15 minutes</h2>
+            <p className="text-[17px] text-[#525252] max-w-lg mx-auto">CM/ECF was built in 2001. ECFiler brings it to 2026.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Without ECFiler */}
+            <div className="bg-white border border-[#e8e5e0] rounded-2xl p-8">
+              <div className="text-[11px] font-semibold text-[#b91c1c] uppercase tracking-wide mb-5 flex items-center gap-2">
+                <div className="w-5 h-5 bg-[#fef2f2] rounded-full flex items-center justify-center text-[10px]">&#x2717;</div>
+                Without ECFiler
+              </div>
+              <div className="space-y-3">
+                {["Navigate 10+ pages of CM/ECF forms", "Scroll through hundreds of event codes", "Manually check Rule 5.2 compliance", "Hope you selected the right filing fee", "No pre-flight PDF validation", "Copy-paste docket text from Word"].map((t) => (
+                  <div key={t} className="flex items-start gap-2.5 text-[13px] text-[#8a8a8a]">
+                    <span className="text-[#c4c4c4] mt-0.5">&#x2014;</span> {t}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* With ECFiler */}
+            <div className="bg-gradient-to-br from-[#0f1f35] to-[#1e3a5f] border border-[#1e3a5f] rounded-2xl p-8">
+              <div className="text-[11px] font-semibold text-[#bbf7d0] uppercase tracking-wide mb-5 flex items-center gap-2">
+                <div className="w-5 h-5 bg-[#f0fdf4]/20 rounded-full flex items-center justify-center text-[10px]">&#x2713;</div>
+                With ECFiler
+              </div>
+              <div className="space-y-3">
+                {["Drop a PDF — AI does everything", "Event code matched in seconds", "Automatic redaction scanning", "Filing fee displayed before submit", "PDF validated, converted to PDF/A", "Docket text auto-generated and editable"].map((t) => (
+                  <div key={t} className="flex items-start gap-2.5 text-[13px] text-white/80">
+                    <span className="text-[#bbf7d0] mt-0.5">&#x2713;</span> {t}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
