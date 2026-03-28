@@ -196,14 +196,76 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Waitlist */}
-      <Waitlist />
+      {/* Pricing */}
+      <section className="bg-white border-y border-[#e8e5e0]">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
+          <div className="text-center mb-12">
+            <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Simple pricing</h2>
+            <p className="text-[17px] text-[#525252]">Start free. Upgrade when your practice demands it.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Free */}
+            <div className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-8">
+              <div className="text-[11px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">Free</div>
+              <div className="text-[36px] font-bold text-[#1a1a1a] mb-1">$0</div>
+              <div className="text-[13px] text-[#8a8a8a] mb-6">Forever. No credit card.</div>
+              <Link href="/sign-up" className="block w-full py-3 text-center bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-sm mb-6">Get Started</Link>
+              <div className="space-y-2.5">
+                {[
+                  "AI document analysis",
+                  "Event code matching",
+                  "Rule 5.2 redaction scanning",
+                  "PDF validation & PDF/A checks",
+                  "Docket text generation",
+                  "Certificate of service",
+                  "207 federal courts",
+                  "Filing fee lookup",
+                ].map((f) => (
+                  <div key={f} className="flex items-center gap-2.5 text-[13px] text-[#525252]">
+                    <div className="w-4 h-4 bg-[#f0fdf4] text-[#15803d] rounded-full flex items-center justify-center text-[8px] font-bold shrink-0">&#10003;</div>
+                    {f}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pro */}
+            <div className="bg-gradient-to-br from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 right-4 text-[10px] px-2.5 py-1 bg-[#b8860b] text-white rounded-full font-semibold">Recommended</div>
+              <div className="text-[11px] font-semibold text-white/40 uppercase tracking-wide mb-2">Pro</div>
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-[36px] font-bold text-white">$99</span>
+                <span className="text-[14px] text-white/40">/attorney/mo</span>
+              </div>
+              <div className="text-[13px] text-white/40 mb-6">Cancel anytime. Stripe billing.</div>
+              <Waitlist />
+              <div className="space-y-2.5 mt-6">
+                {[
+                  "Everything in Free",
+                  "Automated CM/ECF submission",
+                  "Live browser view of filing",
+                  "Filing history & receipts",
+                  "Team management",
+                  "Filing templates",
+                  "Priority support",
+                  "Custom court configurations",
+                ].map((f) => (
+                  <div key={f} className="flex items-center gap-2.5 text-[13px] text-white/80">
+                    <div className="w-4 h-4 bg-white/10 text-[#bbf7d0] rounded-full flex items-center justify-center text-[8px] font-bold shrink-0">&#10003;</div>
+                    {f}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA */}
       <section className="bg-[#0f1f35]">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24 text-center">
           <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-white mb-4">Ready to modernize your filing?</h2>
-          <p className="text-[17px] text-white/50 mb-10 max-w-md mx-auto">Open source. Free to use. 207 courts. No credit card required.</p>
+          <p className="text-[17px] text-white/50 mb-10 max-w-md mx-auto">Free to start. 207 courts. No credit card required.</p>
           <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
             <Link href="/sign-up" className="w-full sm:w-auto px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl hover:bg-[#f5f5f0] transition shadow-lg text-center">Get Started Free</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="w-full sm:w-auto px-8 py-3.5 border border-white/20 text-white/70 text-[15px] font-semibold rounded-xl hover:border-white/40 hover:text-white transition text-center">Star on GitHub</a>
@@ -236,21 +298,14 @@ function Waitlist() {
     e.preventDefault(); if (!email) return; setStatus("loading");
     try { await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); setStatus("done"); } catch { setStatus("error"); }
   };
-  return (
-    <section className="bg-[#fafaf8] border-y border-[#e8e5e0]">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#fdf8ef] border border-[#fde68a] rounded-full text-[12px] font-semibold text-[#b8860b] mb-6">Coming Soon</div>
-        <h2 className="text-[28px] font-bold tracking-tight text-[#1a1a1a] mb-3">ECFiler Pro</h2>
-        <p className="text-[16px] text-[#525252] mb-8 max-w-md mx-auto">Hosted filing with team management, templates, and priority support. $99/attorney/month.</p>
-        {status === "done" ? (
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl text-[14px] text-[#15803d] font-medium"><span className="w-2 h-2 bg-[#15803d] rounded-full" />You&apos;re on the list.</div>
-        ) : (
-          <form onSubmit={submit} className="flex gap-3 max-w-sm mx-auto">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@lawfirm.com" required className="flex-1 px-4 py-3 border border-[#e8e5e0] rounded-xl text-[14px] outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 bg-white" />
-            <button type="submit" disabled={status === "loading"} className="px-6 py-3 bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] disabled:opacity-50 transition whitespace-nowrap shadow-sm">{status === "loading" ? "..." : "Join Waitlist"}</button>
-          </form>
-        )}
-      </div>
-    </section>
+  return status === "done" ? (
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-[#bbf7d0] font-medium">
+      <span className="w-2 h-2 bg-[#bbf7d0] rounded-full" />You&apos;re on the list
+    </div>
+  ) : (
+    <form onSubmit={submit} className="flex gap-2">
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@lawfirm.com" required className="flex-1 px-3 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-white placeholder-white/30 outline-none focus:border-white/30" />
+      <button type="submit" disabled={status === "loading"} className="px-5 py-2.5 bg-white text-[#1e3a5f] text-[13px] font-bold rounded-xl hover:bg-[#f0f4fa] disabled:opacity-50 transition shadow-lg whitespace-nowrap shrink-0">{status === "loading" ? "..." : "Join Waitlist"}</button>
+    </form>
   );
 }
