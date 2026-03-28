@@ -104,16 +104,21 @@ class CourtRegistry:
         Returns:
             Matching courts
         """
-        query_lower = query.lower()
+        query_lower = query.lower().strip()
+        words = query_lower.split()
         results = []
         for court_id, data in self._courts.items():
             name = data.get("name", "")
-            if query_lower in court_id.lower() or query_lower in name.lower():
+            searchable = f"{court_id} {name}".lower()
+            # Match if all words appear in the court ID + name
+            if all(w in searchable for w in words):
                 results.append({
                     "court_id": court_id,
                     "name": name,
                     "type": data.get("court_type", "district"),
                 })
+        # Sort: exact ID match first, then by name
+        results.sort(key=lambda c: (0 if c["court_id"].lower() == query_lower else 1, c["name"]))
         return results
 
     @property
