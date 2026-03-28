@@ -30,7 +30,8 @@ export default function WorkspacePage() {
   const [browserDone, setBrowserDone] = useState(false);
   const [browserMsg, setBrowserMsg] = useState("");
   const [error, setError] = useState("");
-  const [history, setHistory] = useState<Record<string, unknown>[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showCourts, setShowCourts] = useState(false);
   const [docketText, setDocketText] = useState("");

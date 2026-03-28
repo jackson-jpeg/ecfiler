@@ -251,3 +251,4 @@ class FilingReceipt(BaseModel):
     confirmation_text: str = ""
     receipt_path: str = ""
     screenshot_path: str = ""
+    pdf_path: str = ""

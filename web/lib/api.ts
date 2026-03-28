@@ -1,5 +1,35 @@
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
+/**
+ * Get the Clerk user ID from the cookie or return empty string.
+ * This is used to scope all API calls to the authenticated user.
+ */
+function getUserId(): string {
+  if (typeof window === "undefined") return "";
+  // Clerk stores the user session — we read the user ID that was
+  // set by our auth wrapper on the client side.
+  return window.__ecfiler_user_id || "";
+}
+
+/** Set the user ID for API calls (called once from layout/auth wrapper). */
+export function setUserId(id: string) {
+  if (typeof window !== "undefined") {
+    window.__ecfiler_user_id = id;
+  }
+}
+
+// Extend Window for the user ID
+declare global {
+  interface Window {
+    __ecfiler_user_id?: string;
+  }
+}
+
+/** Standard headers including user isolation. */
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  return { "X-User-Id": getUserId(), ...extra };
+}
+
 export interface FilingPreview {
   document_type: string;
   case_number: string;
@@ -59,13 +89,34 @@ export interface ValidationResult {
   warnings: string[];
 }
 
+export interface FilingRecord {
+  id: number;
+  user_id: string;
+  court_id: string;
+  case_number: string;
+  docket_number: string;
+  event_description: string;
+  status: string;
+  filed_at: string;
+  confirmation_text: string;
+  receipt_path: string;
+  pdf_path: string;
+  pdf_compressed: number;
+  is_sealed: number;
+  created_at: string;
+}
+
 export async function* streamAnalysis(
   file: File
 ): AsyncGenerator<{ type: "step"; data: AnalysisStep } | { type: "result"; data: FilingPreview } | { type: "error"; message: string }> {
   const fd = new FormData();
   fd.append("document", file);
 
-  const resp = await fetch(`${API}/api/file/stream`, { method: "POST", body: fd });
+  const resp = await fetch(`${API}/api/file/stream`, {
+    method: "POST",
+    body: fd,
+    headers: authHeaders(),
+  });
   if (!resp.ok) throw new Error(await resp.text());
 
   const reader = resp.body!.getReader();
@@ -111,7 +162,7 @@ export async function* streamBrowser(
 ): AsyncGenerator<{ type: "browser"; data: BrowserStep } | { type: "done"; message: string }> {
   const resp = await fetch(`${API}/api/filing/browser-stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       court_id: filing.court_id,
       case_number: filing.case_number,
@@ -178,18 +229,28 @@ export async function generateCOS(
 ): Promise<{ text: string }> {
   const resp = await fetch(`${API}/api/certificate-of-service`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ attorney_name: attorney, case_number: caseNumber, recipients }),
   });
   return resp.json();
 }
 
-export async function getHistory(): Promise<Record<string, unknown>[]> {
-  const resp = await fetch(`${API}/api/history`);
+export async function getHistory(): Promise<FilingRecord[]> {
+  const resp = await fetch(`${API}/api/history`, { headers: authHeaders() });
   return resp.json();
 }
 
+export async function getFilingDetail(id: number): Promise<FilingRecord> {
+  const resp = await fetch(`${API}/api/history/${id}`, { headers: authHeaders() });
+  if (!resp.ok) throw new Error("Filing not found");
+  return resp.json();
+}
+
+export function getFilingPdfUrl(id: number): string {
+  return `${API}/api/history/${id}/pdf`;
+}
+
 export async function getDrafts(): Promise<Record<string, unknown>[]> {
-  const resp = await fetch(`${API}/api/drafts`);
+  const resp = await fetch(`${API}/api/drafts`, { headers: authHeaders() });
   return resp.json();
 }

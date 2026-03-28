@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { getHistory } from "@/lib/api";
+import { getHistory, getFilingDetail, getFilingPdfUrl, type FilingRecord } from "@/lib/api";
 
 type StatusFilter = "all" | "submitted" | "error";
 
@@ -56,12 +56,198 @@ function exportCSV(rows: Record<string, unknown>[]) {
   URL.revokeObjectURL(url);
 }
 
+/* ------------------------------------------------------------------ */
+/*  Detail Panel                                                       */
+/* ------------------------------------------------------------------ */
+
+function DetailPanel({
+  filing,
+  onClose,
+}: {
+  filing: FilingRecord;
+  onClose: () => void;
+}) {
+  return (
+    <tr>
+      <td colSpan={5} className="px-0 py-0 border-b border-[#f0eee9]">
+        <div className="bg-[#fafaf8] border-t border-[#e8e5e0] px-5 py-4">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">
+              Filing Detail
+            </p>
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-[#525252] bg-white border border-[#e8e5e0] rounded-lg hover:bg-[#f5f3ee] transition"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              Close
+            </button>
+          </div>
+
+          {/* Docket number */}
+          {filing.docket_number && (
+            <div className="mb-3">
+              <p className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-1">
+                Docket Number
+              </p>
+              <p className="text-[13px] font-mono text-[#1a1a1a]">{filing.docket_number}</p>
+            </div>
+          )}
+
+          {/* Confirmation text */}
+          {filing.confirmation_text && (
+            <div className="mb-3">
+              <p className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-1">
+                ECF Confirmation
+              </p>
+              <pre className="bg-white border border-[#e8e5e0] rounded-xl p-4 text-[12px] font-mono text-[#1a1a1a] whitespace-pre-wrap break-words max-h-48 overflow-y-auto shadow-sm">
+                {filing.confirmation_text}
+              </pre>
+            </div>
+          )}
+
+          {/* PDF actions */}
+          <div className="flex items-center gap-2 mt-3">
+            {filing.is_sealed === 1 ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-[#fef2f2] text-[#b91c1c] rounded-full">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Sealed — PDF not retained
+              </span>
+            ) : (
+              <>
+                <a
+                  href={getFilingPdfUrl(filing.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="inline-flex items-center gap-2 px-4 py-2 text-[12px] font-medium text-white bg-[#1e3a5f] rounded-lg hover:bg-[#162a47] transition shadow-sm"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Download PDF
+                </a>
+                {filing.pdf_compressed === 1 && (
+                  <span className="inline-block px-2.5 py-1 text-[10px] font-semibold bg-[#f0f4f8] text-[#1e3a5f] rounded-full uppercase tracking-wide">
+                    Compressed
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/* Mobile detail card */
+function MobileDetailPanel({
+  filing,
+  onClose,
+}: {
+  filing: FilingRecord;
+  onClose: () => void;
+}) {
+  return (
+    <div className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-4 shadow-sm -mt-1">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">
+          Filing Detail
+        </p>
+        <button
+          onClick={onClose}
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-[#525252] bg-white border border-[#e8e5e0] rounded-lg hover:bg-[#f5f3ee] transition"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+          Close
+        </button>
+      </div>
+
+      {filing.docket_number && (
+        <div className="mb-3">
+          <p className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-1">
+            Docket Number
+          </p>
+          <p className="text-[13px] font-mono text-[#1a1a1a]">{filing.docket_number}</p>
+        </div>
+      )}
+
+      {filing.confirmation_text && (
+        <div className="mb-3">
+          <p className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-1">
+            ECF Confirmation
+          </p>
+          <pre className="bg-white border border-[#e8e5e0] rounded-xl p-4 text-[12px] font-mono text-[#1a1a1a] whitespace-pre-wrap break-words max-h-48 overflow-y-auto shadow-sm">
+            {filing.confirmation_text}
+          </pre>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 mt-3">
+        {filing.is_sealed === 1 ? (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-[#fef2f2] text-[#b91c1c] rounded-full">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Sealed — PDF not retained
+          </span>
+        ) : (
+          <>
+            <a
+              href={getFilingPdfUrl(filing.id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="inline-flex items-center gap-2 px-4 py-2 text-[12px] font-medium text-white bg-[#1e3a5f] rounded-lg hover:bg-[#162a47] transition shadow-sm"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download PDF
+            </a>
+            {filing.pdf_compressed === 1 && (
+              <span className="inline-block px-2.5 py-1 text-[10px] font-semibold bg-[#f0f4f8] text-[#1e3a5f] rounded-full uppercase tracking-wide">
+                Compressed
+              </span>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main Page                                                          */
+/* ------------------------------------------------------------------ */
+
 export default function HistoryPage() {
-  const [history, setHistory] = useState<Record<string, unknown>[]>([]);
+  const [history, setHistory] = useState<FilingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
+
+  // Expanded detail state
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [detailData, setDetailData] = useState<FilingRecord | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     getHistory()
@@ -71,6 +257,29 @@ export default function HistoryPage() {
 
   // Reset to page 1 when filters change
   useEffect(() => { setPage(1); }, [search, statusFilter]);
+
+  const toggleDetail = useCallback(
+    async (filing: FilingRecord) => {
+      if (expandedId === filing.id) {
+        // Collapse
+        setExpandedId(null);
+        setDetailData(null);
+        return;
+      }
+      setExpandedId(filing.id);
+      setDetailLoading(true);
+      try {
+        const detail = await getFilingDetail(filing.id);
+        setDetailData(detail);
+      } catch {
+        // Fall back to the row data we already have
+        setDetailData(filing);
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [expandedId]
+  );
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -157,7 +366,7 @@ export default function HistoryPage() {
           </div>
           {history.length > 0 && (
             <button
-              onClick={() => exportCSV(filtered)}
+              onClick={() => exportCSV(filtered as unknown as Record<string, unknown>[])}
               className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[#1e3a5f] bg-white border border-[#e8e5e0] rounded-lg hover:bg-[#fafaf8] transition shadow-sm self-start sm:self-auto"
             >
               <svg
@@ -355,39 +564,80 @@ export default function HistoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.map((h, i) => {
+                  {paginated.map((h) => {
                     const status = normalizeStatus(h.status);
                     const sc = statusColor(status);
                     const desc = String(h.event_description || "");
+                    const isExpanded = expandedId === h.id;
                     return (
-                      <tr
-                        key={i}
-                        className="hover:bg-[#fafaf8]/60 transition-colors"
-                      >
-                        <td className="px-5 py-3 text-[#525252] border-b border-[#f0eee9] whitespace-nowrap">
-                          {formatDate(h.filed_at)}
-                        </td>
-                        <td className="px-5 py-3 border-b border-[#f0eee9]">
-                          <span className="inline-block px-2 py-0.5 text-[11px] font-semibold bg-[#f0f4f8] text-[#1e3a5f] rounded-md uppercase tracking-wide">
-                            {String(h.court_id || "").toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 border-b border-[#f0eee9] font-mono text-[13px] text-[#1a1a1a]">
-                          {String(h.case_number || "")}
-                        </td>
-                        <td className="px-5 py-3 text-[#525252] border-b border-[#f0eee9] max-w-[280px]">
-                          <span className="block truncate" title={desc}>
-                            {desc}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 border-b border-[#f0eee9]">
-                          <span
-                            className={`inline-block text-[11px] px-2.5 py-1 rounded-full font-semibold capitalize ${sc.bg} ${sc.text}`}
-                          >
-                            {status}
-                          </span>
-                        </td>
-                      </tr>
+                      <>
+                        <tr
+                          key={h.id}
+                          onClick={() => toggleDetail(h)}
+                          className={`cursor-pointer transition-colors ${
+                            isExpanded
+                              ? "bg-[#fafaf8]"
+                              : "hover:bg-[#fafaf8]/60"
+                          }`}
+                        >
+                          <td className="px-5 py-3 text-[#525252] border-b border-[#f0eee9] whitespace-nowrap">
+                            {formatDate(h.filed_at)}
+                          </td>
+                          <td className="px-5 py-3 border-b border-[#f0eee9]">
+                            <span className="inline-block px-2 py-0.5 text-[11px] font-semibold bg-[#f0f4f8] text-[#1e3a5f] rounded-md uppercase tracking-wide">
+                              {String(h.court_id || "").toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 border-b border-[#f0eee9] font-mono text-[13px] text-[#1a1a1a]">
+                            {String(h.case_number || "")}
+                          </td>
+                          <td className="px-5 py-3 text-[#525252] border-b border-[#f0eee9] max-w-[280px]">
+                            <span className="block truncate" title={desc}>
+                              {desc}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 border-b border-[#f0eee9]">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-block text-[11px] px-2.5 py-1 rounded-full font-semibold capitalize ${sc.bg} ${sc.text}`}
+                              >
+                                {status}
+                              </span>
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#8a8a8a"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                              >
+                                <polyline points="6 9 12 15 18 9" />
+                              </svg>
+                            </div>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          detailLoading ? (
+                            <tr key={`detail-${h.id}`}>
+                              <td colSpan={5} className="px-5 py-4 border-b border-[#f0eee9] bg-[#fafaf8]">
+                                <div className="flex items-center gap-2 text-sm text-[#8a8a8a]">
+                                  <div className="w-4 h-4 border-2 border-[#e8e5e0] border-t-[#1e3a5f] rounded-full animate-spin" />
+                                  Loading detail...
+                                </div>
+                              </td>
+                            </tr>
+                          ) : detailData ? (
+                            <DetailPanel
+                              key={`detail-${h.id}`}
+                              filing={detailData}
+                              onClose={() => { setExpandedId(null); setDetailData(null); }}
+                            />
+                          ) : null
+                        )}
+                      </>
                     );
                   })}
                 </tbody>
@@ -396,36 +646,71 @@ export default function HistoryPage() {
 
             {/* Mobile cards */}
             <div className="md:hidden space-y-3">
-              {paginated.map((h, i) => {
+              {paginated.map((h) => {
                 const status = normalizeStatus(h.status);
                 const sc = statusColor(status);
                 const desc = String(h.event_description || "");
+                const isExpanded = expandedId === h.id;
                 return (
-                  <div
-                    key={i}
-                    className="bg-white border border-[#e8e5e0] rounded-2xl p-4 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[12px] text-[#8a8a8a]">
-                        {formatDate(h.filed_at)}
-                      </span>
-                      <span
-                        className={`text-[11px] px-2.5 py-1 rounded-full font-semibold capitalize ${sc.bg} ${sc.text}`}
-                      >
-                        {status}
-                      </span>
+                  <div key={h.id}>
+                    <div
+                      onClick={() => toggleDetail(h)}
+                      className={`bg-white border border-[#e8e5e0] rounded-2xl p-4 shadow-sm cursor-pointer transition-colors ${
+                        isExpanded ? "bg-[#fafaf8]" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[12px] text-[#8a8a8a]">
+                          {formatDate(h.filed_at)}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-[11px] px-2.5 py-1 rounded-full font-semibold capitalize ${sc.bg} ${sc.text}`}
+                          >
+                            {status}
+                          </span>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#8a8a8a"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-semibold bg-[#f0f4f8] text-[#1e3a5f] rounded-md uppercase tracking-wide">
+                          {String(h.court_id || "").toUpperCase()}
+                        </span>
+                        <span className="font-mono text-[13px] text-[#1a1a1a]">
+                          {String(h.case_number || "")}
+                        </span>
+                      </div>
+                      <p className="text-[13px] text-[#525252] line-clamp-2" title={desc}>
+                        {desc}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="inline-block px-2 py-0.5 text-[10px] font-semibold bg-[#f0f4f8] text-[#1e3a5f] rounded-md uppercase tracking-wide">
-                        {String(h.court_id || "").toUpperCase()}
-                      </span>
-                      <span className="font-mono text-[13px] text-[#1a1a1a]">
-                        {String(h.case_number || "")}
-                      </span>
-                    </div>
-                    <p className="text-[13px] text-[#525252] line-clamp-2" title={desc}>
-                      {desc}
-                    </p>
+                    {isExpanded && (
+                      detailLoading ? (
+                        <div className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-4 shadow-sm -mt-1">
+                          <div className="flex items-center gap-2 text-sm text-[#8a8a8a]">
+                            <div className="w-4 h-4 border-2 border-[#e8e5e0] border-t-[#1e3a5f] rounded-full animate-spin" />
+                            Loading detail...
+                          </div>
+                        </div>
+                      ) : detailData ? (
+                        <MobileDetailPanel
+                          filing={detailData}
+                          onClose={() => { setExpandedId(null); setDetailData(null); }}
+                        />
+                      ) : null
+                    )}
                   </div>
                 );
               })}

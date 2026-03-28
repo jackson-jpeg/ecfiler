@@ -12,6 +12,7 @@ from pathlib import Path
 CONFIG_DIR = Path(os.environ.get("ECFILER_DATA_DIR", str(Path.home() / ".ecfiler")))
 CONFIG_FILE = CONFIG_DIR / "config.toml"
 RECEIPTS_DIR = CONFIG_DIR / "receipts"
+DOCUMENTS_DIR = CONFIG_DIR / "documents"
 DB_PATH = CONFIG_DIR / "history.db"
 
 DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-20250514"
@@ -76,6 +77,7 @@ def ensure_dirs() -> None:
     """Create ECFiler directories if they don't exist."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     RECEIPTS_DIR.mkdir(parents=True, exist_ok=True)
+    DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_config(config_path: str | None = None) -> AppConfig:

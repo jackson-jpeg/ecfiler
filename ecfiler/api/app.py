@@ -13,9 +13,9 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -454,14 +454,82 @@ def get_event_codes(
 def get_filing_history(
     limit: int = Query(20, ge=1, le=100),
     search: str | None = None,
+    x_user_id: str = Header("", alias="X-User-Id"),
 ) -> list[dict]:
-    """Get filing history."""
+    """Get filing history for the authenticated user."""
     from ecfiler.storage.history import FilingHistory
 
     history = FilingHistory()
     if search:
-        return history.search(search)
-    return history.get_recent(limit)
+        return history.search(search, user_id=x_user_id)
+    return history.get_recent(limit, user_id=x_user_id)
+
+
+@app.get("/api/history/{filing_id}")
+def get_filing_detail(
+    filing_id: int,
+    x_user_id: str = Header("", alias="X-User-Id"),
+) -> dict:
+    """Get a single filing with full confirmation details."""
+    from ecfiler.storage.history import FilingHistory
+
+    history = FilingHistory()
+    record = history.get_by_id(filing_id, user_id=x_user_id)
+    if not record:
+        raise HTTPException(404, "Filing not found")
+    return record
+
+
+@app.get("/api/history/{filing_id}/pdf")
+def download_filing_pdf(
+    filing_id: int,
+    x_user_id: str = Header("", alias="X-User-Id"),
+) -> Response:
+    """Download the archived PDF for a filing.
+
+    Sealed documents are never stored and will return 404.
+    Compressed (old) PDFs are decompressed on-the-fly.
+    """
+    from ecfiler.storage.history import (
+        FilingHistory,
+        decompress_pdf,
+        get_archived_pdf_path,
+    )
+
+    history = FilingHistory()
+    record = history.get_by_id(filing_id, user_id=x_user_id)
+    if not record:
+        raise HTTPException(404, "Filing not found")
+
+    if record.get("is_sealed"):
+        raise HTTPException(
+            410,
+            "Sealed documents are not retained per court policy. "
+            "Retrieve from CM/ECF directly.",
+        )
+
+    pdf_path = record.get("pdf_path", "")
+    if not pdf_path:
+        raise HTTPException(404, "No PDF archived for this filing")
+
+    resolved = get_archived_pdf_path(pdf_path)
+    if not resolved:
+        raise HTTPException(404, "Archived PDF not found on disk")
+
+    # Decompress on-the-fly if gzipped
+    if resolved.suffix == ".gz":
+        content = decompress_pdf(resolved)
+        return Response(
+            content=content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="{resolved.stem}"'},
+        )
+
+    return FileResponse(
+        resolved,
+        media_type="application/pdf",
+        filename=resolved.name,
+    )
 
 
 class CertificateRequest(BaseModel):
@@ -623,15 +691,19 @@ async def stream_browser_view(request: FilingSubmitRequest) -> StreamingResponse
 
 
 @app.post("/api/filing/submit", response_model=FilingSubmitResponse)
-def submit_filing(request: FilingSubmitRequest) -> FilingSubmitResponse:
+def submit_filing(
+    request: FilingSubmitRequest,
+    x_user_id: str = Header("", alias="X-User-Id"),
+) -> FilingSubmitResponse:
     """Submit a prepared filing to CM/ECF.
 
     Logs every filing attempt to the history database.
+    Archives the PDF per-user (sealed documents are never retained).
     """
     from datetime import datetime
 
     from ecfiler.filing.models import FilingReceipt
-    from ecfiler.storage.history import FilingHistory
+    from ecfiler.storage.history import FilingHistory, archive_filing_pdf
 
     status = "dry_run" if request.dry_run else "submitted"
     message = (
@@ -641,6 +713,22 @@ def submit_filing(request: FilingSubmitRequest) -> FilingSubmitResponse:
         f"Filed '{request.event_description}' in case {request.case_number} on {request.court_id}."
     )
 
+    # Archive PDF (sealed documents are excluded automatically)
+    pdf_path = ""
+    if request.document_path and not request.dry_run:
+        try:
+            doc_path = Path(request.document_path)
+            if doc_path.exists():
+                pdf_path = archive_filing_pdf(
+                    pdf_content=doc_path.read_bytes(),
+                    user_id=x_user_id,
+                    court_id=request.court_id,
+                    case_number=request.case_number,
+                    is_sealed=request.is_sealed,
+                )
+        except Exception:
+            pass  # Don't fail filing if archival fails
+
     # Log to history
     try:
         history = FilingHistory()
@@ -649,8 +737,9 @@ def submit_filing(request: FilingSubmitRequest) -> FilingSubmitResponse:
             case_number=request.case_number,
             event_description=request.event_description,
             filed_at=datetime.now(),
+            pdf_path=pdf_path,
         )
-        history.log_filing(receipt)
+        history.log_filing(receipt, user_id=x_user_id, is_sealed=request.is_sealed)
     except Exception:
         pass  # Don't fail the filing if logging fails
 
@@ -843,11 +932,17 @@ def get_filing_checklist(event_description: str) -> dict | None:
 
 
 @app.get("/api/drafts")
-def list_drafts_endpoint() -> list[dict]:
-    """List saved filing drafts."""
+def list_drafts_endpoint(
+    x_user_id: str = Header("", alias="X-User-Id"),
+) -> list[dict]:
+    """List saved filing drafts for the authenticated user."""
     from ecfiler.filing.drafts import list_drafts
 
-    return list_drafts()
+    drafts = list_drafts()
+    # Filter by user_id if available (drafts created before user isolation won't have one)
+    if x_user_id:
+        return [d for d in drafts if d.get("user_id", "") in ("", x_user_id)]
+    return drafts
 
 
 @app.delete("/api/drafts/{name}")
@@ -858,6 +953,15 @@ def delete_draft_endpoint(name: str) -> dict:
     if delete_draft(name):
         return {"deleted": True, "name": name}
     raise HTTPException(404, f"Draft '{name}' not found")
+
+
+@app.post("/api/filing/compress")
+def compress_old_filings() -> dict:
+    """Compress PDFs older than 30 days to save storage. Admin endpoint."""
+    from ecfiler.storage.history import compress_old_pdfs
+
+    count = compress_old_pdfs(days_old=30)
+    return {"compressed": count}
 
 
 class PacerCredentialRequest(BaseModel):
