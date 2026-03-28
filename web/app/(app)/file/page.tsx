@@ -307,11 +307,12 @@ export default function WorkspacePage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="grid grid-cols-4 gap-3 mb-5">
               {[
                 { label: "PDF", value: `${filing.pdf_size_mb?.toFixed(1)}MB · ${filing.pdf_pages}p`, ok: filing.pdf_valid },
                 { label: "Redaction", value: filing.redaction_issues === 0 ? "Clean" : `${filing.redaction_issues} issue(s)`, ok: filing.redaction_issues === 0 },
                 { label: "Fee", value: filing.filing_fee_text || (filing.filing_fee ? `$${filing.filing_fee}` : "None"), ok: true },
+                { label: "Confidence", value: filing.confidence || "High", ok: filing.completeness_score >= 80 },
               ].map(({ label, value, ok }) => (
                 <div key={label} className={`rounded-xl border p-4 ${ok ? "bg-[#f0fdf4] border-[#bbf7d0]" : "bg-[#fffbeb] border-[#fde68a]"}`}>
                   <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-1">{label}</div>
@@ -319,6 +320,19 @@ export default function WorkspacePage() {
                 </div>
               ))}
             </div>
+
+            {/* Court-specific notices */}
+            {filing.court_id && ["nysd", "edny", "sdny"].includes(filing.court_id.toLowerCase()) && (
+              <div className="flex items-start gap-3 px-4 py-3 bg-[#f0f4fa] border border-[#bfdbfe] rounded-xl text-[12px] text-[#1e40af] mb-5">
+                <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                </svg>
+                <div>
+                  <span className="font-semibold">{filing.court_id.toUpperCase()} requires PDF/A format.</span>{" "}
+                  ECFiler will automatically convert your document before filing.
+                </div>
+              </div>
+            )}
 
             {/* Filing details */}
             <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
