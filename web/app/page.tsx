@@ -72,7 +72,7 @@ export default function LandingPage() {
             </div>
             <h1 className="text-[32px] sm:text-[42px] md:text-[52px] leading-[1.08] font-bold tracking-[-0.035em] text-[#1a1a1a] mb-6">
               Stop wrestling with<br />
-              <span className="bg-gradient-to-r from-[#1e3a5f] to-[#3b82f6] bg-clip-text text-transparent">CM/ECF forms</span>
+              <span className="gradient-text-animated">CM/ECF forms</span>
             </h1>
             <p className="text-[16px] sm:text-[18px] md:text-[20px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop a PDF. AI reads the document, extracts case number, court, event code, and filing party. You review, edit the docket text, and file with one click.</p>
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">

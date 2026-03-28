@@ -106,3 +106,19 @@ body {
 .step-enter {
   animation: step-in 0.35s ease-out forwards;
 }
+
+/* Gradient text animation for hero */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-text-animated {
+  background: linear-gradient(90deg, #1e3a5f, #3b82f6, #1e3a5f, #0f2440);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 6s ease-in-out infinite;
+}

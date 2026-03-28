@@ -38,6 +38,33 @@ export default function RootLayout({
         </head>
         <body className="bg-[#fafaf8] text-[#1a1a1a]">
           {children}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                "name": "ECFiler",
+                "applicationCategory": "LegalService",
+                "operatingSystem": "Web",
+                "description": "AI-powered tool for filing documents on federal CM/ECF court systems. Supports all 207 federal courts.",
+                "url": "https://ecfiler.com",
+                "offers": [
+                  { "@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free tier" },
+                  { "@type": "Offer", "price": "99", "priceCurrency": "USD", "description": "Pro tier per attorney per month" },
+                ],
+                "featureList": [
+                  "AI document analysis",
+                  "207 federal courts",
+                  "Event code matching",
+                  "Rule 5.2 redaction scanning",
+                  "PDF validation",
+                  "Filing fee lookup",
+                  "Certificate of service generation",
+                ],
+              }),
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>
