@@ -8,8 +8,11 @@ export interface FilingPreview {
   event_code: string;
   event_description: string;
   filing_party: string;
+  attorney_name?: string;
+  attorney_firm?: string;
   is_response: boolean;
   responds_to: string | null;
+  responds_to_docket?: string;
   pdf_valid: boolean;
   pdf_size_mb: number;
   pdf_pages: number;
@@ -22,6 +25,8 @@ export interface FilingPreview {
   ready: boolean;
   filing_fee?: number;
   filing_fee_text?: string;
+  has_certificate_of_service?: boolean;
+  has_proposed_order?: boolean;
 }
 
 export interface AnalysisStep {

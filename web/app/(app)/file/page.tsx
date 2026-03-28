@@ -352,8 +352,9 @@ export default function WorkspacePage() {
                 { label: "Case", value: filing.case_number || "—", mono: true },
                 { label: "Court", value: filing.court_id?.toUpperCase() || "—" },
                 { label: "Caption", value: filing.case_caption || "" },
-                ...(filing.is_response && filing.responds_to ? [{ label: "Response to", value: filing.responds_to, highlight: true }] : []),
+                ...(filing.is_response && filing.responds_to ? [{ label: "Response to", value: filing.responds_to, sub: filing.responds_to_docket ? `Docket #${filing.responds_to_docket}` : undefined, highlight: true }] : []),
                 { label: "Filing Party", value: filing.filing_party || "Not detected" },
+                ...(filing.attorney_name ? [{ label: "Attorney", value: filing.attorney_name, sub: filing.attorney_firm || undefined }] : []),
                 { label: "Event Code", value: filing.event_code, mono: true },
               ].filter(f => f.value).map(({ label, value, sub, mono, highlight }) => (
                 <div key={label} className={`flex px-5 py-3.5 border-b border-[#f0eee9] last:border-0 ${highlight ? "bg-[#f0f4fa]" : ""}`}>
@@ -525,11 +526,13 @@ export default function WorkspacePage() {
               </div>
               <div className="px-5 py-3 space-y-2">
                 {[
-                  { ok: filing.pdf_valid, text: `PDF valid — ${filing.pdf_size_mb?.toFixed(1)}MB, ${filing.pdf_pages} pages` },
+                  { ok: filing.pdf_valid, text: `PDF valid — ${filing.pdf_size_mb?.toFixed(1)}MB, ${filing.pdf_pages} pages${filing.pdf_is_pdfa ? ", PDF/A" : ""}` },
                   { ok: filing.redaction_issues === 0, text: filing.redaction_issues === 0 ? "No unredacted identifiers (Rule 5.2)" : `${filing.redaction_issues} redaction issue(s)`, warn: filing.redaction_issues > 0 },
                   ...(filing.case_number ? [{ ok: true, text: `Case ${filing.case_number} matches PDF` }] : []),
-                  ...(filing.event_code ? [{ ok: true, text: `Event code ${filing.event_code} matches document` }] : []),
-                  { ok: !filing.warnings?.some(w => w.includes("certificate")), text: filing.warnings?.some(w => w.includes("certificate")) ? "No certificate of service detected" : "Certificate of service present", warn: filing.warnings?.some(w => w.includes("certificate")) },
+                  ...(filing.event_code ? [{ ok: true, text: `Event code ${filing.event_code} matches document type` }] : []),
+                  { ok: filing.has_certificate_of_service !== false, text: filing.has_certificate_of_service ? "Certificate of service present" : "No certificate of service detected", warn: !filing.has_certificate_of_service },
+                  ...(filing.has_proposed_order ? [{ ok: true, text: "Proposed order detected" }] : []),
+                  ...(filing.attorney_name ? [{ ok: true, text: `Signed by ${filing.attorney_name}` }] : [{ ok: false, text: "No signature block detected", warn: true }]),
                 ].map(({ ok, text, warn }) => (
                   <div key={text} className="flex items-center gap-2.5">
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${warn ? "bg-[#fffbeb] text-[#b45309]" : ok ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#fef2f2] text-[#b91c1c]"}`}>
