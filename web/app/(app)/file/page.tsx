@@ -20,6 +20,9 @@ export default function WorkspacePage() {
   const [history, setHistory] = useState<Record<string, unknown>[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showCourts, setShowCourts] = useState(false);
+  const [docketText, setDocketText] = useState("");
+  const [isSealed, setIsSealed] = useState(false);
+  const [isRedacted, setIsRedacted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {}); }, []);
@@ -35,7 +38,11 @@ export default function WorkspacePage() {
     try {
       for await (const event of streamAnalysis(file)) {
         if (event.type === "step") setSteps((prev) => { const ex = prev.find((s) => s.id === event.data.id); if (ex) return prev.map((s) => s.id === event.data.id ? { ...s, ...event.data } : s); return [...prev, event.data]; });
-        if (event.type === "result") { setFiling(event.data); setTimeout(() => setPhase("review"), 300); }
+        if (event.type === "result") { 
+          setFiling(event.data); 
+          setDocketText(event.data.event_description || ""); 
+          setTimeout(() => setPhase("review"), 300); 
+        }
         if (event.type === "error") throw new Error(event.message);
       }
     } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); setPhase("error"); }
@@ -253,25 +260,77 @@ export default function WorkspacePage() {
               ))}
             </div>
 
-            {/* Filing data */}
-            <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
+            {/* Filing details */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
               {[
                 { label: "Document", value: filing.document_type, sub: fileName },
                 { label: "Case", value: filing.case_number || "—", mono: true },
                 { label: "Court", value: filing.court_id?.toUpperCase() || "—" },
                 { label: "Caption", value: filing.case_caption || "" },
-                { label: "Docket Text", value: filing.event_description, sub: `Event code ${filing.event_code}`, bold: true },
                 ...(filing.is_response && filing.responds_to ? [{ label: "Response to", value: filing.responds_to, highlight: true }] : []),
                 { label: "Filing Party", value: filing.filing_party || "Not detected" },
-              ].filter(f => f.value).map(({ label, value, sub, mono, bold, highlight }) => (
+                { label: "Event Code", value: filing.event_code, mono: true },
+              ].filter(f => f.value).map(({ label, value, sub, mono, highlight }) => (
                 <div key={label} className={`flex px-5 py-3.5 border-b border-[#f0eee9] last:border-0 ${highlight ? "bg-[#f0f4fa]" : ""}`}>
                   <div className="w-[110px] shrink-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide pt-0.5">{label}</div>
-                  <div>
-                    <div className={`text-[14px] ${bold ? "font-semibold" : ""} ${mono ? "font-mono" : ""} text-[#1a1a1a]`}>{value}</div>
+                  <div className={`text-[14px] ${mono ? "font-mono" : ""} text-[#1a1a1a]`}>
+                    {value}
                     {sub && <div className="text-[11px] text-[#8a8a8a] font-mono mt-0.5">{sub}</div>}
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Docket Text — editable, this is what CM/ECF displays */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
+              <div className="px-5 py-3 border-b border-[#f0eee9] flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Docket Text</span>
+                  <span className="text-[10px] text-[#c4c4c4] ml-2">This is exactly what appears on the court docket</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 bg-[#f0eee9] text-[#8a8a8a] rounded font-mono">editable</span>
+              </div>
+              <div className="p-5">
+                <textarea
+                  value={docketText}
+                  onChange={(e) => setDocketText(e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-3 border border-[#e8e5e0] rounded-xl text-[14px] font-medium text-[#1a1a1a] outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 resize-none bg-[#fafaf8]"
+                />
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="text-[11px] text-[#8a8a8a]">Suggested: <button onClick={() => setDocketText(filing.event_description)} className="text-[#1e3a5f] font-medium hover:underline">{filing.event_description}</button></div>
+                  {filing.is_response && filing.responds_to && <div className="text-[11px] text-[#8a8a8a]">Related to: <span className="font-mono">Dkt. #{filing.responds_to}</span></div>}
+                </div>
+              </div>
+            </div>
+
+            {/* Filing options */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
+              <div className="px-5 py-3 border-b border-[#f0eee9]">
+                <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Filing Options</span>
+              </div>
+              <div className="p-5 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition ${isSealed ? "bg-[#1e3a5f] border-[#1e3a5f]" : "border-[#d4d0ca] group-hover:border-[#8a8a8a]"}`}>
+                    {isSealed && <span className="text-white text-[10px] font-bold">✓</span>}
+                  </div>
+                  <input type="checkbox" checked={isSealed} onChange={(e) => setIsSealed(e.target.checked)} className="hidden" />
+                  <div>
+                    <div className="text-[13px] font-medium text-[#1a1a1a]">File under seal</div>
+                    <div className="text-[11px] text-[#8a8a8a]">Document will not be publicly accessible on CM/ECF</div>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition ${isRedacted ? "bg-[#1e3a5f] border-[#1e3a5f]" : "border-[#d4d0ca] group-hover:border-[#8a8a8a]"}`}>
+                    {isRedacted && <span className="text-white text-[10px] font-bold">✓</span>}
+                  </div>
+                  <input type="checkbox" checked={isRedacted} onChange={(e) => setIsRedacted(e.target.checked)} className="hidden" />
+                  <div>
+                    <div className="text-[13px] font-medium text-[#1a1a1a]">Redacted version filed</div>
+                    <div className="text-[11px] text-[#8a8a8a]">This is the publicly-available redacted version per Rule 5.2</div>
+                  </div>
+                </label>
+              </div>
             </div>
 
             {/* Verification */}
