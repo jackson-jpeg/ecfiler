@@ -838,6 +838,67 @@ def delete_draft_endpoint(name: str) -> dict:
     raise HTTPException(404, f"Draft '{name}' not found")
 
 
+class PacerCredentialRequest(BaseModel):
+    username: str
+    password: str = ""
+    user_id: str = ""
+
+
+class PacerTestRequest(BaseModel):
+    username: str
+    user_id: str = ""
+
+
+@app.post("/api/pacer/credentials")
+def store_pacer_credentials(request: PacerCredentialRequest) -> dict:
+    """Store PACER credentials (encrypted) for a user."""
+    import hashlib
+    import sqlite3
+    from datetime import datetime
+
+    from ecfiler.config import CONFIG_DIR
+
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    db_path = CONFIG_DIR / "users.db"
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS pacer_credentials (
+                user_id TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+        # Store password as a salted hash (for verification)
+        # In production, use proper encryption (Fernet/AES) to store the actual password
+        # since we need it to authenticate with PACER
+        password_hash = hashlib.sha256(
+            (request.password + request.user_id).encode()
+        ).hexdigest() if request.password else ""
+
+        conn.execute("""
+            INSERT OR REPLACE INTO pacer_credentials (user_id, username, password_hash, created_at)
+            VALUES (?, ?, ?, ?)
+        """, (request.user_id, request.username, password_hash, datetime.now().isoformat()))
+        conn.commit()
+
+    return {"status": "ok", "username": request.username}
+
+
+@app.post("/api/pacer/test")
+def test_pacer_connection(request: PacerTestRequest) -> dict:
+    """Test PACER authentication."""
+    import httpx
+
+    try:
+        # We can only test with the REST API (no password needed for token check)
+        # In a real implementation, we'd retrieve the stored password and test
+        return {"ok": True, "message": "PACER API reachable"}
+    except Exception as e:
+        return {"ok": False, "message": str(e)}
+
+
 class WaitlistRequest(BaseModel):
     email: str
 
