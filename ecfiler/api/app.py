@@ -284,22 +284,17 @@ async def analyze_and_prepare_filing(
 # --- Streaming endpoint ---
 
 
+_analysis_in_progress: set[str] = set()  # Simple concurrency guard
+
 @app.post("/api/file/stream")
 async def analyze_filing_stream(
     document: UploadFile = File(..., description="PDF document to file"),
 ) -> StreamingResponse:
     """Upload a PDF and receive real-time analysis progress via Server-Sent Events.
 
-    The client should use EventSource or fetch with streaming to consume events:
-
-    - event: step — a processing step started/completed/failed
-      data: {"id": 1, "label": "Validating PDF", "status": "running|done|warn|error", "detail": "..."}
-
+    - event: step — processing step started/completed/failed
     - event: result — final analysis complete
-      data: {"filing": {...}}  (same schema as /api/file response)
-
     - event: error — fatal error
-      data: {"message": "..."}
     """
     import os
 
@@ -309,10 +304,24 @@ async def analyze_filing_stream(
     if not api_key:
         raise HTTPException(503, "Smart filing requires an Anthropic API key.")
 
+    # Simple concurrency guard — max 3 concurrent analyses
+    if len(_analysis_in_progress) >= 3:
+        raise HTTPException(429, "Server is busy. Please try again in a moment.")
+
     content = await _validate_upload(document)
 
+    analysis_id = f"{id(document)}_{len(_analysis_in_progress)}"
+    _analysis_in_progress.add(analysis_id)
+
+    async def guarded_stream():
+        try:
+            async for event in stream_analysis(content, document.filename or "upload.pdf", api_key):
+                yield event
+        finally:
+            _analysis_in_progress.discard(analysis_id)
+
     return StreamingResponse(
-        stream_analysis(content, document.filename or "upload.pdf", api_key),
+        guarded_stream(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

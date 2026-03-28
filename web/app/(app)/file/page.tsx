@@ -214,6 +214,9 @@ export default function WorkspacePage() {
                 <span className="text-[10px] text-[#c4c4c4] hidden sm:inline">{backendOk ? "Connected" : "Offline"}</span>
               </div>
             )}
+            <kbd className="hidden sm:flex items-center gap-1 text-[10px] text-[#c4c4c4] bg-[#f5f3ee] px-2 py-1 rounded-lg border border-[#e8e5e0] cursor-pointer hover:text-[#8a8a8a] hover:border-[#d4d0ca] transition" title="Command palette" onClick={() => { const e = new KeyboardEvent("keydown", { key: "k", metaKey: true }); window.dispatchEvent(e); }}>
+              <span className="font-mono">&#8984;K</span>
+            </kbd>
             <Link href="/settings" className="text-[13px] text-[#8a8a8a] hover:text-[#525252] transition hidden sm:inline">Settings</Link>
             <UserButton appearance={{ elements: { avatarBox: "w-7 h-7" } }} />
           </div>

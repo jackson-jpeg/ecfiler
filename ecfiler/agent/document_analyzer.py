@@ -172,7 +172,7 @@ def analyze_document(
     """
     logger.info("Analyzing document (%d chars)", len(document_text))
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key, timeout=60.0)
 
     response = client.messages.create(
         model=model,
