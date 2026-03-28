@@ -19,6 +19,7 @@ const EXHIBIT_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 export default function WorkspacePage() {
   const [phase, setPhase] = useState<Phase>("ready");
   const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState(0);
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [filing, setFiling] = useState<FilingPreview | null>(null);
   const [browserSteps, setBrowserSteps] = useState<BrowserStep[]>([]);
@@ -43,6 +44,8 @@ export default function WorkspacePage() {
   const exhibitRef = useRef<HTMLInputElement>(null);
 
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragCounter = useRef(0);
 
   useEffect(() => {
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
@@ -90,7 +93,7 @@ export default function WorkspacePage() {
   }, []);
 
   const handleFile = useCallback(async (file: File) => {
-    setFileName(file.name); setPhase("analyzing"); setSteps([]);
+    setFileName(file.name); setFileSize(file.size); setPhase("analyzing"); setSteps([]);
     try {
       for await (const event of streamAnalysis(file)) {
         if (event.type === "step") setSteps((prev) => { const ex = prev.find((s) => s.id === event.data.id); if (ex) return prev.map((s) => s.id === event.data.id ? { ...s, ...event.data } : s); return [...prev, event.data]; });
@@ -134,20 +137,57 @@ export default function WorkspacePage() {
     } catch (e: unknown) { setBrowserDone(true); setBrowserMsg(e instanceof Error ? e.message : "Failed"); }
   }, [filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, exhibits]);
 
-  // Keyboard shortcut: Cmd+Enter to file
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Cmd+Enter to file
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && phase === "review" && filing?.ready) {
         e.preventDefault();
         handleConfirm();
       }
+      // Escape to close modals or go back
+      if (e.key === "Escape") {
+        if (showHistory) { setShowHistory(false); return; }
+        if (showCourts) { setShowCourts(false); return; }
+        if (showEventSearch) { setShowEventSearch(false); return; }
+        if (phase === "review" || phase === "analyzing") { reset(); return; }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [phase, filing, handleConfirm]);
+  }, [phase, filing, handleConfirm, showHistory, showCourts, showEventSearch, reset]);
 
   return (
-    <div className="min-h-screen bg-[#f5f3ee]">
+    <div
+      className="min-h-screen bg-[#f5f3ee] relative"
+      onDragEnter={(e) => { e.preventDefault(); dragCounter.current++; if (phase === "ready" || phase === "review") setIsDraggingOver(true); }}
+      onDragOver={(e) => e.preventDefault()}
+      onDragLeave={(e) => { e.preventDefault(); dragCounter.current--; if (dragCounter.current <= 0) { setIsDraggingOver(false); dragCounter.current = 0; } }}
+      onDrop={(e) => {
+        e.preventDefault(); setIsDraggingOver(false); dragCounter.current = 0;
+        if (phase !== "ready" && phase !== "review") return;
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf" || f.name.endsWith(".pdf"));
+        if (files.length === 0) return;
+        if (phase === "ready") {
+          handleFile(files[0]);
+          if (files.length > 1) { const rest = new DataTransfer(); files.slice(1).forEach(f => rest.items.add(f)); addExhibits(rest.files); }
+        } else if (phase === "review") {
+          addExhibits(e.dataTransfer.files);
+        }
+      }}
+    >
+      {/* Full-page drag overlay */}
+      {isDraggingOver && (
+        <div className="fixed inset-0 z-[100] bg-[#1e3a5f]/10 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
+          <div className="bg-white rounded-2xl shadow-2xl border-2 border-dashed border-[#1e3a5f] px-12 py-10 text-center">
+            <svg className="w-12 h-12 text-[#1e3a5f] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+            </svg>
+            <div className="text-[16px] font-semibold text-[#1e3a5f]">{phase === "review" ? "Drop to add as exhibit" : "Drop PDF to start filing"}</div>
+            <div className="text-[12px] text-[#8a8a8a] mt-1">Release to upload</div>
+          </div>
+        </div>
+      )}
       {/* Top bar */}
       <header className="bg-white border-b border-[#e8e5e0] sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -318,7 +358,7 @@ export default function WorkspacePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[16px] font-bold text-[#1a1a1a]">Analyzing Document</div>
-                    <div className="text-[12px] text-[#8a8a8a] font-mono mt-0.5">{fileName}</div>
+                    <div className="text-[12px] text-[#8a8a8a] font-mono mt-0.5">{fileName}{fileSize > 0 ? ` · ${(fileSize / 1024 / 1024).toFixed(1)}MB` : ""}</div>
                   </div>
                   <div className="text-[11px] text-[#8a8a8a] font-medium">{steps.filter(s => s.status === "done").length}/{steps.length || "..."} steps</div>
                 </div>

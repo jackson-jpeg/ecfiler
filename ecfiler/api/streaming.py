@@ -164,6 +164,23 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
 
         ready = validation.valid and analysis.completeness_score >= 60 and bool(event_code)
 
+        # Step 7: Final verification
+        yield emit_step("Verification complete", "running")
+        await asyncio.sleep(0.2)
+
+        checks_passed = sum([
+            validation.valid,
+            not redaction.has_issues,
+            bool(analysis.case_number),
+            bool(event_code),
+            analysis.has_signature,
+        ])
+        checks_total = 5
+        verify_detail = f"{checks_passed}/{checks_total} checks passed"
+        if not ready:
+            verify_detail += " — manual review needed"
+        yield emit_step("Verification complete", "done" if ready else "warn", verify_detail)
+
         # Emit final result
         filing = {
             "document_type": analysis.document_type_specific or analysis.document_type,
