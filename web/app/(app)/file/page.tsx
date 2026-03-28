@@ -186,24 +186,40 @@ export default function WorkspacePage() {
 
         {/* Analyzing */}
         {phase === "analyzing" && (
-          <div>
-            <button onClick={reset} className="text-[13px] text-[#8a8a8a] hover:text-[#525252] transition mb-6">&larr; Cancel</button>
-            <h2 className="text-[20px] font-bold text-[#1a1a1a] mb-1">Analyzing</h2>
-            <p className="text-[13px] text-[#8a8a8a] font-mono mb-5">{fileName}</p>
-            <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden shadow-sm">
-              {steps.map((s) => (
-                <div key={s.id} className="flex items-start gap-3 px-5 py-4 border-b border-[#f0eee9] last:border-0">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
-                    s.status === "done" ? "bg-[#f0fdf4] text-[#15803d]" : s.status === "running" ? "bg-[#e1effe] text-[#1e3a5f]" : s.status === "warn" ? "bg-[#fffbeb] text-[#b45309]" : "bg-[#fef2f2] text-[#b91c1c]"
-                  }`}>
-                    {s.status === "done" ? "✓" : s.status === "running" ? <span className="animate-pulse">●</span> : s.status === "warn" ? "!" : "×"}
+          <div className="max-w-xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <button onClick={reset} className="text-[13px] text-[#8a8a8a] hover:text-[#525252] transition">&larr; Cancel</button>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-[#1e3a5f] rounded-full animate-pulse" />
+                <span className="text-[12px] font-medium text-[#1e3a5f]">Processing</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-lg shadow-black/5">
+              <div className="px-6 py-4 border-b border-[#f0eee9] bg-[#fafaf8]">
+                <div className="text-[16px] font-bold text-[#1a1a1a]">Analyzing Document</div>
+                <div className="text-[12px] text-[#8a8a8a] font-mono mt-0.5">{fileName}</div>
+              </div>
+              <div className="px-6 py-4">
+                {steps.map((s, i) => (
+                  <div key={s.id} className="flex items-start gap-4 py-3 border-b border-[#f0eee9] last:border-0">
+                    <div className="relative">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold transition-all ${
+                        s.status === "done" ? "bg-[#f0fdf4] text-[#15803d] shadow-sm shadow-green-200/50" :
+                        s.status === "running" ? "bg-[#1e3a5f] text-white shadow-md shadow-[#1e3a5f]/30" :
+                        s.status === "warn" ? "bg-[#fffbeb] text-[#b45309]" : "bg-[#fef2f2] text-[#b91c1c]"
+                      }`}>
+                        {s.status === "done" ? "✓" : s.status === "running" ? <span className="animate-pulse">●</span> : s.status === "warn" ? "!" : "×"}
+                      </div>
+                      {i < steps.length - 1 && <div className={`absolute left-1/2 top-full w-px h-3 -translate-x-1/2 ${s.status === "done" ? "bg-[#bbf7d0]" : "bg-[#e8e5e0]"}`} />}
+                    </div>
+                    <div className="pt-1">
+                      <div className={`text-[14px] font-semibold ${s.status === "running" ? "text-[#1e3a5f]" : "text-[#1a1a1a]"}`}>{s.label}</div>
+                      {s.detail && <div className="font-mono text-[12px] text-[#8a8a8a] mt-1">{s.detail}</div>}
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[14px] font-medium text-[#1a1a1a]">{s.label}</div>
-                    {s.detail && <div className="font-mono text-[12px] text-[#8a8a8a] mt-0.5">{s.detail}</div>}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -289,11 +305,19 @@ export default function WorkspacePage() {
             ))}
 
             {/* Actions */}
-            <div className="flex gap-3 mt-6">
-              <button onClick={handleConfirm} disabled={!filing.ready} className="px-8 py-3 bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-md shadow-[#1e3a5f]/15">
-                Confirm &amp; File
-              </button>
-              <button onClick={reset} className="px-6 py-3 text-[14px] text-[#8a8a8a] hover:text-[#525252] transition">Cancel</button>
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[14px] font-bold text-[#1a1a1a]">{filing.ready ? "Ready to file" : "Missing required fields"}</div>
+                  <div className="text-[12px] text-[#8a8a8a] mt-0.5">{filing.ready ? "Everything verified. Submit to CM/ECF." : "Review the issues above."}</div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={reset} className="px-5 py-2.5 text-[13px] text-[#8a8a8a] hover:text-[#525252] transition border border-[#e8e5e0] rounded-xl hover:bg-[#fafaf8]">Cancel</button>
+                  <button onClick={handleConfirm} disabled={!filing.ready} className="px-8 py-2.5 bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-lg shadow-[#1e3a5f]/20">
+                    Confirm &amp; File
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

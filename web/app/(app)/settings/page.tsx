@@ -76,8 +76,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-8 lg:p-12 max-w-2xl">
-      <h1 className="text-2xl font-bold tracking-tight mb-2">Settings</h1>
+    <div className="min-h-screen bg-[#f5f3ee]">
+      {/* Top bar */}
+      <header className="bg-white border-b border-[#e8e5e0] sticky top-0 z-50">
+        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center gap-4">
+          <a href="/file" className="text-[13px] text-[#8a8a8a] hover:text-[#1a1a1a] transition">&larr; Back to Filing</a>
+          <div className="h-5 w-px bg-[#e8e5e0]" />
+          <span className="text-[15px] font-semibold text-[#1a1a1a]">Settings</span>
+        </div>
+      </header>
+      <div className="max-w-2xl mx-auto px-6 py-10">
       <p className="text-[#525252] text-sm mb-8">Manage your account, PACER credentials, and subscription.</p>
 
       {/* Profile */}
@@ -198,6 +206,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+    </div>
     </div>
   );
 }
