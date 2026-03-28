@@ -303,15 +303,42 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-[#e8e5e0]">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md flex items-center justify-center text-white text-[9px] font-bold">E</div>
-            <span className="text-[12px] text-[#8a8a8a]">ECFiler is a filing tool, not a legal advisor.</span>
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md flex items-center justify-center text-white text-[9px] font-bold">E</div>
+                <span className="text-[13px] font-semibold text-[#1a1a1a]">ECFiler</span>
+              </div>
+              <p className="text-[11px] text-[#8a8a8a] leading-relaxed">AI-powered federal court filing. 207 courts supported.</p>
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Product</div>
+              <div className="space-y-2 text-[12px]">
+                <Link href="/file" className="block text-[#525252] hover:text-[#1a1a1a] transition">Filing Workspace</Link>
+                <Link href="/federal-courts" className="block text-[#525252] hover:text-[#1a1a1a] transition">Court Directory</Link>
+                <Link href="/sign-up" className="block text-[#525252] hover:text-[#1a1a1a] transition">Sign Up</Link>
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Resources</div>
+              <div className="space-y-2 text-[12px]">
+                <Link href="/what-is-cmecf" className="block text-[#525252] hover:text-[#1a1a1a] transition">What is CM/ECF?</Link>
+                <a href="https://github.com/jackson-jpeg/ecfiler" className="block text-[#525252] hover:text-[#1a1a1a] transition">GitHub</a>
+                <a href="https://pacer.uscourts.gov" target="_blank" className="block text-[#525252] hover:text-[#1a1a1a] transition">PACER</a>
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Legal</div>
+              <div className="space-y-2 text-[12px]">
+                <span className="block text-[#8a8a8a]">Filing tool, not legal advice</span>
+                <span className="block text-[#8a8a8a]">Attorney review required</span>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-6 text-[12px] text-[#8a8a8a]">
-            <a href="https://github.com/jackson-jpeg/ecfiler" className="hover:text-[#525252] transition">GitHub</a>
-            <Link href="/courts" className="hover:text-[#525252] transition">Courts</Link>
-            <Link href="/what-is-cmecf" className="hover:text-[#525252] transition">Resources</Link>
+          <div className="border-t border-[#f0eee9] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span className="text-[11px] text-[#c4c4c4]">&copy; {new Date().getFullYear()} ECFiler. Not affiliated with the U.S. Courts.</span>
+            <span className="text-[11px] text-[#c4c4c4]">ecfiler.com</span>
           </div>
         </div>
       </footer>
