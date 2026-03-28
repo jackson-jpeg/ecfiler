@@ -243,20 +243,18 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {/* Free */}
             <div className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-8">
-              <div className="text-[11px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">Free</div>
+              <div className="text-[11px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">Free Tools</div>
               <div className="text-[36px] font-bold text-[#1a1a1a] mb-1">$0</div>
               <div className="text-[13px] text-[#8a8a8a] mb-6">Forever. No credit card.</div>
-              <Link href="/sign-up" className="block w-full py-3 text-center bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-sm mb-6">Get Started</Link>
+              <Link href="/sign-up" className="block w-full py-3 text-center bg-white text-[#1e3a5f] text-[14px] font-semibold rounded-xl border border-[#e8e5e0] hover:bg-[#f5f3ee] transition mb-6">Get Started</Link>
               <div className="space-y-2.5">
                 {[
-                  "AI document analysis",
-                  "Event code matching",
-                  "Rule 5.2 redaction scanning",
                   "PDF validation & PDF/A checks",
-                  "Docket text generation",
-                  "Certificate of service",
-                  "207 federal courts",
+                  "Rule 5.2 redaction scanning",
+                  "207 federal courts directory",
                   "Filing fee lookup",
+                  "Certificate of service generator",
+                  "Event code browser",
                 ].map((f) => (
                   <div key={f} className="flex items-center gap-2.5 text-[13px] text-[#525252]">
                     <div className="w-4 h-4 bg-[#f0fdf4] text-[#15803d] rounded-full flex items-center justify-center text-[8px] font-bold shrink-0">&#10003;</div>
@@ -264,10 +262,25 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
+              <div className="mt-4 pt-4 border-t border-[#e8e5e0]">
+                <div className="space-y-2.5">
+                  {[
+                    "AI document analysis",
+                    "AI docket text generation",
+                    "AI event code matching",
+                    "Automated CM/ECF filing",
+                  ].map((f) => (
+                    <div key={f} className="flex items-center gap-2.5 text-[13px] text-[#c4c4c4]">
+                      <div className="w-4 h-4 bg-[#f5f5f0] text-[#d4d0ca] rounded-full flex items-center justify-center text-[8px] font-bold shrink-0">&mdash;</div>
+                      {f}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Pro */}
-            <div className="bg-gradient-to-br from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-8 relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-8 relative overflow-hidden ring-2 ring-[#b8860b]/30">
               <div className="absolute top-4 right-4 text-[10px] px-2.5 py-1 bg-[#b8860b] text-white rounded-full font-semibold">Recommended</div>
               <div className="text-[11px] font-semibold text-white/40 uppercase tracking-wide mb-2">Pro</div>
               <div className="flex items-baseline gap-1 mb-1">
@@ -279,13 +292,15 @@ export default function LandingPage() {
               <div className="space-y-2.5 mt-6">
                 {[
                   "Everything in Free",
+                  "AI document analysis",
+                  "AI docket text generation",
+                  "AI event code matching",
+                  "3-pass AI safety verification",
                   "Automated CM/ECF submission",
                   "Live browser view of filing",
-                  "Filing history & receipts",
+                  "Filing history & PDF archive",
                   "Team management",
-                  "Filing templates",
                   "Priority support",
-                  "Custom court configurations",
                 ].map((f) => (
                   <div key={f} className="flex items-center gap-2.5 text-[13px] text-white/80">
                     <div className="w-4 h-4 bg-white/10 text-[#bbf7d0] rounded-full flex items-center justify-center text-[8px] font-bold shrink-0">&#10003;</div>

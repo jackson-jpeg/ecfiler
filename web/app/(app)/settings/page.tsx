@@ -101,10 +101,12 @@ export default function SettingsPage() {
 
   const features = [
     { feature: "PDF validation & redaction scanning", needsPacer: false },
-    { feature: "AI document analysis & event code matching", needsPacer: false },
-    { feature: "Filing review with verification checks", needsPacer: false },
     { feature: "Certificate of service generation", needsPacer: false },
     { feature: "Court & event code search (207 courts)", needsPacer: false },
+    { feature: "Filing fee lookup", needsPacer: false },
+    { feature: "AI document analysis & event code matching", needsPacer: true },
+    { feature: "AI docket text generation", needsPacer: true },
+    { feature: "3-pass AI safety verification", needsPacer: true },
     { feature: "Automated CM/ECF submission", needsPacer: true },
     { feature: "Live browser view of filing", needsPacer: true },
   ];
@@ -518,7 +520,7 @@ export default function SettingsPage() {
                     </div>
                     <span className={`text-[14px] ${available ? "text-[#1a1a1a]" : "text-[#8a8a8a]"}`}>{f.feature}</span>
                     {f.needsPacer && !pacerUsername && (
-                      <span className="ml-auto text-[11px] text-[#8a8a8a] bg-[#f5f5f0] px-2 py-0.5 rounded-md font-medium flex-shrink-0">Needs PACER</span>
+                      <span className="ml-auto text-[11px] text-[#1e3a5f] bg-[#f0f4fa] px-2 py-0.5 rounded-md font-semibold flex-shrink-0">Pro</span>
                     )}
                   </div>
                 );
