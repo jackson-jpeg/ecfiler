@@ -43,12 +43,12 @@ export default function LandingPage() {
         </div>
         {/* Product showcase */}
         <div className="max-w-5xl mx-auto px-8 pb-24">
-          <div className="rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-2xl shadow-[#d4d0ca]/30 bg-white">
-            <div className="bg-[#f5f5f0] px-5 py-3 flex items-center gap-3 border-b border-[#e8e5e0]">
-              <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-[#d4d0ca]" /><div className="w-3 h-3 rounded-full bg-[#d4d0ca]" /><div className="w-3 h-3 rounded-full bg-[#d4d0ca]" /></div>
-              <div className="flex-1 mx-12"><div className="bg-white rounded-lg px-4 py-1.5 text-[12px] text-[#8a8a8a] font-mono text-center border border-[#e8e5e0]">ecfiler.com/file</div></div>
+          <div className="rounded-2xl border border-[#c4bfb6] overflow-hidden shadow-2xl shadow-black/10 bg-white">
+            <div className="bg-[#e8e5e0] px-5 py-3 flex items-center gap-3 border-b border-[#d4d0ca]">
+              <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-[#ff5f57]" /><div className="w-3 h-3 rounded-full bg-[#febc2e]" /><div className="w-3 h-3 rounded-full bg-[#28c840]" /></div>
+              <div className="flex-1 mx-12"><div className="bg-white rounded-lg px-4 py-1.5 text-[12px] text-[#525252] font-mono text-center border border-[#d4d0ca] shadow-inner">ecfiler.com/file</div></div>
             </div>
-            <div className="bg-[#fafaf8] p-8 md:p-10">
+            <div className="bg-[#f0eee9] p-8 md:p-10">
               <div className="flex gap-6">
                 <div className="hidden md:block w-48 shrink-0">
                   <div className="bg-[#0f1f35] rounded-xl p-4">
@@ -60,9 +60,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex-1 space-y-4">
-                  <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden">
-                    <div className="px-5 py-3 border-b border-[#f0eee9] flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-[#8a8a8a] uppercase tracking-wide">AI Analysis Complete</span>
+                  <div className="bg-white rounded-xl border border-[#d4d0ca] overflow-hidden shadow-sm">
+                    <div className="px-5 py-3 border-b border-[#e8e5e0] flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-[#525252] uppercase tracking-wide">AI Analysis Complete</span>
                       <span className="text-[11px] px-2.5 py-0.5 bg-[#f0fdf4] text-[#15803d] rounded-full font-semibold">100% extracted</span>
                     </div>
                     <div className="p-5 space-y-3">
@@ -75,7 +75,7 @@ export default function LandingPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="bg-white rounded-xl border border-[#e8e5e0] p-5 flex items-center justify-between">
+                  <div className="bg-white rounded-xl border border-[#d4d0ca] p-5 flex items-center justify-between shadow-sm">
                     <div>
                       <div className="text-[15px] font-semibold text-[#1a1a1a]">Motion to Dismiss for Failure to State a Claim</div>
                       <div className="text-[12px] text-[#8a8a8a] font-mono mt-1">NYSD &middot; Jones Corporation (defendant) &middot; $0 filing fee</div>
