@@ -155,7 +155,7 @@ class DocumentAnalysis:
 def analyze_document(
     document_text: str,
     api_key: str,
-    model: str = "claude-sonnet-4-20250514",
+    model: str = "claude-sonnet-4-20250514",  # Latest Sonnet for best cost/quality
 ) -> DocumentAnalysis:
     """Analyze a document and extract all filing metadata.
 

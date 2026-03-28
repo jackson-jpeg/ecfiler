@@ -35,10 +35,22 @@ export default function WorkspacePage() {
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [showCertService, setShowCertService] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [filingStartTime, setFilingStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const exhibitRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {}); }, []);
+
+  // Elapsed time counter for filing phase
+  useEffect(() => {
+    if (phase === "filing" && !filingStartTime) setFilingStartTime(Date.now());
+    if (phase !== "filing") { setFilingStartTime(null); setElapsedTime(0); return; }
+    const interval = setInterval(() => {
+      if (filingStartTime) setElapsedTime(Math.floor((Date.now() - filingStartTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, filingStartTime]);
 
   const reset = () => {
     setPhase("ready"); setFileName(""); setSteps([]); setFiling(null);
@@ -143,7 +155,7 @@ export default function WorkspacePage() {
       </header>
 
       {/* Main workspace */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className={`${phase === "filing" ? "max-w-6xl" : "max-w-3xl"} mx-auto px-4 sm:px-6 py-6 sm:py-10 transition-all duration-500`}>
 
         {/* Ready state */}
         {phase === "ready" && (
@@ -617,35 +629,99 @@ export default function WorkspacePage() {
         {/* Filing — browser view */}
         {phase === "filing" && (
           <div>
-            <h2 className="text-[20px] font-bold text-[#1a1a1a] mb-1">Filing on CM/ECF</h2>
-            <p className="text-[13px] text-[#525252] mb-5">Navigating the court&apos;s filing system.</p>
-
-            <div className="rounded-2xl border border-[#c4bfb6] overflow-hidden shadow-xl shadow-black/10 mb-5">
-              <div className="bg-[#e8e5e0] px-4 py-2 flex items-center gap-2 border-b border-[#d4d0ca]">
-                <div className="flex gap-[5px]"><div className="w-[10px] h-[10px] rounded-full bg-[#ff5f57]" /><div className="w-[10px] h-[10px] rounded-full bg-[#febc2e]" /><div className="w-[10px] h-[10px] rounded-full bg-[#28c840]" /></div>
-                <div className="flex-1 text-center font-mono text-[11px] text-[#525252]">ecf.{filing?.court_id || "nysd"}.uscourts.gov</div>
-                {!browserDone && <span className="text-[10px] text-[#1e3a5f] font-semibold animate-pulse">LIVE</span>}
+            {/* Header with elapsed time */}
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-[20px] font-bold text-[#1a1a1a] mb-0.5">Filing on CM/ECF</h2>
+                <p className="text-[13px] text-[#525252]">{filing?.court_id?.toUpperCase()} &middot; {filing?.case_number}</p>
               </div>
-              <div className="bg-[#f0eee9] min-h-[300px] flex items-center justify-center">
-                {screenshot ? <img src={`data:image/png;base64,${screenshot}`} className="w-full" alt="CM/ECF" /> : <span className="text-[13px] text-[#8a8a8a]">Connecting...</span>}
+              <div className="flex items-center gap-3">
+                {!browserDone && (
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-[#1e3a5f] rounded-full animate-pulse" />
+                    <span className="text-[12px] font-mono text-[#1e3a5f] font-medium">{Math.floor(elapsedTime / 60)}:{String(elapsedTime % 60).padStart(2, "0")}</span>
+                  </div>
+                )}
+                <span className={`text-[11px] px-3 py-1 rounded-full font-semibold ${browserDone ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#e1effe] text-[#1e3a5f]"}`}>
+                  {browserDone ? "Complete" : `${browserSteps.filter(s => s.status === "done").length}/${browserSteps.length || "..."} steps`}
+                </span>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-5">
-              {browserSteps.map((s) => (
-                <div key={s.step} className="flex items-start gap-3 px-5 py-3 border-b border-[#f0eee9] last:border-0">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${s.status === "done" ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#e1effe] text-[#1e3a5f]"}`}>
-                    {s.status === "done" ? "✓" : <span className="animate-pulse">●</span>}
-                  </div>
-                  <div><div className="text-[12px] font-semibold text-[#1a1a1a]">{s.step}</div><div className="text-[11px] text-[#8a8a8a]">{s.description}</div></div>
+            {/* Split panel: browser + timeline */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+              {/* Browser window — 2 cols */}
+              <div className="lg:col-span-2 rounded-2xl border border-[#c4bfb6] overflow-hidden shadow-xl shadow-black/10">
+                <div className="bg-[#e8e5e0] px-4 py-2 flex items-center gap-2 border-b border-[#d4d0ca]">
+                  <div className="flex gap-[5px]"><div className="w-[10px] h-[10px] rounded-full bg-[#ff5f57]" /><div className="w-[10px] h-[10px] rounded-full bg-[#febc2e]" /><div className="w-[10px] h-[10px] rounded-full bg-[#28c840]" /></div>
+                  <div className="flex-1 text-center font-mono text-[11px] text-[#525252]">ecf.{filing?.court_id || "nysd"}.uscourts.gov</div>
+                  {!browserDone && <span className="text-[10px] text-[#1e3a5f] font-semibold animate-pulse">LIVE</span>}
                 </div>
-              ))}
+                {screenshot ? (
+                  <img src={`data:image/png;base64,${screenshot}`} className="w-full" alt="CM/ECF" />
+                ) : (
+                  /* Mock CM/ECF page when no screenshot */
+                  <div className="bg-white min-h-[350px]">
+                    <div className="bg-[#003366] px-4 py-2 flex items-center justify-between">
+                      <div className="text-white text-[12px] font-serif font-bold">CM/ECF — {filing?.court_id?.toUpperCase() || "NYSD"}</div>
+                      <div className="text-white/50 text-[10px] font-serif">NextGen</div>
+                    </div>
+                    <div className="px-4 py-2 bg-[#f0f0f0] border-b border-[#d0d0d0] text-[10px] text-[#666] font-serif">
+                      Civil &rsaquo; File a Document &rsaquo; {filing?.case_number || "Case"}
+                    </div>
+                    <div className="p-6 flex flex-col items-center justify-center min-h-[250px]">
+                      <div className="w-10 h-10 border-3 border-[#1e3a5f] border-t-transparent rounded-full animate-spin mb-4" />
+                      <div className="text-[13px] text-[#525252] font-medium">ECFiler is navigating CM/ECF...</div>
+                      <div className="text-[11px] text-[#8a8a8a] mt-1">{browserSteps.length > 0 ? browserSteps[browserSteps.length - 1].step : "Connecting"}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Timeline — 1 col */}
+              <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm h-fit">
+                <div className="px-4 py-3 border-b border-[#f0eee9] bg-[#fafaf8]">
+                  <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Filing Progress</span>
+                </div>
+                <div className="p-3">
+                  {browserSteps.length === 0 && (
+                    <div className="flex items-center gap-2 p-2 text-[12px] text-[#8a8a8a]">
+                      <span className="w-1.5 h-1.5 bg-[#1e3a5f] rounded-full animate-pulse" />
+                      Initializing...
+                    </div>
+                  )}
+                  {browserSteps.map((s, i) => (
+                    <div key={s.step} className="flex items-start gap-3 p-2 step-enter">
+                      <div className="relative">
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-bold ${s.status === "done" ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#1e3a5f] text-white shadow-md shadow-[#1e3a5f]/20"}`}>
+                          {s.status === "done" ? "✓" : <span className="animate-pulse">●</span>}
+                        </div>
+                        {i < browserSteps.length - 1 && <div className={`absolute left-1/2 top-full w-px h-2 -translate-x-1/2 ${s.status === "done" ? "bg-[#bbf7d0]" : "bg-[#e8e5e0]"}`} />}
+                      </div>
+                      <div className="pt-0.5 min-w-0">
+                        <div className="text-[11px] font-semibold text-[#1a1a1a] leading-tight">{s.step}</div>
+                        <div className="text-[10px] text-[#8a8a8a] truncate">{s.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {browserDone && (
-              <div className="flex items-center gap-4">
-                <button onClick={() => setPhase("done")} className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-sm">View Receipt</button>
-                <span className="text-[13px] text-[#525252]">{browserMsg}</span>
+              <div className="bg-gradient-to-r from-[#f0fdf4] to-[#dcfce7] rounded-2xl border border-[#bbf7d0] p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                    <svg className="w-6 h-6 text-[#15803d]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-bold text-[#15803d]">Filing Complete</div>
+                    <div className="text-[12px] text-[#166534]">{browserMsg || "Document filed successfully on CM/ECF"}</div>
+                  </div>
+                </div>
+                <button onClick={() => setPhase("done")} className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20">
+                  View Receipt
+                </button>
               </div>
             )}
           </div>
@@ -704,18 +780,41 @@ export default function WorkspacePage() {
       {showHistory && (
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setShowHistory(false)}>
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-          <div className="relative w-full sm:w-[380px] md:w-[400px] bg-white h-full shadow-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-[#e8e5e0] px-6 py-4 flex items-center justify-between">
-              <h3 className="text-[16px] font-bold text-[#1a1a1a]">Filing History</h3>
-              <button onClick={() => setShowHistory(false)} className="text-[#8a8a8a] hover:text-[#1a1a1a] transition text-lg">&times;</button>
+          <div className="relative w-full sm:w-[380px] md:w-[420px] bg-white h-full shadow-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-[#e8e5e0] px-6 py-4 z-10">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[16px] font-bold text-[#1a1a1a]">Filing History</h3>
+                <button onClick={() => setShowHistory(false)} className="w-7 h-7 rounded-lg bg-[#f5f3ee] hover:bg-[#e8e5e0] flex items-center justify-center text-[#8a8a8a] hover:text-[#1a1a1a] transition text-sm">&times;</button>
+              </div>
+              <div className="text-[11px] text-[#8a8a8a]">{history.length} filing{history.length !== 1 ? "s" : ""} on record</div>
             </div>
-            <div className="p-6">
+            <div className="p-4">
               {history.length === 0 ? (
-                <p className="text-[13px] text-[#8a8a8a] text-center py-8">No filings yet</p>
+                <div className="text-center py-12">
+                  <div className="w-12 h-12 bg-[#f5f3ee] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-[#c4c4c4]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <p className="text-[13px] text-[#8a8a8a] mb-1">No filings yet</p>
+                  <p className="text-[11px] text-[#c4c4c4]">Drop a PDF to start your first filing</p>
+                </div>
               ) : history.map((h, i) => (
-                <div key={i} className="py-3 border-b border-[#f0eee9] last:border-0">
-                  <div className="text-[13px] font-medium text-[#1a1a1a]">{String(h.event_description || "Filing")}</div>
-                  <div className="text-[11px] text-[#8a8a8a] font-mono mt-0.5">{String(h.court_id || "")} &middot; {String(h.case_number || "")} &middot; {String(h.filed_at || "").substring(0, 10)}</div>
+                <div key={i} className="bg-[#fafaf8] border border-[#f0eee9] rounded-xl p-4 mb-2 hover:border-[#e8e5e0] transition">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-semibold text-[#1a1a1a] truncate">{String(h.event_description || "Filing")}</div>
+                      <div className="text-[11px] text-[#8a8a8a] font-mono mt-0.5">
+                        {String(h.court_id || "").toUpperCase()} &middot; {String(h.case_number || "")}
+                      </div>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                      String(h.status) === "submitted" || String(h.status) === "filed" ? "bg-[#f0fdf4] text-[#15803d]" :
+                      String(h.status) === "error" ? "bg-[#fef2f2] text-[#b91c1c]" : "bg-[#f5f3ee] text-[#8a8a8a]"
+                    }`}>{String(h.status || "filed")}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2 text-[10px] text-[#c4c4c4]">
+                    <span>{String(h.filed_at || "").substring(0, 10)}</span>
+                    {h.docket_number ? <span className="font-mono">Dkt. #{String(h.docket_number)}</span> : null}
+                  </div>
                 </div>
               ))}
             </div>
