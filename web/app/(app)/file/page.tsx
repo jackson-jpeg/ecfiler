@@ -111,11 +111,11 @@ export default function WorkspacePage() {
     <div className="min-h-screen bg-[#f5f3ee]">
       {/* Top bar */}
       <header className="bg-white border-b border-[#e8e5e0] sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2.5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-6">
+            <Link href="/" className="flex items-center gap-2">
               <div className="w-7 h-7 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-lg flex items-center justify-center text-white text-[10px] font-bold">E</div>
-              <span className="text-[15px] font-semibold tracking-tight text-[#1a1a1a]">ECFiler</span>
+              <span className="text-[15px] font-semibold tracking-tight text-[#1a1a1a] hidden sm:inline">ECFiler</span>
             </Link>
             <div className="h-5 w-px bg-[#e8e5e0]" />
             <button onClick={() => setShowHistory(!showHistory)} className="text-[13px] text-[#525252] hover:text-[#1a1a1a] transition font-medium">
@@ -123,15 +123,15 @@ export default function WorkspacePage() {
             </button>
             <button onClick={() => setShowCourts(!showCourts)} className="text-[13px] text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</button>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/settings" className="text-[13px] text-[#8a8a8a] hover:text-[#525252] transition">Settings</Link>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/settings" className="text-[13px] text-[#8a8a8a] hover:text-[#525252] transition hidden sm:inline">Settings</Link>
             <UserButton appearance={{ elements: { avatarBox: "w-7 h-7" } }} />
           </div>
         </div>
       </header>
 
       {/* Main workspace */}
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
 
         {/* Ready state */}
         {phase === "ready" && (
@@ -325,7 +325,7 @@ export default function WorkspacePage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
               {[
                 { label: "PDF", value: `${filing.pdf_size_mb?.toFixed(1)}MB · ${filing.pdf_pages}p${filing.pdf_is_pdfa ? " · PDF/A" : ""}`, ok: filing.pdf_valid },
                 { label: "Redaction", value: filing.redaction_issues === 0 ? "Clean" : `${filing.redaction_issues} issue(s)`, ok: filing.redaction_issues === 0 },
@@ -689,7 +689,7 @@ export default function WorkspacePage() {
       {showHistory && (
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setShowHistory(false)}>
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-          <div className="relative w-[400px] bg-white h-full shadow-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full sm:w-[380px] md:w-[400px] bg-white h-full shadow-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-white border-b border-[#e8e5e0] px-6 py-4 flex items-center justify-between">
               <h3 className="text-[16px] font-bold text-[#1a1a1a]">Filing History</h3>
               <button onClick={() => setShowHistory(false)} className="text-[#8a8a8a] hover:text-[#1a1a1a] transition text-lg">&times;</button>
@@ -729,7 +729,7 @@ function CourtsModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={onClose}>
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-      <div className="relative w-[560px] bg-white rounded-2xl shadow-2xl border border-[#e8e5e0] max-h-[60vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="relative w-[calc(100%-2rem)] sm:w-[500px] md:w-[560px] bg-white rounded-2xl shadow-2xl border border-[#e8e5e0] max-h-[60vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-4 border-b border-[#f0eee9]">
           <input
             type="text" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus

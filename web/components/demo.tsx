@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const STEPS = [
   { label: "Validating PDF", detail: "2.3MB, 15 pages, searchable, no encryption" },
@@ -24,20 +24,45 @@ export function InteractiveDemo() {
   const [visibleSteps, setVisibleSteps] = useState(0);
 
   useEffect(() => {
-    if (phase !== "analyzing") return;
-    if (visibleSteps >= STEPS.length) {
-      const t = setTimeout(() => setPhase("review"), 500);
+    if (phase === "analyzing") {
+      if (visibleSteps >= STEPS.length) {
+        const t = setTimeout(() => setPhase("review"), 500);
+        return () => clearTimeout(t);
+      }
+      const t = setTimeout(() => setVisibleSteps((v) => v + 1), 700);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setVisibleSteps((v) => v + 1), 700);
-    return () => clearTimeout(t);
+    if (phase === "review") {
+      // Auto-restart after 6 seconds
+      const t = setTimeout(() => { setPhase("analyzing"); setVisibleSteps(0); }, 6000);
+      return () => clearTimeout(t);
+    }
   }, [phase, visibleSteps]);
 
   const start = () => { setPhase("analyzing"); setVisibleSteps(0); };
   const reset = () => { setPhase("idle"); setVisibleSteps(0); };
 
+  // Auto-start when scrolled into view
+  const demoRef = useRef<HTMLDivElement>(null);
+  const hasAutoStarted = useRef(false);
+  useEffect(() => {
+    const el = demoRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAutoStarted.current && phase === "idle") {
+          hasAutoStarted.current = true;
+          setTimeout(start, 500); // Small delay for dramatic effect
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [phase]);
+
   return (
-    <div className="rounded-2xl border border-[#9e9a94] overflow-hidden shadow-2xl shadow-black/20 bg-white">
+    <div ref={demoRef} className="rounded-2xl border border-[#9e9a94] overflow-hidden shadow-2xl shadow-black/20 bg-white">
       {/* Browser chrome */}
       <div className="bg-[#c8c4be] px-5 py-2.5 flex items-center gap-3 border-b border-[#a8a49e]">
         <div className="flex gap-[6px]">
@@ -45,15 +70,15 @@ export function InteractiveDemo() {
           <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e]" />
           <div className="w-[11px] h-[11px] rounded-full bg-[#28c840]" />
         </div>
-        <div className="flex-1 mx-8">
-          <div className="bg-white rounded-md px-4 py-[5px] text-[11px] text-[#525252] font-mono text-center border border-[#a8a49e]">
+        <div className="flex-1 mx-4 sm:mx-8">
+          <div className="bg-white rounded-md px-3 sm:px-4 py-[5px] text-[10px] sm:text-[11px] text-[#525252] font-mono text-center border border-[#a8a49e]">
             ecfiler.com/file
           </div>
         </div>
       </div>
 
       {/* App content — matches actual app layout */}
-      <div className="bg-[#f5f3ee]" style={{ minHeight: 420 }}>
+      <div className="bg-[#f5f3ee]" style={{ minHeight: "min(420px, 70vh)" }}>
         {/* Top bar */}
         <div className="bg-white border-b border-[#e8e5e0] px-5 h-10 flex items-center justify-between">
           <div className="flex items-center gap-3">

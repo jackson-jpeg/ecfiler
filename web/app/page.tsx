@@ -5,16 +5,17 @@ import { useState } from "react";
 import { InteractiveDemo } from "@/components/demo";
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       {/* Nav */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-[#e8e5e0] sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-lg flex items-center justify-center text-white text-[12px] font-bold shadow-sm">E</div>
             <span className="text-[17px] font-semibold tracking-tight text-[#1a1a1a]">ECFiler</span>
           </Link>
-          <div className="flex items-center gap-8 text-[14px]">
+          <div className="hidden md:flex items-center gap-8 text-[14px]">
             <Link href="/courts" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</Link>
             <Link href="/what-is-cmecf" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Resources</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">GitHub</a>
@@ -22,35 +23,54 @@ export default function LandingPage() {
             <Link href="/sign-in" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Sign In</Link>
             <Link href="/sign-up" className="px-5 py-2 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm">Get Started Free</Link>
           </div>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-[#525252] hover:text-[#1a1a1a] transition" aria-label="Toggle menu">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              {mobileMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              )}
+            </svg>
+          </button>
         </div>
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-[#e8e5e0] bg-white px-5 py-4 flex flex-col gap-4 text-[14px]">
+            <Link href="/courts" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</Link>
+            <Link href="/what-is-cmecf" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Resources</Link>
+            <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">GitHub</a>
+            <hr className="border-[#e8e5e0]" />
+            <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Sign In</Link>
+            <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)} className="px-5 py-2 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm text-center">Get Started Free</Link>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-white via-[#fafaf8] to-[#f5f0e8]/30" />
-        <div className="relative max-w-6xl mx-auto px-8 pt-24 pb-16">
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-24 pb-16">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full text-[12px] font-semibold text-[#15803d] mb-8">
               <span className="w-2 h-2 bg-[#15803d] rounded-full animate-pulse" />
               207 federal courts supported
             </div>
-            <h1 className="text-[52px] leading-[1.08] font-bold tracking-[-0.035em] text-[#1a1a1a] mb-6">The intelligent way to<br />file on CM/ECF</h1>
-            <p className="text-[20px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop your filing. AI extracts the case, court, event code, and party. Review what CM/ECF will receive. Confirm with one click.</p>
-            <div className="flex gap-4 justify-center">
-              <Link href="/sign-up" className="px-8 py-3.5 bg-[#1e3a5f] text-white text-[15px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20">Start Filing &mdash; Free</Link>
-              <Link href="/what-is-cmecf" className="px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl border border-[#e8e5e0] hover:border-[#d4d0ca] hover:bg-[#fafaf8] transition">Learn More</Link>
+            <h1 className="text-[32px] sm:text-[42px] md:text-[52px] leading-[1.08] font-bold tracking-[-0.035em] text-[#1a1a1a] mb-6">The intelligent way to<br />file on CM/ECF</h1>
+            <p className="text-[16px] sm:text-[18px] md:text-[20px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop your filing. AI extracts the case, court, event code, and party. Review what CM/ECF will receive. Confirm with one click.</p>
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
+              <Link href="/sign-up" className="w-full sm:w-auto px-8 py-3.5 bg-[#1e3a5f] text-white text-[15px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20 text-center">Start Filing &mdash; Free</Link>
+              <Link href="/what-is-cmecf" className="w-full sm:w-auto px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl border border-[#e8e5e0] hover:border-[#d4d0ca] hover:bg-[#fafaf8] transition text-center">Learn More</Link>
             </div>
           </div>
         </div>
         {/* Interactive product demo */}
-        <div className="max-w-5xl mx-auto px-8 pb-24">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 pb-24">
           <InteractiveDemo />
         </div>
       </section>
 
       {/* Trust numbers */}
       <section className="border-y border-[#e8e5e0] bg-white">
-        <div className="max-w-5xl mx-auto px-8 py-14 grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 py-14 grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
           {[["207", "Federal Courts", "District, Bankruptcy, Appellate"],["94", "Bankruptcy Courts", "Every federal district"],["7", "Safety Gates", "Before every filing"],["<1m", "To Prepare", "AI does the work"]].map(([value, label, sub]) => (
             <div key={label}><div className="text-[36px] font-bold tracking-tight text-[#1e3a5f]">{value}</div><div className="text-[14px] font-semibold text-[#1a1a1a] mt-1">{label}</div><div className="text-[12px] text-[#8a8a8a] mt-0.5">{sub}</div></div>
           ))}
@@ -59,12 +79,12 @@ export default function LandingPage() {
 
       {/* How it works */}
       <section className="bg-[#fafaf8]">
-        <div className="max-w-6xl mx-auto px-8 py-24">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
           <div className="text-center mb-16">
-            <h2 className="text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">How ECFiler works</h2>
+            <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">How ECFiler works</h2>
             <p className="text-[17px] text-[#525252] max-w-lg mx-auto">No event code menus. No multi-step forms. Just drop your document.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-16 max-w-4xl mx-auto">
             {[{n:"01",t:"Drop your filing",d:"Upload any federal court document. AI reads the entire document in seconds.",c:"from-[#1e3a5f] to-[#0f2440]"},{n:"02",t:"Review what AI found",d:"Case number, court, event code, filing party, docket text. Every field extracted and verified.",c:"from-[#b8860b] to-[#8b6508]"},{n:"03",t:"Confirm and file",d:"See exactly what CM/ECF will receive. Filing fee displayed. One click to submit.",c:"from-[#15803d] to-[#166534]"}].map(({n,t,d,c}) => (
               <div key={n}><div className={`w-14 h-14 bg-gradient-to-br ${c} text-white rounded-2xl flex items-center justify-center text-[16px] font-bold mb-6 shadow-lg`}>{n}</div><h3 className="text-[18px] font-bold text-[#1a1a1a] mb-3">{t}</h3><p className="text-[14px] text-[#525252] leading-[1.7]">{d}</p></div>
             ))}
@@ -74,12 +94,12 @@ export default function LandingPage() {
 
       {/* Features */}
       <section className="bg-white border-y border-[#e8e5e0]">
-        <div className="max-w-6xl mx-auto px-8 py-24">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
           <div className="text-center mb-16">
-            <h2 className="text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Built for federal practice</h2>
+            <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Built for federal practice</h2>
             <p className="text-[17px] text-[#525252] max-w-lg mx-auto">Every feature prevents filing errors and saves attorney time.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
             {[
               {t:"207 federal courts",d:"Every district, bankruptcy, and appellate court. BAPs and special courts included.",icon:"M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21"},
               {t:"AI event code matching",d:"Describe your filing in English. ECFiler matches the correct CM/ECF event code from hundreds of options.",icon:"M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"},
@@ -105,9 +125,9 @@ export default function LandingPage() {
 
       {/* How filing works today vs ECFiler */}
       <section className="bg-[#fafaf8]">
-        <div className="max-w-6xl mx-auto px-8 py-24">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
           <div className="text-center mb-16">
-            <h2 className="text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Filing shouldn&apos;t take 15 minutes</h2>
+            <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Filing shouldn&apos;t take 15 minutes</h2>
             <p className="text-[17px] text-[#525252] max-w-lg mx-auto">CM/ECF was built in 2001. ECFiler brings it to 2026.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
@@ -148,19 +168,19 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="bg-[#0f1f35]">
-        <div className="max-w-6xl mx-auto px-8 py-24 text-center">
-          <h2 className="text-[36px] font-bold tracking-tight text-white mb-4">Ready to modernize your filing?</h2>
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24 text-center">
+          <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-bold tracking-tight text-white mb-4">Ready to modernize your filing?</h2>
           <p className="text-[17px] text-white/50 mb-10 max-w-md mx-auto">Open source. Free to use. 207 courts. No credit card required.</p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/sign-up" className="px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl hover:bg-[#f5f5f0] transition shadow-lg">Get Started Free</Link>
-            <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="px-8 py-3.5 border border-white/20 text-white/70 text-[15px] font-semibold rounded-xl hover:border-white/40 hover:text-white transition">Star on GitHub</a>
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
+            <Link href="/sign-up" className="w-full sm:w-auto px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl hover:bg-[#f5f5f0] transition shadow-lg text-center">Get Started Free</Link>
+            <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="w-full sm:w-auto px-8 py-3.5 border border-white/20 text-white/70 text-[15px] font-semibold rounded-xl hover:border-white/40 hover:text-white transition text-center">Star on GitHub</a>
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-white border-t border-[#e8e5e0]">
-        <div className="max-w-6xl mx-auto px-8 py-8 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md flex items-center justify-center text-white text-[9px] font-bold">E</div>
             <span className="text-[12px] text-[#8a8a8a]">ECFiler is a filing tool, not a legal advisor.</span>
@@ -185,7 +205,7 @@ function Waitlist() {
   };
   return (
     <section className="bg-[#fafaf8] border-y border-[#e8e5e0]">
-      <div className="max-w-6xl mx-auto px-8 py-20 text-center">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#fdf8ef] border border-[#fde68a] rounded-full text-[12px] font-semibold text-[#b8860b] mb-6">Coming Soon</div>
         <h2 className="text-[28px] font-bold tracking-tight text-[#1a1a1a] mb-3">ECFiler Pro</h2>
         <p className="text-[16px] text-[#525252] mb-8 max-w-md mx-auto">Hosted filing with team management, templates, and priority support. $99/attorney/month.</p>
