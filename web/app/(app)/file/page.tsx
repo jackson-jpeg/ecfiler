@@ -4,6 +4,8 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { streamAnalysis, streamBrowser, getHistory, type FilingPreview, type AnalysisStep, type BrowserStep, type FilingOptions } from "@/lib/api";
+import { EventCodeSearch } from "@/components/event-code-search";
+import { CourtsModal } from "@/components/courts-modal";
 
 type Phase = "ready" | "analyzing" | "review" | "filing" | "done" | "error";
 
@@ -1113,95 +1115,4 @@ export default function WorkspacePage() {
   );
 }
 
-function CourtsModal({ onClose }: { onClose: () => void }) {
-  const [query, setQuery] = useState("");
-  const [courts, setCourts] = useState<{ court_id: string; name: string; court_type: string }[]>([]);
 
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (query) params.set("search", query);
-    fetch(`/api/courts?${params}`).then(r => r.json()).then(setCourts).catch(() => {});
-  }, [query]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-      <div className="relative w-[calc(100%-2rem)] sm:w-[500px] md:w-[560px] bg-white rounded-2xl shadow-2xl border border-[#e8e5e0] max-h-[60vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="p-4 border-b border-[#f0eee9]">
-          <input
-            type="text" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus
-            placeholder="Search 207 federal courts..."
-            className="w-full px-4 py-2.5 bg-[#f5f3ee] rounded-xl text-[14px] outline-none focus:bg-white focus:ring-2 focus:ring-[#1e3a5f]/10 border border-transparent focus:border-[#1e3a5f] transition"
-          />
-        </div>
-        <div className="overflow-y-auto flex-1">
-          {courts.slice(0, 20).map((c) => (
-            <div key={c.court_id} className="flex items-center justify-between px-5 py-3 border-b border-[#f0eee9] last:border-0 hover:bg-[#fafaf8] transition cursor-default">
-              <div>
-                <div className="text-[13px] font-medium text-[#1a1a1a]">{c.name}</div>
-                <div className="text-[11px] text-[#8a8a8a] font-mono">ecf.{c.court_id}.uscourts.gov</div>
-              </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
-                c.court_type === "district" ? "bg-[#e1effe] text-[#1e3a5f]" : c.court_type === "bankruptcy" ? "bg-[#f5f3ff] text-[#7c3aed]" : "bg-[#fffbeb] text-[#b45309]"
-              }`}>{c.court_type}</span>
-            </div>
-          ))}
-          {courts.length === 0 && <div className="p-8 text-center text-[13px] text-[#8a8a8a]">No courts found</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EventCodeSearch({ courtId, onSelect, onClose }: { courtId: string; onSelect: (code: string, desc: string) => void; onClose: () => void }) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<{ code: string; description: string }[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!query || query.length < 2) { setResults([]); return; }
-    setLoading(true);
-    const timer = setTimeout(() => {
-      fetch(`/api/courts/${courtId || "nysd"}/events?search=${encodeURIComponent(query)}`)
-        .then(r => r.json())
-        .then((data) => { setResults(data.slice(0, 15)); setLoading(false); })
-        .catch(() => setLoading(false));
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [query, courtId]);
-
-  return (
-    <div className="border-t border-[#e8e5e0] bg-[#fafaf8] p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Search Event Codes</span>
-        <button onClick={onClose} className="text-[11px] text-[#8a8a8a] hover:text-[#1a1a1a] transition">Close</button>
-      </div>
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="e.g., motion to dismiss, reply brief..."
-        autoFocus
-        className="w-full px-3 py-2 border border-[#e8e5e0] rounded-lg text-[13px] outline-none focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]/10 bg-white mb-2"
-      />
-      {loading && <div className="text-[11px] text-[#8a8a8a] py-2">Searching...</div>}
-      {results.length > 0 && (
-        <div className="max-h-[200px] overflow-y-auto border border-[#e8e5e0] rounded-lg bg-white">
-          {results.map((r) => (
-            <button
-              key={r.code}
-              onClick={() => onSelect(r.code, r.description)}
-              className="w-full text-left px-3 py-2 border-b border-[#f0eee9] last:border-0 hover:bg-[#f0f4fa] transition"
-            >
-              <span className="text-[12px] font-mono text-[#1e3a5f] font-semibold">{r.code}</span>
-              <span className="text-[12px] text-[#525252] ml-2">{r.description}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {query.length >= 2 && !loading && results.length === 0 && (
-        <div className="text-[11px] text-[#8a8a8a] py-2">No matching event codes</div>
-      )}
-    </div>
-  );
-}
