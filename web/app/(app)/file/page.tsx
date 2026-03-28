@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { streamAnalysis, streamBrowser, getHistory, type FilingPreview, type AnalysisStep, type BrowserStep } from "@/lib/api";
+import { streamAnalysis, streamBrowser, getHistory, type FilingPreview, type AnalysisStep, type BrowserStep, type FilingOptions } from "@/lib/api";
 
 type Phase = "ready" | "analyzing" | "review" | "filing" | "done" | "error";
 
@@ -114,12 +114,20 @@ export default function WorkspacePage() {
     if (!filing) return;
     setPhase("filing"); setBrowserSteps([]); setScreenshot(""); setBrowserDone(false);
     try {
-      for await (const event of streamBrowser(filing)) {
+      const options = {
+        docket_text: docketText || undefined,
+        event_code_override: eventCodeOverride || undefined,
+        is_sealed: isSealed,
+        is_redacted: isRedacted,
+        include_cos: showCertService,
+        exhibits: exhibits.map((e) => ({ label: e.label, description: e.description })),
+      };
+      for await (const event of streamBrowser(filing, options)) {
         if (event.type === "browser") { if (event.data.screenshot) setScreenshot(event.data.screenshot); setBrowserSteps((prev) => { const ex = prev.find((s) => s.step === event.data.step); if (ex) return prev.map((s) => s.step === event.data.step ? { ...s, ...event.data } : s); return [...prev, event.data]; }); }
         if (event.type === "done") { setBrowserDone(true); setBrowserMsg(event.message); }
       }
     } catch (e: unknown) { setBrowserDone(true); setBrowserMsg(e instanceof Error ? e.message : "Failed"); }
-  }, [filing]);
+  }, [filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, exhibits]);
 
   // Keyboard shortcut: Cmd+Enter to file
   useEffect(() => {

@@ -82,10 +82,14 @@ async def stream_demo_filing(
     case_number: str,
     event_description: str,
     filing_party: str,
+    is_sealed: bool = False,
+    is_redacted: bool = False,
+    exhibits: list[dict] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream simulated CM/ECF screenshots as SSE events."""
 
     court_name = court_id.upper() if court_id else "NYSD"
+    exhibit_list = exhibits or []
 
     steps = [
         ("Login", "Authenticating with PACER",
@@ -142,17 +146,24 @@ async def stream_demo_filing(
              "[ ] Smith (Plaintiff)",
          ], "Next"),
 
-        ("Document Uploaded", "PDF uploaded to CM/ECF",
+        ("Document Uploaded", f"PDF uploaded{f' + {len(exhibit_list)} exhibit(s)' if exhibit_list else ''}",
          "Upload Document", [
              "Main Document:", f">> document.pdf",
              "---", "File uploaded successfully.",
              "Size: 2.3 MB", "Pages: 15",
+             *(
+                 [f"---", f"Attachments ({len(exhibit_list)}):"]
+                 + [f"  {e.get('label', f'Exhibit {i+1}')}: {e.get('description', 'Document')}" for i, e in enumerate(exhibit_list)]
+                 if exhibit_list else []
+             ),
          ], "Next"),
 
         ("Docket Text", "Docket text confirmed",
          "Modify Docket Text", [
              "Docket text (modify if needed):", "---",
              f">> {event_description}", "---",
+             *(["[X] FILE UNDER SEAL"] if is_sealed else []),
+             *(["[X] REDACTED FILING"] if is_redacted else []),
              "This text will appear on the docket."
          ], "Next"),
 
@@ -161,7 +172,11 @@ async def stream_demo_filing(
              f"**Case: {case_number}",
              f"**Event: {event_description}",
              f"**Filed by: {filing_party}",
-             "**Document: document.pdf (2.3 MB)", "---",
+             f"**Document: document.pdf (2.3 MB)",
+             *(exhibit_list and [f"**Attachments: {len(exhibit_list)}"] or []),
+             *(["**SEALED FILING"] if is_sealed else []),
+             *(["**REDACTED VERSION"] if is_redacted else []),
+             "---",
              "WARNING: Clicking Submit will file this document.",
              "This action cannot be undone."
          ], "Submit"),

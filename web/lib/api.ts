@@ -96,8 +96,18 @@ export async function* streamAnalysis(
   }
 }
 
+export interface FilingOptions {
+  docket_text?: string;
+  event_code_override?: string;
+  is_sealed?: boolean;
+  is_redacted?: boolean;
+  include_cos?: boolean;
+  exhibits?: { label: string; description: string }[];
+}
+
 export async function* streamBrowser(
-  filing: FilingPreview
+  filing: FilingPreview,
+  options?: FilingOptions,
 ): AsyncGenerator<{ type: "browser"; data: BrowserStep } | { type: "done"; message: string }> {
   const resp = await fetch(`${API}/api/filing/browser-stream`, {
     method: "POST",
@@ -105,12 +115,16 @@ export async function* streamBrowser(
     body: JSON.stringify({
       court_id: filing.court_id,
       case_number: filing.case_number,
-      event_code: filing.event_code,
-      event_description: filing.event_description,
+      event_code: options?.event_code_override || filing.event_code,
+      event_description: options?.docket_text || filing.event_description,
       filing_party_name: filing.filing_party?.split("(")[0]?.trim() || "",
       filing_party_role: filing.filing_party?.match(/\((\w+)\)/)?.[1] || "",
       document_path: "",
       dry_run: false,
+      is_sealed: options?.is_sealed || false,
+      is_redacted: options?.is_redacted || false,
+      include_certificate_of_service: options?.include_cos || false,
+      exhibits: options?.exhibits || [],
     }),
   });
   if (!resp.ok) throw new Error(await resp.text());

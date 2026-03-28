@@ -471,6 +471,12 @@ class CertificateResponse(BaseModel):
     is_all_ecf: bool
 
 
+class ExhibitInfo(BaseModel):
+    """Exhibit/attachment metadata."""
+    label: str = ""
+    description: str = ""
+
+
 class FilingSubmitRequest(BaseModel):
     """Request to submit a prepared filing."""
 
@@ -480,9 +486,13 @@ class FilingSubmitRequest(BaseModel):
     event_description: str
     filing_party_name: str
     filing_party_role: str
-    document_path: str  # Server-side path to the uploaded PDF
+    document_path: str = ""  # Server-side path to the uploaded PDF
     is_response: bool = False
     responds_to_docket: str = ""
+    is_sealed: bool = False
+    is_redacted: bool = False
+    include_certificate_of_service: bool = False
+    exhibits: list[ExhibitInfo] = []
     dry_run: bool = True  # Default to dry run for safety
 
 
@@ -594,6 +604,9 @@ async def stream_browser_view(request: FilingSubmitRequest) -> StreamingResponse
             case_number=request.case_number,
             event_description=request.event_description,
             filing_party=request.filing_party_name,
+            is_sealed=request.is_sealed,
+            is_redacted=request.is_redacted,
+            exhibits=[{"label": e.label, "description": e.description} for e in request.exhibits],
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
