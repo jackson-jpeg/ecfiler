@@ -42,7 +42,12 @@ export default function WorkspacePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const exhibitRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {}); }, []);
+  const [backendOk, setBackendOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
+    fetch("/api/health").then(r => r.ok ? setBackendOk(true) : setBackendOk(false)).catch(() => setBackendOk(false));
+  }, []);
 
   // Elapsed time counter for filing phase
   useEffect(() => {
@@ -158,6 +163,12 @@ export default function WorkspacePage() {
             <button onClick={() => setShowCourts(!showCourts)} className="text-[13px] text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</button>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
+            {backendOk !== null && (
+              <div className="flex items-center gap-1.5" title={backendOk ? "Backend connected" : "Backend unreachable"}>
+                <span className={`w-1.5 h-1.5 rounded-full ${backendOk ? "bg-[#15803d]" : "bg-[#b91c1c] animate-pulse"}`} />
+                <span className="text-[10px] text-[#c4c4c4] hidden sm:inline">{backendOk ? "Connected" : "Offline"}</span>
+              </div>
+            )}
             <Link href="/settings" className="text-[13px] text-[#8a8a8a] hover:text-[#525252] transition hidden sm:inline">Settings</Link>
             <UserButton appearance={{ elements: { avatarBox: "w-7 h-7" } }} />
           </div>
@@ -983,13 +994,27 @@ export default function WorkspacePage() {
 
         {/* Error */}
         {phase === "error" && (
-          <div className="text-center py-12">
-            <div className="w-14 h-14 bg-[#fef2f2] rounded-2xl flex items-center justify-center mx-auto mb-5">
-              <svg className="w-7 h-7 text-[#b91c1c]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+          <div className="max-w-md mx-auto text-center py-12">
+            <div className="w-16 h-16 bg-[#fef2f2] rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <svg className="w-8 h-8 text-[#b91c1c]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
             </div>
             <h2 className="text-[18px] font-bold text-[#1a1a1a] mb-2">Something went wrong</h2>
-            <p className="text-[14px] text-[#525252] mb-6">{error}</p>
-            <button onClick={reset} className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-xl hover:bg-[#162a47] transition">Try Again</button>
+            <p className="text-[14px] text-[#525252] mb-4">{error}</p>
+            {error.includes("Failed to fetch") || error.includes("network") ? (
+              <div className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-4 mb-6 text-left">
+                <div className="text-[12px] font-semibold text-[#92400e] mb-1">Connection issue</div>
+                <div className="text-[11px] text-[#78350f]">The backend server may be starting up. Railway free tier spins down after inactivity. Try again in 10-15 seconds.</div>
+              </div>
+            ) : (
+              <div className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-4 mb-6 text-left">
+                <div className="text-[12px] font-semibold text-[#991b1b] mb-1">Analysis failed</div>
+                <div className="text-[11px] text-[#7f1d1d]">The document may be corrupted, password-protected, or in an unsupported format. Try a different PDF.</div>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-3">
+              <button onClick={reset} className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-sm">Try Again</button>
+              <Link href="/validate" className="px-5 py-2.5 border border-[#e8e5e0] text-[13px] text-[#525252] font-medium rounded-xl hover:bg-[#fafaf8] transition">Validate PDF</Link>
+            </div>
           </div>
         )}
       </div>
