@@ -1,18 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  --color-sidebar: #18181b;
-  --color-sidebar-hover: #27272a;
-  --color-sidebar-active: #3f3f46;
-  --color-accent: #2563eb;
-  --color-accent-light: #dbeafe;
+  /*
+   * ECFiler Design System
+   * Warm, authoritative, premium — like a top law firm's digital presence
+   * Not cold/terminal. Not startup-flashy. Refined and trustworthy.
+   */
+
+  /* Brand — deep navy with warm gold accent */
+  --color-brand: #1e3a5f;
+  --color-brand-light: #f0f4fa;
+  --color-brand-dark: #0f2440;
+  --color-gold: #b8860b;
+  --color-gold-light: #fdf8ef;
+
+  /* Surfaces — warm, not clinical */
+  --color-bg: #fafaf8;
   --color-surface: #ffffff;
-  --color-muted: #71717a;
-  --color-border: #e4e4e7;
-  --font-mono: "JetBrains Mono", monospace;
+  --color-surface-2: #f5f5f0;
+  --color-surface-warm: #faf9f7;
+
+  /* Sidebar — deep navy, warm */
+  --color-sidebar: #0f1f35;
+  --color-sidebar-2: #162a47;
+  --color-sidebar-3: #1e3a5f;
+
+  /* Text — warm blacks and grays */
+  --color-ink: #1a1a1a;
+  --color-ink-2: #525252;
+  --color-ink-3: #8a8a8a;
+  --color-ink-4: #c4c4c4;
+
+  /* Borders — warm gray */
+  --color-line: #e8e5e0;
+  --color-line-light: #f0eee9;
+
+  /* Status */
+  --color-ok: #15803d;
+  --color-ok-bg: #f0fdf4;
+  --color-warn: #b45309;
+  --color-warn-bg: #fffbeb;
+  --color-bad: #b91c1c;
+  --color-bad-bg: #fef2f2;
+
+  /* Typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  --font-serif: "Georgia", "Times New Roman", serif;
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  text-rendering: optimizeLegibility;
 }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d4d0ca; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a8a49e; }
+
+::selection { background: #e8dcc8; color: #1a1a1a; }

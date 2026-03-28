@@ -5,220 +5,161 @@ import { useState } from "react";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#fafaf8]">
       {/* Nav */}
-      <nav className="bg-white/80 backdrop-blur-sm border-b border-zinc-100 sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-zinc-900 rounded-lg flex items-center justify-center text-white text-[11px] font-bold">E</div>
-            <span className="text-[15px] font-semibold tracking-tight">ECFiler</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <Link href="/courts" className="text-zinc-500 hover:text-zinc-900 transition">Courts</Link>
-            <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-zinc-500 hover:text-zinc-900 transition">GitHub</a>
-            <Link href="/sign-in" className="text-zinc-500 hover:text-zinc-900 transition font-medium">Sign In</Link>
-            <Link href="/sign-up" className="px-4 py-1.5 bg-zinc-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition">
-              Get Started
-            </Link>
+      <nav className="bg-white/90 backdrop-blur-md border-b border-[#e8e5e0] sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-lg flex items-center justify-center text-white text-[12px] font-bold shadow-sm">E</div>
+            <span className="text-[17px] font-semibold tracking-tight text-[#1a1a1a]">ECFiler</span>
+          </Link>
+          <div className="flex items-center gap-8 text-[14px]">
+            <Link href="/courts" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</Link>
+            <Link href="/what-is-cmecf" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Resources</Link>
+            <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">GitHub</a>
+            <div className="w-px h-5 bg-[#e8e5e0]" />
+            <Link href="/sign-in" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Sign In</Link>
+            <Link href="/sign-up" className="px-5 py-2 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <div className="bg-gradient-to-b from-zinc-50 to-white">
-        <div className="max-w-5xl mx-auto px-6 pt-20 pb-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full text-xs font-medium text-green-700 mb-6">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              207 federal courts &middot; Open source
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-[#fafaf8] to-[#f5f0e8]/30" />
+        <div className="relative max-w-6xl mx-auto px-8 pt-24 pb-16">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full text-[12px] font-semibold text-[#15803d] mb-8">
+              <span className="w-2 h-2 bg-[#15803d] rounded-full animate-pulse" />
+              207 federal courts supported
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] mb-5">
-              File on CM/ECF<br />without the forms
-            </h1>
-            <p className="text-xl text-zinc-500 mb-8 leading-relaxed max-w-lg mx-auto">
-              Drop a PDF. AI reads your document and prepares the entire filing. You review and confirm.
-            </p>
-            <div className="flex gap-3 justify-center mb-4">
-              <Link href="/file" className="px-7 py-3 bg-zinc-900 text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 transition shadow-lg shadow-zinc-900/20">
-                Start Filing &rarr;
-              </Link>
-              <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="px-7 py-3 bg-white border border-zinc-200 text-zinc-700 text-sm font-semibold rounded-xl hover:border-zinc-300 hover:bg-zinc-50 transition">
-                View Source
-              </a>
+            <h1 className="text-[52px] leading-[1.08] font-bold tracking-[-0.035em] text-[#1a1a1a] mb-6">The intelligent way to<br />file on CM/ECF</h1>
+            <p className="text-[20px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop your filing. AI extracts the case, court, event code, and party. Review what CM/ECF will receive. Confirm with one click.</p>
+            <div className="flex gap-4 justify-center">
+              <Link href="/sign-up" className="px-8 py-3.5 bg-[#1e3a5f] text-white text-[15px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20">Start Filing &mdash; Free</Link>
+              <Link href="/what-is-cmecf" className="px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl border border-[#e8e5e0] hover:border-[#d4d0ca] hover:bg-[#fafaf8] transition">Learn More</Link>
             </div>
           </div>
         </div>
-
-        {/* Product mockup */}
-        <div className="max-w-4xl mx-auto px-6 pb-20">
-          <div className="rounded-2xl border border-zinc-200 overflow-hidden shadow-2xl shadow-zinc-300/30 bg-white">
-            {/* Browser chrome */}
-            <div className="bg-zinc-100 px-4 py-2.5 flex items-center gap-2 border-b border-zinc-200">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400/60" />
-                <div className="w-3 h-3 rounded-full bg-amber-400/60" />
-                <div className="w-3 h-3 rounded-full bg-green-400/60" />
-              </div>
-              <div className="flex-1 mx-8">
-                <div className="bg-white rounded-md px-3 py-1 text-xs text-zinc-400 font-mono text-center border border-zinc-200">
-                  ecfiler.com/file
-                </div>
-              </div>
+        {/* Product showcase */}
+        <div className="max-w-5xl mx-auto px-8 pb-24">
+          <div className="rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-2xl shadow-[#d4d0ca]/30 bg-white">
+            <div className="bg-[#f5f5f0] px-5 py-3 flex items-center gap-3 border-b border-[#e8e5e0]">
+              <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-[#d4d0ca]" /><div className="w-3 h-3 rounded-full bg-[#d4d0ca]" /><div className="w-3 h-3 rounded-full bg-[#d4d0ca]" /></div>
+              <div className="flex-1 mx-12"><div className="bg-white rounded-lg px-4 py-1.5 text-[12px] text-[#8a8a8a] font-mono text-center border border-[#e8e5e0]">ecfiler.com/file</div></div>
             </div>
-            {/* App content */}
-            <div className="bg-zinc-50 p-6 md:p-8">
-              <div className="flex gap-5">
-                {/* Mini sidebar */}
-                <div className="hidden md:block w-40 shrink-0">
-                  <div className="bg-zinc-900 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-3 px-1">
-                      <div className="w-5 h-5 bg-blue-600 rounded-md" />
-                      <span className="text-white font-semibold text-[11px]">ECFiler</span>
-                    </div>
-                    <div className="text-[9px] text-zinc-500 uppercase tracking-wider px-2 mb-1">Filing</div>
-                    {["New Filing", "Drafts", "History"].map((item, i) => (
-                      <div key={item} className={`text-[11px] px-2 py-1.5 rounded-md mb-0.5 ${i === 0 ? "bg-zinc-700 text-white font-medium" : "text-zinc-500"}`}>{item}</div>
-                    ))}
-                    <div className="text-[9px] text-zinc-500 uppercase tracking-wider px-2 mb-1 mt-3">Tools</div>
-                    {["Validate PDF", "Certificate", "Courts"].map((item) => (
-                      <div key={item} className="text-[11px] px-2 py-1.5 text-zinc-500">{item}</div>
-                    ))}
+            <div className="bg-[#fafaf8] p-8 md:p-10">
+              <div className="flex gap-6">
+                <div className="hidden md:block w-48 shrink-0">
+                  <div className="bg-[#0f1f35] rounded-xl p-4">
+                    <div className="flex items-center gap-2.5 mb-5 px-1"><div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md" /><span className="text-white font-semibold text-[12px]">ECFiler</span></div>
+                    <div className="text-[9px] text-white/20 uppercase tracking-[0.12em] px-2 mb-2">Filing</div>
+                    {["Filing Dashboard", "Drafts", "History"].map((item, i) => (<div key={item} className={`text-[11px] px-2.5 py-2 rounded-lg mb-0.5 ${i === 0 ? "bg-white/[0.08] text-white font-medium" : "text-white/30"}`}>{item}</div>))}
+                    <div className="text-[9px] text-white/20 uppercase tracking-[0.12em] px-2 mb-2 mt-4">Tools</div>
+                    {["PDF Validator", "Certificate of Service", "Court Directory"].map((item) => (<div key={item} className="text-[11px] px-2.5 py-2 text-white/30">{item}</div>))}
                   </div>
                 </div>
-                {/* Main content — showing review state */}
-                <div className="flex-1 space-y-3">
-                  {/* Stat cards */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-                      <div className="text-[9px] font-semibold text-zinc-400 uppercase">Extraction</div>
-                      <div className="text-base font-bold text-green-700">100%</div>
+                <div className="flex-1 space-y-4">
+                  <div className="bg-white rounded-xl border border-[#e8e5e0] overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#f0eee9] flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-[#8a8a8a] uppercase tracking-wide">AI Analysis Complete</span>
+                      <span className="text-[11px] px-2.5 py-0.5 bg-[#f0fdf4] text-[#15803d] rounded-full font-semibold">100% extracted</span>
                     </div>
-                    <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-                      <div className="text-[9px] font-semibold text-zinc-400 uppercase">PDF</div>
-                      <div className="text-base font-bold text-green-700">2.3MB</div>
-                    </div>
-                    <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-                      <div className="text-[9px] font-semibold text-zinc-400 uppercase">Redaction</div>
-                      <div className="text-base font-bold text-green-700">Clean</div>
+                    <div className="p-5 space-y-3">
+                      {[["Validated PDF", "2.3MB, 15 pages, searchable"],["Identified case", "1:24-cv-01234-ABC, S.D.N.Y."],["Matched event", "Motion to Dismiss (Code 12)"],["No redaction issues", "Rule 5.2 scan clean"]].map(([label, detail]) => (
+                        <div key={label} className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-[#15803d] bg-[#f0fdf4]">&#10003;</div>
+                          <span className="text-[13px] font-medium text-[#1a1a1a]">{label}</span>
+                          <span className="text-[12px] text-[#8a8a8a] font-mono">{detail}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  {/* Filing data */}
-                  <div className="bg-white rounded-xl border border-zinc-200 text-[12px]">
-                    {[
-                      ["Document", "Motion to Dismiss for Failure to State a Claim"],
-                      ["Case", "1:24-cv-01234-ABC"],
-                      ["Court", "NYSD"],
-                      ["Docket Text", "Motion to Dismiss"],
-                      ["Filing Party", "Jones Corporation (defendant)"],
-                    ].map(([k, v]) => (
-                      <div key={k} className="flex px-4 py-2 border-b border-zinc-100 last:border-0">
-                        <div className="w-24 text-[10px] font-semibold text-zinc-400 uppercase shrink-0">{k}</div>
-                        <div className="font-medium">{v}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Confirm */}
-                  <div className="flex items-center gap-3">
-                    <div className="px-5 py-2 bg-zinc-900 text-white text-[11px] font-semibold rounded-lg">Confirm & File</div>
-                    <div className="text-[11px] text-zinc-400">Cancel</div>
+                  <div className="bg-white rounded-xl border border-[#e8e5e0] p-5 flex items-center justify-between">
+                    <div>
+                      <div className="text-[15px] font-semibold text-[#1a1a1a]">Motion to Dismiss for Failure to State a Claim</div>
+                      <div className="text-[12px] text-[#8a8a8a] font-mono mt-1">NYSD &middot; Jones Corporation (defendant) &middot; $0 filing fee</div>
+                    </div>
+                    <div className="px-6 py-2.5 bg-[#1e3a5f] text-white text-[12px] font-semibold rounded-lg shadow-sm shrink-0 ml-6">Confirm &amp; File</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Numbers */}
-      <div className="border-y border-zinc-100 bg-white">
-        <div className="max-w-4xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            ["207", "Federal Courts"],
-            ["94", "Bankruptcy Courts"],
-            ["7", "Safety Gates"],
-            ["<1min", "To File"],
-          ].map(([n, label]) => (
-            <div key={label}>
-              <div className="text-3xl font-bold tracking-tight text-zinc-900">{n}</div>
-              <div className="text-sm text-zinc-500 mt-1">{label}</div>
-            </div>
+      {/* Trust numbers */}
+      <section className="border-y border-[#e8e5e0] bg-white">
+        <div className="max-w-5xl mx-auto px-8 py-14 grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
+          {[["207", "Federal Courts", "District, Bankruptcy, Appellate"],["94", "Bankruptcy Courts", "Every federal district"],["7", "Safety Gates", "Before every filing"],["<1m", "To Prepare", "AI does the work"]].map(([value, label, sub]) => (
+            <div key={label}><div className="text-[36px] font-bold tracking-tight text-[#1e3a5f]">{value}</div><div className="text-[14px] font-semibold text-[#1a1a1a] mt-1">{label}</div><div className="text-[12px] text-[#8a8a8a] mt-0.5">{sub}</div></div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* How it works */}
-      <div className="bg-white">
-        <div className="max-w-5xl mx-auto px-6 py-20">
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-4">Three steps to file</h2>
-          <p className="text-zinc-500 text-center mb-14 max-w-md mx-auto">No forms. No dropdowns. No scrolling through event codes. Just drop a PDF.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-3xl mx-auto">
-            {[
-              { n: "1", t: "Drop a PDF", d: "Upload your motion, brief, complaint, or any filing. AI reads the entire document in seconds.", color: "bg-blue-600" },
-              { n: "2", t: "Review what AI found", d: "Case number, court, event code, party, docket text. Everything extracted and verified.", color: "bg-violet-600" },
-              { n: "3", t: "Confirm & file", d: "Watch ECFiler navigate CM/ECF step by step. Nothing submits without your explicit confirmation.", color: "bg-green-600" },
-            ].map((s) => (
-              <div key={s.n} className="text-center">
-                <div className={`w-12 h-12 ${s.color} text-white rounded-2xl flex items-center justify-center text-lg font-bold mx-auto mb-5`}>{s.n}</div>
-                <div className="text-lg font-semibold mb-2">{s.t}</div>
-                <div className="text-sm text-zinc-500 leading-relaxed">{s.d}</div>
-              </div>
+      <section className="bg-[#fafaf8]">
+        <div className="max-w-6xl mx-auto px-8 py-24">
+          <div className="text-center mb-16">
+            <h2 className="text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">How ECFiler works</h2>
+            <p className="text-[17px] text-[#525252] max-w-lg mx-auto">No event code menus. No multi-step forms. Just drop your document.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 max-w-4xl mx-auto">
+            {[{n:"01",t:"Drop your filing",d:"Upload any federal court document. AI reads the entire document in seconds.",c:"from-[#1e3a5f] to-[#0f2440]"},{n:"02",t:"Review what AI found",d:"Case number, court, event code, filing party, docket text. Every field extracted and verified.",c:"from-[#b8860b] to-[#8b6508]"},{n:"03",t:"Confirm and file",d:"See exactly what CM/ECF will receive. Filing fee displayed. One click to submit.",c:"from-[#15803d] to-[#166534]"}].map(({n,t,d,c}) => (
+              <div key={n}><div className={`w-14 h-14 bg-gradient-to-br ${c} text-white rounded-2xl flex items-center justify-center text-[16px] font-bold mb-6 shadow-lg`}>{n}</div><h3 className="text-[18px] font-bold text-[#1a1a1a] mb-3">{t}</h3><p className="text-[14px] text-[#525252] leading-[1.7]">{d}</p></div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Features */}
-      <div className="bg-zinc-50 border-y border-zinc-100">
-        <div className="max-w-5xl mx-auto px-6 py-20">
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-4">Built for federal court filing</h2>
-          <p className="text-zinc-500 text-center mb-14 max-w-md mx-auto">Every feature exists to prevent filing errors and save attorney time.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            {[
-              { t: "207 federal courts", d: "Every district, bankruptcy, and appellate court. BAPs and special courts included." },
-              { t: "AI event code matching", d: "Describe your filing in English. ECFiler matches it to the right CM/ECF event code." },
-              { t: "Redaction scanning", d: "Catches unredacted SSNs, DOBs, and account numbers before you file (Rule 5.2)." },
-              { t: "PDF pre-flight", d: "Checks size, searchable text, encryption, form fields. Catches problems before CM/ECF does." },
-              { t: "Certificate of service", d: "Generate properly formatted certificates. Download as PDF. Handles all service methods." },
-              { t: "7 safety gates", d: "PDF validation, redaction scan, event match, completeness check, review, confirm, receipt." },
-            ].map((f) => (
-              <div key={f.t} className="bg-white border border-zinc-200 rounded-2xl p-6 hover:border-zinc-300 hover:shadow-sm transition">
-                <div className="text-sm font-bold mb-2">{f.t}</div>
-                <div className="text-sm text-zinc-500 leading-relaxed">{f.d}</div>
+      <section className="bg-white border-y border-[#e8e5e0]">
+        <div className="max-w-6xl mx-auto px-8 py-24">
+          <div className="text-center mb-16">
+            <h2 className="text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-4">Built for federal practice</h2>
+            <p className="text-[17px] text-[#525252] max-w-lg mx-auto">Every feature prevents filing errors and saves attorney time.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+            {[{t:"207 federal courts",d:"Every district, bankruptcy, and appellate court. BAPs and special courts included."},{t:"AI event code matching",d:"Describe your filing in English. ECFiler matches the correct CM/ECF event code."},{t:"Rule 5.2 redaction scanning",d:"Detects unredacted SSNs, DOBs, financial accounts, and minor names."},{t:"PDF pre-flight validation",d:"Checks size, searchable text, encryption before CM/ECF can reject your filing."},{t:"Certificate of service",d:"Generate properly formatted certificates. Download as PDF."},{t:"Filing fee lookup",d:"Know the exact fee before you file. IFP waiver status displayed."}].map(({t,d}) => (
+              <div key={t} className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-7 hover:border-[#d4d0ca] hover:shadow-md transition-all duration-200">
+                <h3 className="text-[15px] font-bold text-[#1a1a1a] mb-2">{t}</h3>
+                <p className="text-[13px] text-[#525252] leading-[1.7]">{d}</p>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Waitlist */}
       <Waitlist />
 
       {/* CTA */}
-      <div className="bg-zinc-900">
-        <div className="max-w-5xl mx-auto px-6 py-20 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white mb-3">Ready to file?</h2>
-          <p className="text-zinc-400 mb-8 max-w-md mx-auto">Open source. Free to self-host. 207 courts. No credit card required.</p>
-          <div className="flex gap-3 justify-center">
-            <Link href="/file" className="px-7 py-3 bg-white text-zinc-900 text-sm font-semibold rounded-xl hover:bg-zinc-100 transition">
-              Open ECFiler &rarr;
-            </Link>
-            <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="px-7 py-3 border border-zinc-700 text-zinc-300 text-sm font-semibold rounded-xl hover:border-zinc-500 hover:text-white transition">
-              Star on GitHub
-            </a>
+      <section className="bg-[#0f1f35]">
+        <div className="max-w-6xl mx-auto px-8 py-24 text-center">
+          <h2 className="text-[36px] font-bold tracking-tight text-white mb-4">Ready to modernize your filing?</h2>
+          <p className="text-[17px] text-white/50 mb-10 max-w-md mx-auto">Open source. Free to use. 207 courts. No credit card required.</p>
+          <div className="flex gap-4 justify-center">
+            <Link href="/sign-up" className="px-8 py-3.5 bg-white text-[#1a1a1a] text-[15px] font-semibold rounded-xl hover:bg-[#f5f5f0] transition shadow-lg">Get Started Free</Link>
+            <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="px-8 py-3.5 border border-white/20 text-white/70 text-[15px] font-semibold rounded-xl hover:border-white/40 hover:text-white transition">Star on GitHub</a>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <div className="bg-white border-t border-zinc-100">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between text-xs text-zinc-400">
-          <div>ECFiler is a filing tool, not a legal advisor.</div>
-          <div className="flex gap-4">
-            <a href="https://github.com/jackson-jpeg/ecfiler" className="hover:text-zinc-600 transition">GitHub</a>
-            <Link href="/courts" className="hover:text-zinc-600 transition">Courts</Link>
+      <footer className="bg-white border-t border-[#e8e5e0]">
+        <div className="max-w-6xl mx-auto px-8 py-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md flex items-center justify-center text-white text-[9px] font-bold">E</div>
+            <span className="text-[12px] text-[#8a8a8a]">ECFiler is a filing tool, not a legal advisor.</span>
+          </div>
+          <div className="flex gap-6 text-[12px] text-[#8a8a8a]">
+            <a href="https://github.com/jackson-jpeg/ecfiler" className="hover:text-[#525252] transition">GitHub</a>
+            <Link href="/courts" className="hover:text-[#525252] transition">Courts</Link>
+            <Link href="/what-is-cmecf" className="hover:text-[#525252] transition">Resources</Link>
           </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
@@ -226,56 +167,25 @@ export default function LandingPage() {
 function Waitlist() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setStatus("loading");
-    try {
-      await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setStatus("done");
-    } catch {
-      setStatus("error");
-    }
+    e.preventDefault(); if (!email) return; setStatus("loading");
+    try { await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); setStatus("done"); } catch { setStatus("error"); }
   };
-
   return (
-    <div className="bg-white border-y border-zinc-100">
-      <div className="max-w-5xl mx-auto px-6 py-16 text-center">
-        <h2 className="text-2xl font-bold tracking-tight mb-2">Get early access to ECFiler Pro</h2>
-        <p className="text-zinc-500 mb-6 max-w-md mx-auto">
-          Hosted version with team management, filing templates, and priority support. $99/attorney/month.
-        </p>
+    <section className="bg-[#fafaf8] border-y border-[#e8e5e0]">
+      <div className="max-w-6xl mx-auto px-8 py-20 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#fdf8ef] border border-[#fde68a] rounded-full text-[12px] font-semibold text-[#b8860b] mb-6">Coming Soon</div>
+        <h2 className="text-[28px] font-bold tracking-tight text-[#1a1a1a] mb-3">ECFiler Pro</h2>
+        <p className="text-[16px] text-[#525252] mb-8 max-w-md mx-auto">Hosted filing with team management, templates, and priority support. $99/attorney/month.</p>
         {status === "done" ? (
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 font-medium">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-            You&apos;re on the list. We&apos;ll be in touch.
-          </div>
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl text-[14px] text-[#15803d] font-medium"><span className="w-2 h-2 bg-[#15803d] rounded-full" />You&apos;re on the list.</div>
         ) : (
-          <form onSubmit={submit} className="flex gap-2 max-w-sm mx-auto">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@lawfirm.com"
-              required
-              className="flex-1 px-4 py-2.5 border border-zinc-200 rounded-xl text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50"
-            />
-            <button
-              type="submit"
-              disabled={status === "loading"}
-              className="px-5 py-2.5 bg-zinc-900 text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 disabled:opacity-50 transition whitespace-nowrap"
-            >
-              {status === "loading" ? "..." : "Join Waitlist"}
-            </button>
+          <form onSubmit={submit} className="flex gap-3 max-w-sm mx-auto">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@lawfirm.com" required className="flex-1 px-4 py-3 border border-[#e8e5e0] rounded-xl text-[14px] outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 bg-white" />
+            <button type="submit" disabled={status === "loading"} className="px-6 py-3 bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] disabled:opacity-50 transition whitespace-nowrap shadow-sm">{status === "loading" ? "..." : "Join Waitlist"}</button>
           </form>
         )}
-        {status === "error" && <p className="text-xs text-red-500 mt-2">Something went wrong. Try again.</p>}
       </div>
-    </div>
+    </section>
   );
 }
