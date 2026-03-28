@@ -6,6 +6,7 @@ import { UserButton } from "@clerk/nextjs";
 import { streamAnalysis, streamBrowser, getHistory, type FilingPreview, type AnalysisStep, type BrowserStep, type FilingOptions } from "@/lib/api";
 import { EventCodeSearch } from "@/components/event-code-search";
 import { CourtsModal } from "@/components/courts-modal";
+import { useToast } from "@/components/toast";
 
 type Phase = "ready" | "analyzing" | "review" | "filing" | "done" | "error";
 
@@ -48,6 +49,7 @@ export default function WorkspacePage() {
   const [backendOk, setBackendOk] = useState<boolean | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounter = useRef(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
@@ -101,6 +103,7 @@ export default function WorkspacePage() {
         if (event.type === "step") setSteps((prev) => { const ex = prev.find((s) => s.id === event.data.id); if (ex) return prev.map((s) => s.id === event.data.id ? { ...s, ...event.data } : s); return [...prev, event.data]; });
         if (event.type === "result") {
           setFiling(event.data);
+          toast(`Analysis complete — ${event.data.completeness_score}% extracted`, "success");
           // Typing animation for docket text
           const fullText = event.data.event_description || "";
           setDocketText("");
@@ -117,7 +120,7 @@ export default function WorkspacePage() {
         }
         if (event.type === "error") throw new Error(event.message);
       }
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Failed"); setPhase("error"); }
+    } catch (e: unknown) { const msg = e instanceof Error ? e.message : "Failed"; setError(msg); setPhase("error"); toast(msg, "error"); }
   }, []);
 
   const handleConfirm = useCallback(async () => {
@@ -134,7 +137,7 @@ export default function WorkspacePage() {
       };
       for await (const event of streamBrowser(filing, options)) {
         if (event.type === "browser") { if (event.data.screenshot) setScreenshot(event.data.screenshot); setBrowserSteps((prev) => { const ex = prev.find((s) => s.step === event.data.step); if (ex) return prev.map((s) => s.step === event.data.step ? { ...s, ...event.data } : s); return [...prev, event.data]; }); }
-        if (event.type === "done") { setBrowserDone(true); setBrowserMsg(event.message); }
+        if (event.type === "done") { setBrowserDone(true); setBrowserMsg(event.message); toast("Filing submitted successfully", "success"); }
       }
     } catch (e: unknown) { setBrowserDone(true); setBrowserMsg(e instanceof Error ? e.message : "Failed"); }
   }, [filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, exhibits]);
@@ -250,7 +253,8 @@ export default function WorkspacePage() {
                     </svg>
                   </div>
                   <div className="text-[15px] font-semibold text-[#1a1a1a] mb-1">Drop your PDF here</div>
-                  <div className="text-[13px] text-[#8a8a8a] mb-4">or click to browse &middot; drop multiple for exhibits</div>
+                  <div className="text-[13px] text-[#8a8a8a] mb-1">or click to browse</div>
+                  <div className="text-[11px] text-[#c4c4c4] mb-4">Drop multiple files — first is the main document, rest become exhibits</div>
                   <div className="flex flex-wrap justify-center gap-1.5">
                     {["Motions", "Briefs", "Complaints", "Notices", "Petitions", "Exhibits"].map((t) => (
                       <span key={t} className="text-[10px] px-2 py-0.5 bg-[#f0eee9] text-[#8a8a8a] rounded-md font-medium">{t}</span>
