@@ -34,6 +34,8 @@ export default function WorkspacePage() {
   const [isRedacted, setIsRedacted] = useState(false);
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [showCertService, setShowCertService] = useState(false);
+  const [showEventSearch, setShowEventSearch] = useState(false);
+  const [eventCodeOverride, setEventCodeOverride] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [filingStartTime, setFilingStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -55,7 +57,7 @@ export default function WorkspacePage() {
   const reset = () => {
     setPhase("ready"); setFileName(""); setSteps([]); setFiling(null);
     setBrowserSteps([]); setScreenshot(""); setBrowserDone(false); setError("");
-    setExhibits([]); setIsSealed(false); setIsRedacted(false); setDocketText(""); setShowCertService(false);
+    setExhibits([]); setIsSealed(false); setIsRedacted(false); setDocketText(""); setShowCertService(false); setShowEventSearch(false); setEventCodeOverride("");
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
   };
 
@@ -397,7 +399,6 @@ export default function WorkspacePage() {
                 ...(filing.is_response && filing.responds_to ? [{ label: "Response to", value: filing.responds_to, sub: filing.responds_to_docket ? `Docket #${filing.responds_to_docket}` : undefined, highlight: true }] : []),
                 { label: "Filing Party", value: filing.filing_party || "Not detected" },
                 ...(filing.attorney_name ? [{ label: "Attorney", value: filing.attorney_name, sub: filing.attorney_firm || undefined }] : []),
-                { label: "Event Code", value: filing.event_code, mono: true },
               ].filter(f => f.value).map(({ label, value, sub, mono, highlight }) => (
                 <div key={label} className={`flex px-5 py-3.5 border-b border-[#f0eee9] last:border-0 ${highlight ? "bg-[#f0f4fa]" : ""}`}>
                   <div className="w-[110px] shrink-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide pt-0.5">{label}</div>
@@ -407,6 +408,23 @@ export default function WorkspacePage() {
                   </div>
                 </div>
               ))}
+              {/* Event Code — editable row */}
+              <div className="flex px-5 py-3.5 border-b border-[#f0eee9] last:border-0 relative">
+                <div className="w-[110px] shrink-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide pt-0.5">Event Code</div>
+                <div className="flex-1">
+                  <button onClick={() => setShowEventSearch(!showEventSearch)} className="flex items-center gap-2 text-[14px] font-mono text-[#1a1a1a] hover:text-[#1e3a5f] transition group">
+                    {eventCodeOverride || filing.event_code}
+                    <svg className="w-3.5 h-3.5 text-[#c4c4c4] group-hover:text-[#1e3a5f] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    </svg>
+                  </button>
+                  <div className="text-[11px] text-[#8a8a8a] mt-0.5">{filing.event_description}</div>
+                  {eventCodeOverride && eventCodeOverride !== filing.event_code && (
+                    <button onClick={() => setEventCodeOverride("")} className="text-[10px] text-[#1e3a5f] hover:underline mt-1">Reset to AI suggestion ({filing.event_code})</button>
+                  )}
+                </div>
+              </div>
+              {showEventSearch && <EventCodeSearch courtId={filing.court_id} onSelect={(code, desc) => { setEventCodeOverride(code); setShowEventSearch(false); }} onClose={() => setShowEventSearch(false)} />}
             </div>
 
             {/* Docket Text — the hero of the review screen */}
@@ -1058,6 +1076,59 @@ function CourtsModal({ onClose }: { onClose: () => void }) {
           {courts.length === 0 && <div className="p-8 text-center text-[13px] text-[#8a8a8a]">No courts found</div>}
         </div>
       </div>
+    </div>
+  );
+}
+
+function EventCodeSearch({ courtId, onSelect, onClose }: { courtId: string; onSelect: (code: string, desc: string) => void; onClose: () => void }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<{ code: string; description: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!query || query.length < 2) { setResults([]); return; }
+    setLoading(true);
+    const timer = setTimeout(() => {
+      fetch(`/api/courts/${courtId || "nysd"}/events?search=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then((data) => { setResults(data.slice(0, 15)); setLoading(false); })
+        .catch(() => setLoading(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query, courtId]);
+
+  return (
+    <div className="border-t border-[#e8e5e0] bg-[#fafaf8] p-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Search Event Codes</span>
+        <button onClick={onClose} className="text-[11px] text-[#8a8a8a] hover:text-[#1a1a1a] transition">Close</button>
+      </div>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="e.g., motion to dismiss, reply brief..."
+        autoFocus
+        className="w-full px-3 py-2 border border-[#e8e5e0] rounded-lg text-[13px] outline-none focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]/10 bg-white mb-2"
+      />
+      {loading && <div className="text-[11px] text-[#8a8a8a] py-2">Searching...</div>}
+      {results.length > 0 && (
+        <div className="max-h-[200px] overflow-y-auto border border-[#e8e5e0] rounded-lg bg-white">
+          {results.map((r) => (
+            <button
+              key={r.code}
+              onClick={() => onSelect(r.code, r.description)}
+              className="w-full text-left px-3 py-2 border-b border-[#f0eee9] last:border-0 hover:bg-[#f0f4fa] transition"
+            >
+              <span className="text-[12px] font-mono text-[#1e3a5f] font-semibold">{r.code}</span>
+              <span className="text-[12px] text-[#525252] ml-2">{r.description}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {query.length >= 2 && !loading && results.length === 0 && (
+        <div className="text-[11px] text-[#8a8a8a] py-2">No matching event codes</div>
+      )}
     </div>
   );
 }
