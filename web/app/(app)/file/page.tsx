@@ -145,7 +145,17 @@ export default function WorkspacePage() {
                   onClick={() => fileRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
                   onDragLeave={(e) => { e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
-                  onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                  onDrop={(e) => {
+                    e.preventDefault(); e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg");
+                    const files = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf" || f.name.endsWith(".pdf"));
+                    if (files.length === 0) return;
+                    handleFile(files[0]);
+                    if (files.length > 1) {
+                      const exhibitFiles = new DataTransfer();
+                      files.slice(1).forEach(f => exhibitFiles.items.add(f));
+                      addExhibits(exhibitFiles.files);
+                    }
+                  }}
                 >
                   <div className="w-14 h-14 bg-[#f0eee9] group-hover:bg-[#dbeafe] rounded-2xl flex items-center justify-center mx-auto mb-4 transition">
                     <svg className="w-7 h-7 text-[#8a8a8a] group-hover:text-[#1e3a5f] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -153,13 +163,21 @@ export default function WorkspacePage() {
                     </svg>
                   </div>
                   <div className="text-[15px] font-semibold text-[#1a1a1a] mb-1">Drop your PDF here</div>
-                  <div className="text-[13px] text-[#8a8a8a] mb-4">or click to browse</div>
+                  <div className="text-[13px] text-[#8a8a8a] mb-4">or click to browse &middot; drop multiple for exhibits</div>
                   <div className="flex flex-wrap justify-center gap-1.5">
                     {["Motions", "Briefs", "Complaints", "Notices", "Petitions", "Exhibits"].map((t) => (
                       <span key={t} className="text-[10px] px-2 py-0.5 bg-[#f0eee9] text-[#8a8a8a] rounded-md font-medium">{t}</span>
                     ))}
                   </div>
-                  <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+                  <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => {
+                    if (!e.target.files?.length) return;
+                    handleFile(e.target.files[0]);
+                    if (e.target.files.length > 1) {
+                      const rest = new DataTransfer();
+                      Array.from(e.target.files).slice(1).forEach(f => rest.items.add(f));
+                      addExhibits(rest.files);
+                    }
+                  }} />
                 </div>
               </div>
 
