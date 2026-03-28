@@ -85,9 +85,11 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         yield emit_step("Reading document", "running")
         await asyncio.sleep(0.1)
 
-        from ecfiler.pdf.validator import extract_text
+        from ecfiler.pdf.validator import extract_text, extract_title
         text = extract_text(tmp_path, max_pages=30)
-        yield emit_step("Reading document", "done", f"{len(text):,} characters extracted")
+        pdf_title = extract_title(tmp_path)
+        title_note = f" — {pdf_title[:60]}" if pdf_title and len(pdf_title) > 5 else ""
+        yield emit_step("Reading document", "done", f"{len(text):,} characters extracted{title_note}")
 
         # Step 3: AI analysis
         yield emit_step("AI analyzing document", "running")
