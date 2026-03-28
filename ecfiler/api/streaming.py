@@ -65,7 +65,7 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         await asyncio.sleep(0.1)  # Let the event flush
 
         from ecfiler.pdf.validator import validate_pdf
-        validation = validate_pdf(tmp_path)
+        validation = validate_pdf(tmp_path, check_pdfa=True)
 
         if not validation.valid:
             yield emit_step("Validating PDF", "error", "; ".join(validation.errors))
@@ -77,6 +77,8 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
             detail += ", searchable"
         else:
             detail += ", NOT searchable"
+        if validation.is_pdfa:
+            detail += ", PDF/A"
         yield emit_step("Validating PDF", "done", detail)
 
         # Step 2: Extract text
@@ -174,6 +176,7 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
             "pdf_valid": validation.valid,
             "pdf_size_mb": validation.file_size_mb,
             "pdf_pages": validation.page_count,
+            "pdf_is_pdfa": validation.is_pdfa or False,
             "redaction_risk": redaction.risk_level,
             "redaction_issues": len(redaction.issues),
             "completeness_score": analysis.completeness_score,

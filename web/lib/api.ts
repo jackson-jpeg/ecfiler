@@ -13,6 +13,7 @@ export interface FilingPreview {
   pdf_valid: boolean;
   pdf_size_mb: number;
   pdf_pages: number;
+  pdf_is_pdfa: boolean;
   redaction_risk: string;
   redaction_issues: number;
   completeness_score: number;

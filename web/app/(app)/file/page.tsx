@@ -309,7 +309,7 @@ export default function WorkspacePage() {
             {/* Stats */}
             <div className="grid grid-cols-4 gap-3 mb-5">
               {[
-                { label: "PDF", value: `${filing.pdf_size_mb?.toFixed(1)}MB · ${filing.pdf_pages}p`, ok: filing.pdf_valid },
+                { label: "PDF", value: `${filing.pdf_size_mb?.toFixed(1)}MB · ${filing.pdf_pages}p${filing.pdf_is_pdfa ? " · PDF/A" : ""}`, ok: filing.pdf_valid },
                 { label: "Redaction", value: filing.redaction_issues === 0 ? "Clean" : `${filing.redaction_issues} issue(s)`, ok: filing.redaction_issues === 0 },
                 { label: "Fee", value: filing.filing_fee_text || (filing.filing_fee ? `$${filing.filing_fee}` : "None"), ok: true },
                 { label: "Confidence", value: filing.confidence || "High", ok: filing.completeness_score >= 80 },
@@ -322,14 +322,25 @@ export default function WorkspacePage() {
             </div>
 
             {/* Court-specific notices */}
-            {filing.court_id && ["nysd", "edny", "sdny"].includes(filing.court_id.toLowerCase()) && (
+            {filing.court_id && ["nysd", "edny", "sdny"].includes(filing.court_id.toLowerCase()) && !filing.pdf_is_pdfa && (
               <div className="flex items-start gap-3 px-4 py-3 bg-[#f0f4fa] border border-[#bfdbfe] rounded-xl text-[12px] text-[#1e40af] mb-5">
                 <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                 </svg>
                 <div>
                   <span className="font-semibold">{filing.court_id.toUpperCase()} requires PDF/A format.</span>{" "}
-                  ECFiler will automatically convert your document before filing.
+                  Your document is not PDF/A — ECFiler will automatically convert it before filing.
+                </div>
+              </div>
+            )}
+            {filing.court_id && ["nysd", "edny", "sdny"].includes(filing.court_id.toLowerCase()) && filing.pdf_is_pdfa && (
+              <div className="flex items-start gap-3 px-4 py-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl text-[12px] text-[#15803d] mb-5">
+                <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <span className="font-semibold">PDF/A compliant.</span>{" "}
+                  Your document meets {filing.court_id.toUpperCase()}&apos;s PDF/A requirement.
                 </div>
               </div>
             )}
