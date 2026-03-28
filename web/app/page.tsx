@@ -349,18 +349,29 @@ export default function LandingPage() {
 function Waitlist() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/waitlist/count").then(r => r.json()).then(d => setCount(d.count || 0)).catch(() => {});
+  }, [status]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); if (!email) return; setStatus("loading");
     try { await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); setStatus("done"); } catch { setStatus("error"); }
   };
-  return status === "done" ? (
-    <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-[#bbf7d0] font-medium">
-      <span className="w-2 h-2 bg-[#bbf7d0] rounded-full" />You&apos;re on the list
+  return (
+    <div>
+      {status === "done" ? (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-[#bbf7d0] font-medium">
+          <span className="w-2 h-2 bg-[#bbf7d0] rounded-full" />You&apos;re on the list
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex gap-2">
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@lawfirm.com" required className="flex-1 px-3 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-white placeholder-white/30 outline-none focus:border-white/30" />
+          <button type="submit" disabled={status === "loading"} className="px-5 py-2.5 bg-white text-[#1e3a5f] text-[13px] font-bold rounded-xl hover:bg-[#f0f4fa] disabled:opacity-50 transition shadow-lg whitespace-nowrap shrink-0">{status === "loading" ? "..." : "Join Waitlist"}</button>
+        </form>
+      )}
+      {count > 0 && <div className="text-[10px] text-white/30 mt-2">{count} attorney{count !== 1 ? "s" : ""} on the waitlist</div>}
     </div>
-  ) : (
-    <form onSubmit={submit} className="flex gap-2">
-      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@lawfirm.com" required className="flex-1 px-3 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-white placeholder-white/30 outline-none focus:border-white/30" />
-      <button type="submit" disabled={status === "loading"} className="px-5 py-2.5 bg-white text-[#1e3a5f] text-[13px] font-bold rounded-xl hover:bg-[#f0f4fa] disabled:opacity-50 transition shadow-lg whitespace-nowrap shrink-0">{status === "loading" ? "..." : "Join Waitlist"}</button>
-    </form>
   );
 }
