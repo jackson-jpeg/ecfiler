@@ -34,6 +34,7 @@ export default function WorkspacePage() {
   const [isRedacted, setIsRedacted] = useState(false);
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [showCertService, setShowCertService] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const exhibitRef = useRef<HTMLInputElement>(null);
 
@@ -74,10 +75,21 @@ export default function WorkspacePage() {
     try {
       for await (const event of streamAnalysis(file)) {
         if (event.type === "step") setSteps((prev) => { const ex = prev.find((s) => s.id === event.data.id); if (ex) return prev.map((s) => s.id === event.data.id ? { ...s, ...event.data } : s); return [...prev, event.data]; });
-        if (event.type === "result") { 
-          setFiling(event.data); 
-          setDocketText(event.data.event_description || ""); 
-          setTimeout(() => setPhase("review"), 300); 
+        if (event.type === "result") {
+          setFiling(event.data);
+          // Typing animation for docket text
+          const fullText = event.data.event_description || "";
+          setDocketText("");
+          setIsTyping(true);
+          setTimeout(() => {
+            setPhase("review");
+            let i = 0;
+            const timer = setInterval(() => {
+              i++;
+              setDocketText(fullText.slice(0, i));
+              if (i >= fullText.length) { clearInterval(timer); setIsTyping(false); }
+            }, 25);
+          }, 300);
         }
         if (event.type === "error") throw new Error(event.message);
       }
@@ -393,7 +405,9 @@ export default function WorkspacePage() {
                   <div className="text-[11px] text-white/50 mt-0.5">This is exactly what appears on the court docket — edit before filing</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2.5 py-1 bg-white/10 text-white/70 rounded-md font-mono border border-white/10">editable</span>
+                  <span className={`text-[10px] px-2.5 py-1 rounded-md font-mono border ${isTyping ? "bg-white/20 text-white border-white/20 animate-pulse" : "bg-white/10 text-white/70 border-white/10"}`}>
+                    {isTyping ? "AI typing..." : "editable"}
+                  </span>
                 </div>
               </div>
               <div className="p-6">
@@ -401,8 +415,9 @@ export default function WorkspacePage() {
                   value={docketText}
                   onChange={(e) => setDocketText(e.target.value)}
                   rows={3}
-                  className="w-full px-5 py-4 border border-[#e8e5e0] rounded-xl text-[16px] font-semibold text-[#1a1a1a] outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 resize-none bg-[#fafaf8] leading-relaxed"
+                  className={`w-full px-5 py-4 border border-[#e8e5e0] rounded-xl text-[16px] font-semibold text-[#1a1a1a] outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 resize-none bg-[#fafaf8] leading-relaxed ${isTyping ? "caret-[#1e3a5f]" : ""}`}
                   placeholder="Enter docket text..."
+                  readOnly={isTyping}
                 />
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-3">

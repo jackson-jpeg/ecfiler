@@ -123,6 +123,20 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Tech trust bar */}
+      <section className="bg-[#fafaf8] border-y border-[#e8e5e0]">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8 py-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-[12px] text-[#8a8a8a] font-medium">
+            <span className="text-[10px] uppercase tracking-wider font-semibold">Built with</span>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              {["Claude AI", "Playwright", "Next.js", "PACER API", "CM/ECF NextGen"].map((t) => (
+                <span key={t} className="px-3 py-1.5 bg-white border border-[#e8e5e0] rounded-lg text-[#525252]">{t}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How filing works today vs ECFiler */}
       <section className="bg-[#fafaf8]">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
