@@ -21,6 +21,7 @@ export function CommandPalette() {
 
   const commands: Command[] = [
     { id: "file", label: "New Filing", description: "Drop a PDF to start filing", action: () => router.push("/file"), icon: "M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z", category: "Filing" },
+    { id: "drafts", label: "Drafts", description: "Resume saved draft filings", action: () => router.push("/drafts"), icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z", category: "Filing" },
     { id: "history", label: "Filing History", description: "View past filings", action: () => router.push("/history"), icon: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z", category: "Filing" },
     { id: "courts", label: "Court Directory", description: "Search 207 federal courts", action: () => router.push("/courts"), icon: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21", category: "Tools" },
     { id: "validate", label: "Validate PDF", description: "Check CM/ECF requirements", action: () => router.push("/validate"), icon: "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z", category: "Tools" },
@@ -62,7 +63,7 @@ export function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[20vh]" onClick={() => setOpen(false)}>
+    <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[20vh]" onClick={() => setOpen(false)} role="dialog" aria-modal="true" aria-label="Command palette">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
       <div className="relative w-[calc(100%-2rem)] sm:w-[520px] bg-white rounded-2xl shadow-2xl border border-[#e8e5e0] overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="p-3 border-b border-[#f0eee9] flex items-center gap-3">
@@ -76,6 +77,10 @@ export function CommandPalette() {
             onChange={(e) => { setQuery(e.target.value); setSelected(0); }}
             onKeyDown={handleKeyDown}
             placeholder="Search commands..."
+            aria-label="Search commands"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
             className="flex-1 text-[14px] outline-none bg-transparent text-[#1a1a1a] placeholder-[#c4c4c4]"
           />
           <kbd className="text-[10px] px-1.5 py-0.5 bg-[#f5f3ee] text-[#8a8a8a] rounded border border-[#e8e5e0] font-mono">esc</kbd>

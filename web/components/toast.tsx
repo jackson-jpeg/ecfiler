@@ -26,14 +26,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const addToast = useCallback((message: string, type: "success" | "error" | "info" = "info") => {
     const id = nextId++;
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+    const duration = type === "error" ? 8000 : 6000;
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), duration);
   }, []);
 
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
       {/* Toast container */}
-      <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none">
+      <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none" role="region" aria-label="Notifications" aria-live="polite">
         {toasts.map((t) => (
           <div
             key={t.id}

@@ -202,10 +202,10 @@ export default function WorkspacePage() {
               <span className="text-[15px] font-semibold tracking-tight text-[#1a1a1a] hidden sm:inline">ECFiler</span>
             </Link>
             <div className="h-5 w-px bg-[#e8e5e0]" />
-            <button onClick={() => setShowHistory(!showHistory)} className="text-[13px] text-[#525252] hover:text-[#1a1a1a] transition font-medium">
+            <button onClick={() => setShowHistory(!showHistory)} className="text-[13px] text-[#525252] hover:text-[#1a1a1a] transition font-medium" aria-label={`Filing history — ${history.length} filings`} aria-expanded={showHistory}>
               History {history.length > 0 && <span className="text-[10px] bg-[#f0eee9] px-1.5 py-0.5 rounded-full ml-1">{history.length}</span>}
             </button>
-            <button onClick={() => setShowCourts(!showCourts)} className="text-[13px] text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</button>
+            <button onClick={() => setShowCourts(!showCourts)} className="text-[13px] text-[#525252] hover:text-[#1a1a1a] transition font-medium" aria-label="Search federal courts" aria-expanded={showCourts}>Courts</button>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
             {backendOk !== null && (
@@ -234,8 +234,12 @@ export default function WorkspacePage() {
               {/* Drop zone — 3 cols */}
               <div className="lg:col-span-3">
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Upload PDF for filing — click or drag and drop"
                   className="bg-white border border-[#d4d0ca] rounded-2xl p-10 text-center cursor-pointer hover:border-[#1e3a5f] hover:shadow-lg hover:shadow-[#1e3a5f]/5 transition-all group h-full flex flex-col items-center justify-center min-h-[260px] shadow-sm drop-glow"
                   onClick={() => fileRef.current?.click()}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileRef.current?.click(); } }}
                   onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
                   onDragLeave={(e) => { e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg"); }}
                   onDrop={(e) => {
@@ -263,7 +267,7 @@ export default function WorkspacePage() {
                       <span key={t} className="text-[10px] px-2 py-0.5 bg-[#f0eee9] text-[#8a8a8a] rounded-md font-medium">{t}</span>
                     ))}
                   </div>
-                  <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => {
+                  <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" aria-label="Select PDF files for filing" onChange={(e) => {
                     if (!e.target.files?.length) return;
                     handleFile(e.target.files[0]);
                     if (e.target.files.length > 1) {
@@ -319,9 +323,33 @@ export default function WorkspacePage() {
                     <Link href="/settings" className="block px-3 py-2 rounded-lg text-[12px] text-[#525252] hover:bg-[#f5f3ee] hover:text-[#1a1a1a] transition flex items-center gap-2">
                       <span className="text-[#8a8a8a]">⚙</span> PACER credentials
                     </Link>
+                    <Link href="/drafts" className="block px-3 py-2 rounded-lg text-[12px] text-[#525252] hover:bg-[#f5f3ee] hover:text-[#1a1a1a] transition flex items-center gap-2">
+                      <span className="text-[#8a8a8a]">📝</span> Saved drafts
+                    </Link>
                     <button onClick={() => setShowHistory(true)} className="w-full text-left px-3 py-2 rounded-lg text-[12px] text-[#525252] hover:bg-[#f5f3ee] hover:text-[#1a1a1a] transition flex items-center gap-2">
                       <span className="text-[#8a8a8a]">📋</span> Filing history
                     </button>
+                  </div>
+                </div>
+
+                {/* Keyboard shortcuts */}
+                <div className="bg-white border border-[#e8e5e0] rounded-2xl p-5 shadow-sm">
+                  <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Keyboard Shortcuts</div>
+                  <div className="space-y-2">
+                    {[
+                      { keys: ["⌘", "K"], label: "Command palette" },
+                      { keys: ["⌘", "↵"], label: "Confirm & file" },
+                      { keys: ["Esc"], label: "Cancel / close" },
+                    ].map(({ keys, label }) => (
+                      <div key={label} className="flex items-center justify-between">
+                        <span className="text-[11px] text-[#525252]">{label}</span>
+                        <div className="flex items-center gap-1">
+                          {keys.map((k) => (
+                            <kbd key={k} className="px-1.5 py-0.5 text-[10px] font-mono bg-[#f5f3ee] text-[#8a8a8a] border border-[#e8e5e0] rounded">{k}</kbd>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -379,7 +407,7 @@ export default function WorkspacePage() {
                   />
                 </div>
               </div>
-              <div className="px-6 py-4">
+              <div className="px-6 py-4" role="log" aria-live="polite" aria-label="Analysis progress">
                 {steps.map((s, i) => (
                   <div key={s.id} className="flex items-start gap-4 py-3 border-b border-[#f0eee9] last:border-0 step-enter">
                     <div className="relative">
@@ -588,7 +616,7 @@ export default function WorkspacePage() {
                 <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Attachments &amp; Exhibits</span>
                 <button onClick={() => exhibitRef.current?.click()} className="text-[11px] text-[#1e3a5f] font-semibold hover:underline">+ Add files</button>
               </div>
-              <input ref={exhibitRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => e.target.files && addExhibits(e.target.files)} />
+              <input ref={exhibitRef} type="file" accept=".pdf" multiple className="hidden" aria-label="Select exhibit PDFs" onChange={(e) => e.target.files && addExhibits(e.target.files)} />
               {exhibits.length === 0 ? (
                 <div
                   className="px-5 py-8 text-center cursor-pointer hover:bg-[#fafaf8] transition border-2 border-dashed border-transparent hover:border-[#e8e5e0] mx-4 my-4 rounded-xl"
@@ -693,9 +721,19 @@ export default function WorkspacePage() {
                       : "Review the issues above."}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button onClick={reset} className="px-5 py-2.5 text-[13px] text-white/50 hover:text-white transition border border-white/10 rounded-xl hover:bg-white/5">Cancel</button>
-                  <button onClick={handleConfirm} disabled={!filing.ready} className="px-8 py-3 bg-white text-[#1e3a5f] text-[14px] font-bold rounded-xl hover:bg-[#f0f4fa] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-lg">
+                <div className="flex items-center gap-2">
+                  <button onClick={reset} className="px-4 py-2.5 text-[12px] text-white/40 hover:text-white/70 transition" aria-label="Cancel filing">Cancel</button>
+                  <button
+                    onClick={() => {
+                      const draft = { filing, docketText, eventCodeOverride, isSealed, isRedacted, exhibits: exhibits.map(e => ({ label: e.label, description: e.description })), savedAt: new Date().toISOString() };
+                      localStorage.setItem(`ecfiler_draft_${Date.now()}`, JSON.stringify(draft));
+                      toast("Draft saved — find it in Drafts", "success");
+                      setTimeout(() => reset(), 1200);
+                    }}
+                    className="px-4 py-2.5 text-[12px] text-white/50 hover:text-white transition border border-white/10 rounded-xl hover:bg-white/5"
+                    aria-label="Save as draft for later"
+                  >Save Draft</button>
+                  <button onClick={handleConfirm} disabled={!filing.ready} className="px-8 py-3 bg-white text-[#1e3a5f] text-[14px] font-bold rounded-xl hover:bg-[#f0f4fa] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-lg" aria-label={filing.ready ? `File to ${filing.court_id?.toUpperCase()} case ${filing.case_number}` : "Cannot file — missing required fields"}>
                     Confirm &amp; File
                   </button>
                 </div>
@@ -1070,7 +1108,7 @@ export default function WorkspacePage() {
 
       {/* History slide-out */}
       {showHistory && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setShowHistory(false)}>
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setShowHistory(false)} role="dialog" aria-modal="true" aria-label="Filing history">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
           <div className="relative w-full sm:w-[380px] md:w-[420px] bg-white h-full shadow-2xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-white border-b border-[#e8e5e0] px-6 py-4 z-10">

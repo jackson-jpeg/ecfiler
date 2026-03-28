@@ -156,7 +156,7 @@ class TestEventCodes:
     def test_get_categories(self) -> None:
         categories = get_event_categories("district")
         assert "Motions" in categories
-        assert "Briefs" in categories
+        assert "Briefs and Memoranda" in categories
         assert "Notices" in categories
 
     def test_bankruptcy_categories(self) -> None:
