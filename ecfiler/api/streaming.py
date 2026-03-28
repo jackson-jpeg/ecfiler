@@ -132,6 +132,14 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         else:
             yield emit_step("Matching event code", "warn", "No exact match — manual selection needed")
 
+        # Step 6: Generate docket text
+        yield emit_step("Generating docket text", "running")
+        await asyncio.sleep(0.1)
+
+        # Build smart docket text from analysis
+        docket_text = _build_docket_text(analysis, event_desc)
+        yield emit_step("Generating docket text", "done", docket_text[:80] + ("..." if len(docket_text) > 80 else ""))
+
         # Check filing fee
         from ecfiler.filing.fees import get_fee, format_fee
         fee = get_fee(event_desc or analysis.document_type, court_type)
@@ -159,7 +167,7 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
             "court_id": analysis.court_id,
             "case_caption": analysis.case_caption,
             "event_code": event_code,
-            "event_description": event_desc,
+            "event_description": docket_text or event_desc,
             "filing_party": f"{analysis.filing_party_name} ({analysis.filing_party_role})" if analysis.filing_party_name else "",
             "is_response": analysis.is_response,
             "responds_to": analysis.responds_to if analysis.is_response else None,
@@ -183,6 +191,26 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         yield emit_error(str(e))
     finally:
         Path(tmp_path).unlink(missing_ok=True)
+
+
+def _build_docket_text(analysis, event_desc: str) -> str:
+    """Build a suggested docket text from the analysis results.
+
+    The docket text is what appears on the court docket. It should be
+    descriptive but concise, matching CM/ECF conventions.
+    """
+    doc_type = analysis.document_type_specific or analysis.document_type or event_desc
+
+    # Start with the document type
+    text = doc_type
+
+    # Add response context if applicable
+    if analysis.is_response and analysis.responds_to_docket_number:
+        text += f" re: Dkt. #{analysis.responds_to_docket_number}"
+    elif analysis.is_response and analysis.responds_to:
+        text += f" re: {analysis.responds_to}"
+
+    return text
 
 
 def _infer_court_type(court_id: str) -> str:
