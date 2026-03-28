@@ -847,10 +847,6 @@ export default function WorkspacePage() {
                   <div className="text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wide mb-3">You are about to file</div>
                   <div className="bg-[#fafaf8] border border-[#e8e5e0] rounded-xl p-4 mb-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-[12px] text-[#8a8a8a]">Document</span>
-                      <span className="text-[12px] font-semibold text-[#1a1a1a]">{filing.document_type}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-[12px] text-[#8a8a8a]">Court</span>
                       <span className="text-[12px] font-mono font-semibold text-[#1a1a1a]">{filing.court_id?.toUpperCase()}</span>
                     </div>
@@ -860,24 +856,85 @@ export default function WorkspacePage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[12px] text-[#8a8a8a]">Event Code</span>
-                      <span className="text-[12px] font-mono font-semibold text-[#1a1a1a]">{eventCodeOverride || filing.event_code}</span>
+                      <span className="text-[12px] font-mono font-semibold text-[#1a1a1a]">{eventCodeOverride || filing.event_code} — {filing.document_type}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[12px] text-[#8a8a8a]">Docket Text</span>
-                      <span className="text-[12px] font-semibold text-[#1a1a1a] text-right max-w-[60%] truncate">{docketText || filing.event_description}</span>
+                      <span className="text-[12px] text-[#8a8a8a]">Filing Party</span>
+                      <span className="text-[12px] font-semibold text-[#1a1a1a]">{filing.filing_party || "—"}</span>
                     </div>
-                    {exhibits.length > 0 && (
+                    {filing.filing_fee ? (
                       <div className="flex justify-between">
-                        <span className="text-[12px] text-[#8a8a8a]">Attachments</span>
-                        <span className="text-[12px] font-semibold text-[#1a1a1a]">{exhibits.length} file{exhibits.length > 1 ? "s" : ""}</span>
+                        <span className="text-[12px] text-[#8a8a8a]">Fee</span>
+                        <span className="text-[12px] font-semibold text-[#1a1a1a]">{filing.filing_fee_text || `$${filing.filing_fee}`}</span>
                       </div>
-                    )}
+                    ) : null}
                     {isSealed && (
                       <div className="flex justify-between">
                         <span className="text-[12px] text-[#8a8a8a]">Sealed</span>
-                        <span className="text-[12px] font-bold text-[#b91c1c]">Yes — under seal</span>
+                        <span className="text-[12px] font-bold text-[#b91c1c]">Yes — filed under seal</span>
                       </div>
                     )}
+                    {isRedacted && (
+                      <div className="flex justify-between">
+                        <span className="text-[12px] text-[#8a8a8a]">Redacted</span>
+                        <span className="text-[12px] font-semibold text-[#1a1a1a]">Redacted version per Rule 5.2</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Exact docket text as it will appear on CM/ECF */}
+                  <div className="mb-4">
+                    <div className="text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wide mb-2">Exact docket text to be entered</div>
+                    <div className="border-2 border-[#1e3a5f]/20 rounded-xl overflow-hidden">
+                      <div className="bg-[#0f1f35] px-4 py-2 flex items-center gap-2">
+                        <svg className="w-3.5 h-3.5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+                        <span className="text-[10px] text-white/50 font-medium">CM/ECF Docket Entry Preview</span>
+                      </div>
+                      <div className="bg-white p-4">
+                        <p className="text-[14px] text-[#1a1a1a] font-medium leading-relaxed">
+                          {docketText || filing.event_description}
+                        </p>
+                        <div className="text-[11px] text-[#8a8a8a] mt-2">
+                          Filed by {filing.filing_party || "Unknown"}.
+                          {filing.case_number && <span> ({filing.case_number})</span>}
+                          {exhibits.length > 0 && (
+                            <span> (Attachments: {exhibits.map((e, i) => `# ${i + 1} ${e.label}`).join(", ")})</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Documents being filed */}
+                  <div className="mb-4">
+                    <div className="text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wide mb-2">Documents to be filed</div>
+                    <div className="border border-[#e8e5e0] rounded-xl overflow-hidden">
+                      {/* Main document */}
+                      <div className="flex items-center gap-3 px-4 py-3 bg-[#fafaf8]">
+                        <div className="w-8 h-8 bg-[#b91c1c] rounded-lg flex items-center justify-center shrink-0">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M7 2C5.9 2 5 2.9 5 4v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8l-6-6H7zm7 7V3.5L18.5 8H14zM9 13h6v2H9v-2zm0 4h4v2H9v-2z" /></svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold text-[#1a1a1a] truncate">{fileName}</div>
+                          <div className="text-[10px] text-[#8a8a8a]">Main document &middot; {filing.pdf_size_mb?.toFixed(1)}MB &middot; {filing.pdf_pages} pages{filing.pdf_is_pdfa ? " · PDF/A" : ""}</div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 bg-[#f0fdf4] text-[#15803d] rounded-full font-semibold shrink-0">Validated</span>
+                      </div>
+                      {/* Exhibits */}
+                      {exhibits.map((ex, i) => (
+                        <div key={ex.id} className="flex items-center gap-3 px-4 py-3 border-t border-[#f0eee9]">
+                          <div className="w-8 h-8 bg-[#1e3a5f] rounded-lg flex items-center justify-center text-white text-[11px] font-bold shrink-0">{ex.label.split(" ")[1]}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-medium text-[#1a1a1a] truncate">{ex.description || ex.file.name}</div>
+                            <div className="text-[10px] text-[#8a8a8a]">{ex.label} &middot; {(ex.file.size / 1024 / 1024).toFixed(1)}MB</div>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 bg-[#f5f3ee] text-[#8a8a8a] rounded-full font-medium shrink-0">Attachment #{i + 1}</span>
+                        </div>
+                      ))}
+                      {exhibits.length === 0 && (
+                        <div className="px-4 py-2 border-t border-[#f0eee9] text-[11px] text-[#c4c4c4]">No additional attachments</div>
+                      )}
+                    </div>
                   </div>
 
                   {/* AI verification summary */}
