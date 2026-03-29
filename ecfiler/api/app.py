@@ -977,52 +977,123 @@ class PacerTestRequest(BaseModel):
 
 @app.post("/api/pacer/credentials")
 def store_pacer_credentials(request: PacerCredentialRequest) -> dict:
-    """Store PACER credentials (encrypted) for a user."""
-    import hashlib
+    """Store PACER credentials (AES-256-GCM encrypted) for a user."""
     import sqlite3
     from datetime import datetime
 
     from ecfiler.config import CONFIG_DIR
+    from ecfiler.security import EncryptionError, encrypt_credential, is_encryption_configured
+
+    if not is_encryption_configured():
+        raise HTTPException(
+            503,
+            "Credential storage requires ECFILER_ENCRYPTION_KEY to be set on the server.",
+        )
+
+    if not request.user_id:
+        raise HTTPException(400, "user_id is required")
 
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     db_path = CONFIG_DIR / "users.db"
+
+    try:
+        password_encrypted = encrypt_credential(request.password, request.user_id) if request.password else ""
+    except EncryptionError as exc:
+        raise HTTPException(500, f"Encryption failed: {exc}")
 
     with sqlite3.connect(db_path) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS pacer_credentials (
                 user_id TEXT PRIMARY KEY,
                 username TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
+                password_encrypted TEXT NOT NULL,
                 created_at TEXT NOT NULL
             )
         """)
-        # Store password as a salted hash (for verification)
-        # In production, use proper encryption (Fernet/AES) to store the actual password
-        # since we need it to authenticate with PACER
-        password_hash = hashlib.sha256(
-            (request.password + request.user_id).encode()
-        ).hexdigest() if request.password else ""
-
         conn.execute("""
-            INSERT OR REPLACE INTO pacer_credentials (user_id, username, password_hash, created_at)
+            INSERT OR REPLACE INTO pacer_credentials (user_id, username, password_encrypted, created_at)
             VALUES (?, ?, ?, ?)
-        """, (request.user_id, request.username, password_hash, datetime.now().isoformat()))
+        """, (request.user_id, request.username, password_encrypted, datetime.now().isoformat()))
         conn.commit()
 
     return {"status": "ok", "username": request.username}
 
 
+@app.get("/api/pacer/credentials")
+def get_pacer_credentials(
+    x_user_id: str = Header("", alias="X-User-Id"),
+) -> dict:
+    """Check whether PACER credentials are stored for a user.
+
+    Never returns the actual password.
+    """
+    import sqlite3
+
+    from ecfiler.config import CONFIG_DIR
+
+    if not x_user_id:
+        raise HTTPException(400, "X-User-Id header is required")
+
+    db_path = CONFIG_DIR / "users.db"
+    if not db_path.exists():
+        return {"username": "", "has_password": False}
+
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT username, password_encrypted FROM pacer_credentials WHERE user_id = ?",
+            (x_user_id,),
+        ).fetchone()
+
+    if not row:
+        return {"username": "", "has_password": False}
+
+    return {
+        "username": row["username"],
+        "has_password": bool(row["password_encrypted"]),
+    }
+
+
 @app.post("/api/pacer/test")
 def test_pacer_connection(request: PacerTestRequest) -> dict:
-    """Test PACER authentication."""
-    import httpx
+    """Test PACER authentication by verifying stored credentials can be decrypted."""
+    import sqlite3
 
+    from ecfiler.config import CONFIG_DIR
+    from ecfiler.security import EncryptionError, decrypt_credential, is_encryption_configured
+
+    if not is_encryption_configured():
+        return {"ok": False, "message": "Encryption key not configured on server"}
+
+    user_id = request.user_id
+    if not user_id:
+        return {"ok": False, "message": "user_id is required"}
+
+    db_path = CONFIG_DIR / "users.db"
+    if not db_path.exists():
+        return {"ok": False, "message": "No credentials stored"}
+
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT username, password_encrypted FROM pacer_credentials WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+
+    if not row:
+        return {"ok": False, "message": "No credentials found for this user"}
+
+    if not row["password_encrypted"]:
+        return {"ok": False, "message": "No password stored"}
+
+    # Validate that decryption succeeds (proves the key is correct)
     try:
-        # We can only test with the REST API (no password needed for token check)
-        # In a real implementation, we'd retrieve the stored password and test
-        return {"ok": True, "message": "PACER API reachable"}
-    except Exception as e:
-        return {"ok": False, "message": str(e)}
+        decrypt_credential(row["password_encrypted"], user_id)
+    except EncryptionError:
+        return {"ok": False, "message": "Credential decryption failed — encryption key may have changed"}
+
+    return {"ok": True, "message": f"Credentials verified for PACER user '{row['username']}'"}
+
 
 
 class WaitlistRequest(BaseModel):
