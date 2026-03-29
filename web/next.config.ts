@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const API = "https://ecfiler-production.up.railway.app";
+const API = process.env.BACKEND_URL || "https://ecfiler-production.up.railway.app";
 
 const nextConfig: NextConfig = {
   async rewrites() {

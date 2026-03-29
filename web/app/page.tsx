@@ -32,7 +32,7 @@ export default function LandingPage() {
             <span className="text-[17px] font-semibold tracking-tight text-[#1a1a1a]">ECFiler</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-[14px]">
-            <Link href="/courts" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</Link>
+            <Link href="/federal-courts" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</Link>
             <Link href="/what-is-cmecf" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Resources</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">GitHub</a>
             <div className="w-px h-5 bg-[#e8e5e0]" />
@@ -51,7 +51,7 @@ export default function LandingPage() {
         </div>
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-[#e8e5e0] bg-white px-5 py-4 flex flex-col gap-4 text-[14px]">
-            <Link href="/courts" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</Link>
+            <Link href="/federal-courts" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Courts</Link>
             <Link href="/what-is-cmecf" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Resources</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">GitHub</a>
             <hr className="border-[#e8e5e0]" />
@@ -402,8 +402,9 @@ export default function LandingPage() {
             <div>
               <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Legal</div>
               <div className="space-y-2 text-[12px]">
+                <Link href="/privacy" className="block text-[#525252] hover:text-[#1a1a1a] transition">Privacy Policy</Link>
+                <Link href="/terms" className="block text-[#525252] hover:text-[#1a1a1a] transition">Terms of Service</Link>
                 <span className="block text-[#8a8a8a]">Filing tool, not legal advice</span>
-                <span className="block text-[#8a8a8a]">Attorney review required</span>
               </div>
             </div>
           </div>
