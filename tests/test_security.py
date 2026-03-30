@@ -133,3 +133,13 @@ def test_decrypt_truncated_ciphertext():
     short = base64.b64encode(b"tiny").decode()
     with pytest.raises(EncryptionError, match="too short"):
         decrypt_credential(short, "user-1")
+
+
+def test_decrypt_valid_base64_but_wrong_ciphertext():
+    """Syntactically valid base64 of sufficient length but wrong AESGCM tag should raise."""
+    import base64
+    # 12-byte nonce + 20 bytes of fake ciphertext (long enough to pass size check)
+    fake_data = b"\x00" * 12 + b"\xff" * 20
+    fake_ciphertext = base64.b64encode(fake_data).decode()
+    with pytest.raises(EncryptionError, match="Decryption failed"):
+        decrypt_credential(fake_ciphertext, "user-1")

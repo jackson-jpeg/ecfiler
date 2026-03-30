@@ -18,16 +18,50 @@ export function setUserId(id: string) {
   }
 }
 
-// Extend Window for the user ID
-declare global {
-  interface Window {
-    __ecfiler_user_id?: string;
+/** Set the Clerk session token for API calls. */
+export function setSessionToken(token: string) {
+  if (typeof window !== "undefined") {
+    window.__ecfiler_session_token = token;
   }
 }
 
-/** Standard headers including user isolation. */
+// Extend Window for the user ID and session token
+declare global {
+  interface Window {
+    __ecfiler_user_id?: string;
+    __ecfiler_session_token?: string;
+  }
+}
+
+/** Standard headers including auth token and user isolation. */
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
-  return { "X-User-Id": getUserId(), ...extra };
+  const headers: Record<string, string> = { "X-User-Id": getUserId(), ...extra };
+  const token = typeof window !== "undefined" ? window.__ecfiler_session_token : undefined;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+/** Fetch with timeout support. Throws on timeout or non-ok response. */
+async function fetchWithTimeout(
+  url: string,
+  opts?: RequestInit,
+  timeoutMs: number = 30000,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, { ...opts, signal: controller.signal });
+    return resp;
+  } catch (e: unknown) {
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new Error("Request timed out");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export interface FilingPreview {
@@ -211,14 +245,16 @@ export async function searchCourts(query?: string, type?: string): Promise<Court
   const params = new URLSearchParams();
   if (query) params.set("search", query);
   if (type) params.set("court_type", type);
-  const resp = await fetch(`${API}/api/courts?${params}`);
+  const resp = await fetchWithTimeout(`${API}/api/courts?${params}`);
+  if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
 }
 
 export async function validatePDF(file: File): Promise<ValidationResult> {
   const fd = new FormData();
   fd.append("document", file);
-  const resp = await fetch(`${API}/api/validate`, { method: "POST", body: fd });
+  const resp = await fetchWithTimeout(`${API}/api/validate`, { method: "POST", body: fd }, 60000);
+  if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
 }
 
@@ -227,21 +263,38 @@ export async function generateCOS(
   caseNumber: string,
   recipients: { name: string; attorney_name: string; method: string }[]
 ): Promise<{ text: string }> {
-  const resp = await fetch(`${API}/api/certificate-of-service`, {
+  const resp = await fetchWithTimeout(`${API}/api/certificate-of-service`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ attorney_name: attorney, case_number: caseNumber, recipients }),
   });
+  if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
+}
+
+export interface HistoryResponse {
+  items: FilingRecord[];
+  total: number;
 }
 
 export async function getHistory(): Promise<FilingRecord[]> {
-  const resp = await fetch(`${API}/api/history`, { headers: authHeaders() });
-  return resp.json();
+  const resp = await fetchWithTimeout(`${API}/api/history`, { headers: authHeaders() });
+  if (!resp.ok) throw new Error(await resp.text());
+  const data = await resp.json();
+  // Support both old (array) and new ({items, total}) response shapes
+  return Array.isArray(data) ? data : data.items;
+}
+
+export async function getHistoryWithTotal(): Promise<HistoryResponse> {
+  const resp = await fetchWithTimeout(`${API}/api/history`, { headers: authHeaders() });
+  if (!resp.ok) throw new Error(await resp.text());
+  const data = await resp.json();
+  if (Array.isArray(data)) return { items: data, total: data.length };
+  return data;
 }
 
 export async function getFilingDetail(id: number): Promise<FilingRecord> {
-  const resp = await fetch(`${API}/api/history/${id}`, { headers: authHeaders() });
+  const resp = await fetchWithTimeout(`${API}/api/history/${id}`, { headers: authHeaders() });
   if (!resp.ok) throw new Error("Filing not found");
   return resp.json();
 }
@@ -251,6 +304,7 @@ export function getFilingPdfUrl(id: number): string {
 }
 
 export async function getDrafts(): Promise<Record<string, unknown>[]> {
-  const resp = await fetch(`${API}/api/drafts`, { headers: authHeaders() });
+  const resp = await fetchWithTimeout(`${API}/api/drafts`, { headers: authHeaders() });
+  if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
 }

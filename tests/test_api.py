@@ -124,7 +124,7 @@ class TestValidateEndpoint:
             )
         # Empty files are now rejected at upload validation
         assert response.status_code == 400
-        assert "Empty" in response.json()["detail"]
+        assert "Empty" in response.json()["error"]
 
 
 class TestRedactionEndpoint:
@@ -249,3 +249,71 @@ class TestHistoryEndpoint:
     def test_empty_history(self, client: TestClient) -> None:
         response = client.get("/api/history")
         assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "total" in data
+        assert isinstance(data["items"], list)
+        assert isinstance(data["total"], int)
+
+
+class TestCORSConfiguration:
+    def test_cors_rejects_unlisted_origin(self, client: TestClient) -> None:
+        """Requests from origins not in ECFILER_ALLOWED_ORIGINS should lack CORS headers."""
+        response = client.options(
+            "/api/health",
+            headers={
+                "Origin": "https://evil.example.com",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        # Should NOT include the evil origin in the response
+        allow_origin = response.headers.get("access-control-allow-origin", "")
+        assert allow_origin != "https://evil.example.com"
+        assert allow_origin != "*"
+
+    def test_cors_allows_configured_origin(self, client: TestClient) -> None:
+        """The default allowed origin (localhost:3000) should get CORS headers."""
+        response = client.options(
+            "/api/health",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        allow_origin = response.headers.get("access-control-allow-origin", "")
+        assert allow_origin == "http://localhost:3000"
+
+
+class TestStandardizedErrorResponses:
+    def test_404_returns_json_with_error_field(self, client: TestClient) -> None:
+        response = client.get("/api/courts/zzz/events")
+        assert response.status_code == 404
+        data = response.json()
+        assert "error" in data
+        assert "code" in data
+        assert data["code"] == 404
+
+    def test_400_returns_json_with_error_field(self, client: TestClient, tmp_path: Path) -> None:
+        empty = tmp_path / "empty.pdf"
+        empty.write_bytes(b"")
+        with open(empty, "rb") as f:
+            response = client.post(
+                "/api/validate",
+                files={"document": ("empty.pdf", f, "application/pdf")},
+            )
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data
+        assert data["code"] == 400
+
+
+class TestCacheHeaders:
+    def test_courts_has_cache_control(self, client: TestClient) -> None:
+        response = client.get("/api/courts")
+        assert response.status_code == 200
+        assert "max-age=3600" in response.headers.get("cache-control", "")
+
+    def test_events_has_cache_control(self, client: TestClient) -> None:
+        response = client.get("/api/courts/nysd/events")
+        assert response.status_code == 200
+        assert "max-age=3600" in response.headers.get("cache-control", "")

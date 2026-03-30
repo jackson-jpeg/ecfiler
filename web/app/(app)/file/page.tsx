@@ -69,10 +69,48 @@ export default function WorkspacePage() {
     return () => clearInterval(interval);
   }, [phase, filingStartTime]);
 
+  // Auto-save review state to sessionStorage so accidental refreshes don't lose work
+  useEffect(() => {
+    if (phase === "review" && filing) {
+      sessionStorage.setItem("ecfiler_review", JSON.stringify({
+        filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, fileName, fileSize,
+      }));
+    }
+    if (phase === "ready" || phase === "done") {
+      sessionStorage.removeItem("ecfiler_review");
+    }
+  }, [phase, filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, fileName, fileSize]);
+
+  // Restore review state on mount (survives accidental refresh)
+  useEffect(() => {
+    const saved = sessionStorage.getItem("ecfiler_review");
+    if (saved && phase === "ready") {
+      try {
+        const state = JSON.parse(saved);
+        if (state.filing) {
+          setFiling(state.filing);
+          setDocketText(state.docketText || "");
+          setEventCodeOverride(state.eventCodeOverride || "");
+          setIsSealed(state.isSealed || false);
+          setIsRedacted(state.isRedacted || false);
+          setShowCertService(state.showCertService || false);
+          setFileName(state.fileName || "");
+          setFileSize(state.fileSize || 0);
+          setPhase("review");
+          toast("Restored your previous analysis session", "success");
+        }
+      } catch {
+        sessionStorage.removeItem("ecfiler_review");
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const reset = () => {
     setPhase("ready"); setFileName(""); setSteps([]); setFiling(null);
     setBrowserSteps([]); setScreenshot(""); setBrowserDone(false); setError("");
     setExhibits([]); setIsSealed(false); setIsRedacted(false); setDocketText(""); setShowCertService(false); setShowEventSearch(false); setEventCodeOverride(""); setShowConfirmGate(false); setAttorneyAttest(false);
+    sessionStorage.removeItem("ecfiler_review");
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
   };
 
@@ -653,7 +691,7 @@ export default function WorkspacePage() {
                         />
                         <div className="text-[10px] text-[#8a8a8a] font-mono mt-0.5">{ex.file.name} &middot; {(ex.file.size / 1024 / 1024).toFixed(1)}MB</div>
                       </div>
-                      <button onClick={() => removeExhibit(ex.id)} className="text-[#c4c4c4] hover:text-[#b91c1c] transition opacity-0 group-hover:opacity-100 text-lg shrink-0">&times;</button>
+                      <button onClick={() => removeExhibit(ex.id)} aria-label="Remove exhibit" className="text-[#c4c4c4] hover:text-[#b91c1c] transition opacity-0 group-hover:opacity-100 text-lg shrink-0">&times;</button>
                     </div>
                   ))}
                   <button onClick={() => exhibitRef.current?.click()} className="w-full py-2.5 border border-dashed border-[#d4d0ca] rounded-xl text-[12px] text-[#8a8a8a] hover:text-[#1e3a5f] hover:border-[#1e3a5f] transition">+ Add more exhibits</button>
@@ -1352,7 +1390,7 @@ export default function WorkspacePage() {
             <div className="sticky top-0 bg-white border-b border-[#e8e5e0] px-6 py-4 z-10">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-[16px] font-bold text-[#1a1a1a]">Filing History</h3>
-                <button onClick={() => setShowHistory(false)} className="w-7 h-7 rounded-lg bg-[#f5f3ee] hover:bg-[#e8e5e0] flex items-center justify-center text-[#8a8a8a] hover:text-[#1a1a1a] transition text-sm">&times;</button>
+                <button onClick={() => setShowHistory(false)} aria-label="Close history" className="w-7 h-7 rounded-lg bg-[#f5f3ee] hover:bg-[#e8e5e0] flex items-center justify-center text-[#8a8a8a] hover:text-[#1a1a1a] transition text-sm">&times;</button>
               </div>
               <div className="text-[11px] text-[#8a8a8a]">{history.length} filing{history.length !== 1 ? "s" : ""} on record</div>
             </div>

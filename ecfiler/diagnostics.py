@@ -53,12 +53,17 @@ def run_diagnostics(config_path: str | None = None) -> DiagnosticReport:
 
     report.checks.append(_check_config(config_path))
     report.checks.append(_check_anthropic_key())
+    report.checks.append(_check_anthropic_connectivity())
     report.checks.append(_check_pacer_credentials(config_path))
     report.checks.append(_check_playwright())
     report.checks.append(_check_pdf_tools())
     report.checks.append(_check_ocrmypdf())
+    report.checks.append(_check_system_deps())
     report.checks.append(_check_courts_data())
+    report.checks.append(_check_event_codes())
     report.checks.append(_check_history_db())
+    report.checks.append(_check_disk_space())
+    report.checks.append(_check_encryption_key())
 
     return report
 
@@ -190,6 +195,44 @@ def _check_ocrmypdf() -> CheckResult:
     )
 
 
+def _check_anthropic_connectivity() -> CheckResult:
+    """Check that the Claude API is reachable (quick model list call)."""
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not key:
+        return CheckResult("anthropic_api", False, "Skipped — no API key", fix="Set ANTHROPIC_API_KEY first")
+    try:
+        import httpx
+
+        resp = httpx.get(
+            "https://api.anthropic.com/v1/models",
+            headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return CheckResult("anthropic_api", True, "Claude API reachable")
+        return CheckResult(
+            "anthropic_api", False, f"API returned {resp.status_code}",
+            fix="Check your ANTHROPIC_API_KEY is valid",
+        )
+    except Exception as e:
+        return CheckResult("anthropic_api", False, f"Cannot reach API: {e}", fix="Check network connectivity")
+
+
+def _check_system_deps() -> CheckResult:
+    """Check required system-level dependencies."""
+    missing = []
+    if not shutil.which("ghostscript") and not shutil.which("gs"):
+        missing.append("ghostscript")
+    if not shutil.which("tesseract"):
+        missing.append("tesseract-ocr")
+    if missing:
+        return CheckResult(
+            "system_deps", False, f"Missing: {', '.join(missing)}",
+            fix=f"apt install {' '.join(missing)}",
+        )
+    return CheckResult("system_deps", True, "ghostscript + tesseract installed")
+
+
 def _check_courts_data() -> CheckResult:
     """Check court registry loads."""
     try:
@@ -201,6 +244,32 @@ def _check_courts_data() -> CheckResult:
         return CheckResult("courts", False, f"Court data error: {e}")
 
 
+def _check_event_codes() -> CheckResult:
+    """Check that event code JSON files are valid and loaded."""
+    import json
+    from pathlib import Path
+
+    codes_dir = Path(__file__).parent / "courts" / "data" / "event_codes"
+    total = 0
+    errors = []
+    for name in ["common_district.json", "common_bankruptcy.json", "common_appellate.json"]:
+        path = codes_dir / name
+        if not path.exists():
+            errors.append(f"{name}: missing")
+            continue
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            count = sum(len(codes) for codes in data.get("categories", {}).values())
+            total += count
+        except Exception as e:
+            errors.append(f"{name}: {e}")
+
+    if errors:
+        return CheckResult("event_codes", False, "; ".join(errors))
+    return CheckResult("event_codes", True, f"{total} event codes across 3 court types")
+
+
 def _check_history_db() -> CheckResult:
     """Check filing history database."""
     try:
@@ -210,3 +279,29 @@ def _check_history_db() -> CheckResult:
         return CheckResult("history_db", True, f"History DB ready ({history.count} filings)")
     except Exception as e:
         return CheckResult("history_db", False, f"Database error: {e}")
+
+
+def _check_disk_space() -> CheckResult:
+    """Check available disk space for temp files and PDF storage."""
+    try:
+        stat = os.statvfs(os.path.expanduser("~"))
+        free_mb = (stat.f_bavail * stat.f_frsize) / (1024 * 1024)
+        if free_mb < 100:
+            return CheckResult(
+                "disk_space", False, f"Low disk space: {free_mb:.0f}MB free",
+                fix="Free up disk space — filing requires temp files for PDF processing",
+            )
+        return CheckResult("disk_space", True, f"{free_mb:.0f}MB free")
+    except Exception as e:
+        return CheckResult("disk_space", False, f"Cannot check disk space: {e}")
+
+
+def _check_encryption_key() -> CheckResult:
+    """Check that the encryption key is configured for credential storage."""
+    key = os.environ.get("ECFILER_ENCRYPTION_KEY", "")
+    if key:
+        return CheckResult("encryption_key", True, "Encryption key set (PACER credential storage ready)")
+    return CheckResult(
+        "encryption_key", False, "ECFILER_ENCRYPTION_KEY not set",
+        fix="export ECFILER_ENCRYPTION_KEY=$(python -c \"import secrets; print(secrets.token_urlsafe(32))\")",
+    )

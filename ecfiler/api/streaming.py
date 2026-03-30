@@ -23,12 +23,16 @@ from __future__ import annotations
 import asyncio
 import json
 import tempfile
+import time
 from pathlib import Path
 from typing import AsyncGenerator
 
 from ecfiler.logging import get_logger
 
 logger = get_logger(__name__)
+
+# Timeout for AI analysis (Claude API call) — generous but not infinite
+AI_ANALYSIS_TIMEOUT = 120  # seconds
 
 
 async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> AsyncGenerator[str, None]:
@@ -59,13 +63,21 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         tmp.write(file_content)
         tmp_path = tmp.name
 
+    t0 = time.monotonic()
+
     try:
         # Step 1: Validate PDF
         yield emit_step("Validating PDF", "running")
         await asyncio.sleep(0.1)  # Let the event flush
 
-        from ecfiler.pdf.validator import validate_pdf
-        validation = validate_pdf(tmp_path, check_pdfa=True)
+        try:
+            from ecfiler.pdf.validator import validate_pdf
+            validation = validate_pdf(tmp_path, check_pdfa=True)
+        except Exception as e:
+            logger.exception("PDF validation crashed")
+            yield emit_step("Validating PDF", "error", "Validation failed")
+            yield emit_error(f"PDF validation failed: {e}")
+            return
 
         if not validation.valid:
             yield emit_step("Validating PDF", "error", "; ".join(validation.errors))
@@ -85,18 +97,42 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         yield emit_step("Reading document", "running")
         await asyncio.sleep(0.1)
 
-        from ecfiler.pdf.validator import extract_text, extract_title
-        text = extract_text(tmp_path, max_pages=30)
-        pdf_title = extract_title(tmp_path)
+        try:
+            from ecfiler.pdf.validator import extract_text, extract_title
+            text = extract_text(tmp_path, max_pages=30)
+            pdf_title = extract_title(tmp_path)
+        except Exception as e:
+            logger.exception("Text extraction failed")
+            yield emit_step("Reading document", "error", "Could not extract text")
+            yield emit_error(f"Text extraction failed: {e}")
+            return
+
         title_note = f" — {pdf_title[:60]}" if pdf_title and len(pdf_title) > 5 else ""
         yield emit_step("Reading document", "done", f"{len(text):,} characters extracted{title_note}")
 
-        # Step 3: AI analysis
+        if not text.strip():
+            yield emit_step("Reading document", "warn", "No extractable text — OCR may be needed")
+
+        # Step 3: AI analysis (with timeout)
         yield emit_step("AI analyzing document", "running")
         await asyncio.sleep(0.1)
 
-        from ecfiler.agent.document_analyzer import analyze_document
-        analysis = analyze_document(text, api_key=api_key)
+        try:
+            from ecfiler.agent.document_analyzer import analyze_document
+            analysis = await asyncio.wait_for(
+                asyncio.to_thread(analyze_document, text, api_key=api_key),
+                timeout=AI_ANALYSIS_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            logger.error("AI analysis timed out after %ds", AI_ANALYSIS_TIMEOUT)
+            yield emit_step("AI analyzing document", "error", f"Timed out after {AI_ANALYSIS_TIMEOUT}s")
+            yield emit_error("AI analysis timed out. The document may be too large or the API may be slow.")
+            return
+        except Exception as e:
+            logger.exception("AI analysis failed")
+            yield emit_step("AI analyzing document", "error", "Analysis failed")
+            yield emit_error(f"AI analysis failed: {e}")
+            return
 
         ai_detail = []
         if analysis.case_number:
@@ -111,25 +147,37 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         yield emit_step("Scanning for redaction issues", "running")
         await asyncio.sleep(0.1)
 
-        from ecfiler.pdf.redaction_check import scan_document
-        redaction = scan_document(text)
+        try:
+            from ecfiler.pdf.redaction_check import scan_document
+            redaction = scan_document(text)
+        except Exception as e:
+            logger.exception("Redaction scan failed")
+            # Non-fatal — continue with a warning
+            yield emit_step("Scanning for redaction issues", "warn", f"Scan failed: {e}")
+            from types import SimpleNamespace
+            redaction = SimpleNamespace(has_issues=False, issues=[], risk_level="unknown")
 
         if redaction.has_issues:
             yield emit_step("Scanning for redaction issues", "warn", f"{len(redaction.issues)} potential issue(s)")
-        else:
+        elif redaction.risk_level != "unknown":
             yield emit_step("Scanning for redaction issues", "done", "No issues found")
 
         # Step 5: Event code matching
         yield emit_step("Matching event code", "running")
         await asyncio.sleep(0.1)
 
-        from ecfiler.filing.events import search_events
-
-        court_type = _infer_court_type(analysis.court_id)
-        desc = analysis.document_type_specific or analysis.document_type
-        matches = search_events(desc, court_type) if desc else []
-        event_code = matches[0].code if matches else ""
-        event_desc = matches[0].description if matches else desc
+        try:
+            from ecfiler.filing.events import search_events
+            court_type = _infer_court_type(analysis.court_id)
+            desc = analysis.document_type_specific or analysis.document_type
+            matches = search_events(desc, court_type) if desc else []
+            event_code = matches[0].code if matches else ""
+            event_desc = matches[0].description if matches else (desc or "")
+        except Exception as e:
+            logger.exception("Event code matching failed")
+            event_code = ""
+            event_desc = analysis.document_type_specific or analysis.document_type or ""
+            court_type = "district"
 
         if event_code:
             yield emit_step("Matching event code", "done", f"{event_desc} ({event_code})")
@@ -140,15 +188,20 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         yield emit_step("Generating docket text", "running")
         await asyncio.sleep(0.1)
 
-        # Build smart docket text from analysis
         docket_text = _build_docket_text(analysis, event_desc)
         yield emit_step("Generating docket text", "done", docket_text[:80] + ("..." if len(docket_text) > 80 else ""))
 
         # Check filing fee
-        from ecfiler.filing.fees import get_fee, format_fee
-        fee = get_fee(event_desc or analysis.document_type, court_type)
-        fee_amount = fee.amount if fee else 0
-        fee_text = format_fee(fee) if fee else "Unknown"
+        try:
+            from ecfiler.filing.fees import get_fee, format_fee
+            fee = get_fee(event_desc or analysis.document_type, court_type)
+            fee_amount = fee.amount if fee else 0
+            fee_text = format_fee(fee) if fee else "Unknown"
+        except Exception:
+            logger.exception("Fee lookup failed")
+            fee = None
+            fee_amount = 0
+            fee_text = "Unknown"
 
         # Build warnings
         warnings: list[str] = []
@@ -176,7 +229,8 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
             analysis.has_signature,
         ])
         checks_total = 5
-        verify_detail = f"{checks_passed}/{checks_total} checks passed"
+        elapsed = time.monotonic() - t0
+        verify_detail = f"{checks_passed}/{checks_total} checks passed ({elapsed:.1f}s)"
         if not ready:
             verify_detail += " — manual review needed"
         yield emit_step("Verification complete", "done" if ready else "warn", verify_detail)
@@ -211,10 +265,11 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
             "filing_fee_text": fee_text,
         }
 
+        logger.info("Analysis complete in %.1fs: %s %s", elapsed, analysis.court_id, analysis.case_number)
         yield emit_result(filing)
 
     except Exception as e:
-        logger.error("Streaming analysis failed: %s", e)
+        logger.exception("Streaming analysis failed")
         yield emit_error(str(e))
     finally:
         Path(tmp_path).unlink(missing_ok=True)

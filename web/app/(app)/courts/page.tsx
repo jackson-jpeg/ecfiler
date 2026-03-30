@@ -75,6 +75,7 @@ export default function CourtsPage() {
         {/* Table */}
         <div className="bg-white border border-[#e8e5e0] rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
+            <caption className="sr-only">Federal courts directory</caption>
             <thead>
               <tr className="text-left">
                 <th className="px-5 py-3 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide border-b border-[#e8e5e0] bg-[#fafaf8]/50 w-24">ID</th>

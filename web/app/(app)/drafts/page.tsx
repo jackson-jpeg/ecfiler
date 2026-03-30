@@ -216,7 +216,20 @@ export default function DraftsPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="text-center py-20 text-sm text-[#8a8a8a]">Loading drafts...</div>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white border border-[#e8e5e0] rounded-2xl p-5 animate-pulse">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2.5 flex-1">
+                    <div className="h-4 bg-[#e8e5e0] rounded w-2/3" />
+                    <div className="h-3 bg-[#f0eee9] rounded w-1/3" />
+                    <div className="h-3 bg-[#f0eee9] rounded w-1/2" />
+                  </div>
+                  <div className="h-8 w-20 bg-[#f0eee9] rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Empty state */}

@@ -33,12 +33,19 @@ export function CourtsModal({ onClose }: Props) {
     setDefaultCourt(localStorage.getItem("ecfiler_court") || "");
   }, []);
 
+  // Debounce court search to avoid firing on every keystroke
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   useEffect(() => {
     const params = new URLSearchParams();
-    if (query) params.set("search", query);
+    if (debouncedQuery) params.set("search", debouncedQuery);
     if (typeFilter !== "all") params.set("court_type", typeFilter);
     fetch(`/api/courts?${params}`).then(r => r.json()).then(setCourts).catch(() => {});
-  }, [query, typeFilter]);
+  }, [debouncedQuery, typeFilter]);
 
   const selectCourt = useCallback((court: Court) => {
     setSelected(court);

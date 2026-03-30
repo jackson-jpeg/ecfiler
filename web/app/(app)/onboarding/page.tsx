@@ -10,7 +10,7 @@ const STEPS: OnboardingStep[] = ["welcome", "role", "court", "pacer", "done"];
 /* Step icons as inline SVGs */
 function RoleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
     </svg>
   );
@@ -18,7 +18,7 @@ function RoleIcon({ className }: { className?: string }) {
 
 function CourtIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
     </svg>
   );
@@ -26,7 +26,7 @@ function CourtIcon({ className }: { className?: string }) {
 
 function PacerIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
     </svg>
   );
@@ -40,13 +40,24 @@ export default function OnboardingPage() {
   const [barNumber, setBarNumber] = useState("");
   const router = useRouter();
 
+  const [barError, setBarError] = useState("");
+
   const finish = () => {
-    // Save to localStorage for now (Clerk user metadata later)
-    localStorage.setItem("ecfiler_onboarded", "true");
-    localStorage.setItem("ecfiler_role", role);
-    localStorage.setItem("ecfiler_court", court);
-    localStorage.setItem("ecfiler_firm", firmName);
-    localStorage.setItem("ecfiler_bar", barNumber);
+    // Validate bar number format if provided
+    if (barNumber && !/^[A-Za-z0-9]{4,12}$/.test(barNumber)) {
+      setBarError("Bar number should be 4-12 alphanumeric characters");
+      return;
+    }
+    // Save to localStorage with error handling
+    try {
+      localStorage.setItem("ecfiler_onboarded", "true");
+      localStorage.setItem("ecfiler_role", role);
+      localStorage.setItem("ecfiler_court", court);
+      localStorage.setItem("ecfiler_firm", firmName);
+      localStorage.setItem("ecfiler_bar", barNumber);
+    } catch {
+      // Storage full or blocked — proceed anyway, settings can be set later
+    }
     router.push("/file");
   };
 
@@ -189,10 +200,15 @@ export default function OnboardingPage() {
                   <input
                     type="text"
                     value={barNumber}
-                    onChange={(e) => setBarNumber(e.target.value)}
+                    onChange={(e) => { setBarNumber(e.target.value); setBarError(""); }}
                     placeholder="e.g., NY12345"
-                    className="w-full px-4 py-2.5 border border-[#e8e5e0] rounded-xl text-sm outline-none focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/10 bg-white transition"
+                    className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none focus:ring-2 bg-white transition ${
+                      barError ? "border-[#f59e0b] focus:border-[#f59e0b] focus:ring-[#f59e0b]/10" : "border-[#e8e5e0] focus:border-[#1e3a5f] focus:ring-[#1e3a5f]/10"
+                    }`}
                   />
+                  {barError && (
+                    <p className="text-[11px] text-[#f59e0b] mt-1.5">{barError}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">

@@ -544,6 +544,7 @@ export default function HistoryPage() {
           <>
             <div className="hidden md:block bg-white border border-[#e8e5e0] rounded-2xl overflow-hidden shadow-sm">
               <table className="w-full text-sm">
+                <caption className="sr-only">Filing history</caption>
                 <thead>
                   <tr className="text-left">
                     <th className="px-5 py-3 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide border-b border-[#e8e5e0] bg-[#fafaf8]">

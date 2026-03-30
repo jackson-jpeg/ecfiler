@@ -10,16 +10,25 @@ Start with: uvicorn ecfiler.api.app:app --reload
 
 from __future__ import annotations
 
+import os
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from ecfiler.logging import get_logger
+
+logger = get_logger(__name__)
+
 STATIC_DIR = Path(__file__).parent / "static"
+
+# --- CORS configuration ---
+_allowed_origins = os.environ.get("ECFILER_ALLOWED_ORIGINS", "http://localhost:3000")
+ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins.split(",") if o.strip()]
 
 app = FastAPI(
     title="ECFiler API",
@@ -29,11 +38,89 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Lock down in production
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- Standardized error responses ---
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Return all errors in a consistent JSON format."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": exc.detail if isinstance(exc.detail, str) else str(exc.detail),
+            "code": exc.status_code,
+        },
+    )
+
+
+# --- Authentication ---
+
+
+async def get_current_user(
+    authorization: str = Header("", alias="Authorization"),
+    x_user_id: str = Header("", alias="X-User-Id"),
+) -> str:
+    """Extract authenticated user ID.
+
+    Checks for a Clerk JWT in the Authorization header first.
+    Falls back to X-User-Id header for local/CLI use.
+    """
+    # Try JWT token first
+    if authorization.startswith("Bearer "):
+        token = authorization[7:]
+        user_id = _verify_clerk_token(token)
+        if user_id:
+            return user_id
+
+    # Fallback to X-User-Id for local/CLI mode
+    return x_user_id
+
+
+def _verify_clerk_token(token: str) -> str | None:
+    """Verify a Clerk JWT and return the user ID (sub claim).
+
+    Returns None if verification fails or pyjwt is not installed.
+    """
+    try:
+        import jwt
+        from jwt import PyJWKClient
+    except ImportError:
+        logger.debug("pyjwt not installed — skipping JWT verification")
+        return None
+
+    clerk_issuer = os.environ.get("CLERK_ISSUER", "")
+    if not clerk_issuer:
+        # No issuer configured — can't verify
+        return None
+
+    try:
+        jwks_url = f"{clerk_issuer}/.well-known/jwks.json"
+        jwks_client = PyJWKClient(jwks_url, cache_keys=True)
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            issuer=clerk_issuer,
+            options={"verify_aud": False},
+        )
+        return payload.get("sub", "")
+    except Exception:
+        logger.debug("Clerk JWT verification failed", exc_info=True)
+        return None
+
+
+# --- Rate limiting ---
+
+_user_request_counts: dict[str, int] = {}
+MAX_REQUESTS_PER_USER = 5  # Max concurrent requests per user on expensive endpoints
 
 
 @app.get("/", include_in_schema=False)
@@ -306,7 +393,11 @@ async def analyze_filing_stream(
 
     # Simple concurrency guard — max 3 concurrent analyses
     if len(_analysis_in_progress) >= 3:
-        raise HTTPException(429, "Server is busy. Please try again in a moment.")
+        raise HTTPException(
+            429,
+            "Server is busy. Please try again in a moment.",
+            headers={"Retry-After": "30"},
+        )
 
     content = await _validate_upload(document)
 
@@ -395,11 +486,14 @@ async def scan_redaction(
 
 @app.get("/api/courts", response_model=list[CourtResponse])
 def list_courts(
+    response: Response,
     court_type: str | None = Query(None, description="Filter: district, bankruptcy, appellate"),
     search: str | None = Query(None, description="Search by name or ID"),
 ) -> list[CourtResponse]:
     """List or search available federal courts."""
     from ecfiler.courts.registry import CourtRegistry
+
+    response.headers["Cache-Control"] = "public, max-age=3600"
 
     registry = CourtRegistry()
 
@@ -421,11 +515,14 @@ def list_courts(
 @app.get("/api/courts/{court_id}/events", response_model=list[EventCodeResponse])
 def get_event_codes(
     court_id: str,
+    response: Response,
     search: str | None = Query(None, description="Search event descriptions"),
 ) -> list[EventCodeResponse]:
     """Get event codes for a specific court."""
     from ecfiler.courts.registry import CourtNotFoundError, CourtRegistry
     from ecfiler.filing.events import get_common_events, search_events
+
+    response.headers["Cache-Control"] = "public, max-age=3600"
 
     registry = CourtRegistry()
     try:
@@ -454,27 +551,30 @@ def get_event_codes(
 def get_filing_history(
     limit: int = Query(20, ge=1, le=100),
     search: str | None = None,
-    x_user_id: str = Header("", alias="X-User-Id"),
-) -> list[dict]:
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """Get filing history for the authenticated user."""
     from ecfiler.storage.history import FilingHistory
 
     history = FilingHistory()
     if search:
-        return history.search(search, user_id=x_user_id)
-    return history.get_recent(limit, user_id=x_user_id)
+        items = history.search(search, user_id=user_id)
+    else:
+        items = history.get_recent(limit, user_id=user_id)
+    total = history.count_for_user(user_id)
+    return {"items": items, "total": total}
 
 
 @app.get("/api/history/{filing_id}")
 def get_filing_detail(
     filing_id: int,
-    x_user_id: str = Header("", alias="X-User-Id"),
+    user_id: str = Depends(get_current_user),
 ) -> dict:
     """Get a single filing with full confirmation details."""
     from ecfiler.storage.history import FilingHistory
 
     history = FilingHistory()
-    record = history.get_by_id(filing_id, user_id=x_user_id)
+    record = history.get_by_id(filing_id, user_id=user_id)
     if not record:
         raise HTTPException(404, "Filing not found")
     return record
@@ -483,7 +583,7 @@ def get_filing_detail(
 @app.get("/api/history/{filing_id}/pdf")
 def download_filing_pdf(
     filing_id: int,
-    x_user_id: str = Header("", alias="X-User-Id"),
+    user_id: str = Depends(get_current_user),
 ) -> Response:
     """Download the archived PDF for a filing.
 
@@ -497,7 +597,7 @@ def download_filing_pdf(
     )
 
     history = FilingHistory()
-    record = history.get_by_id(filing_id, user_id=x_user_id)
+    record = history.get_by_id(filing_id, user_id=user_id)
     if not record:
         raise HTTPException(404, "Filing not found")
 
@@ -693,7 +793,7 @@ async def stream_browser_view(request: FilingSubmitRequest) -> StreamingResponse
 @app.post("/api/filing/submit", response_model=FilingSubmitResponse)
 def submit_filing(
     request: FilingSubmitRequest,
-    x_user_id: str = Header("", alias="X-User-Id"),
+    user_id: str = Depends(get_current_user),
 ) -> FilingSubmitResponse:
     """Submit a prepared filing to CM/ECF.
 
@@ -721,13 +821,13 @@ def submit_filing(
             if doc_path.exists():
                 pdf_path = archive_filing_pdf(
                     pdf_content=doc_path.read_bytes(),
-                    user_id=x_user_id,
+                    user_id=user_id,
                     court_id=request.court_id,
                     case_number=request.case_number,
                     is_sealed=request.is_sealed,
                 )
         except Exception:
-            pass  # Don't fail filing if archival fails
+            logger.exception("Failed to archive filing PDF")
 
     # Log to history
     try:
@@ -739,9 +839,9 @@ def submit_filing(
             filed_at=datetime.now(),
             pdf_path=pdf_path,
         )
-        history.log_filing(receipt, user_id=x_user_id, is_sealed=request.is_sealed)
+        history.log_filing(receipt, user_id=user_id, is_sealed=request.is_sealed)
     except Exception:
-        pass  # Don't fail the filing if logging fails
+        logger.exception("Failed to log filing to history")
 
     return FilingSubmitResponse(
         status=status,
@@ -933,15 +1033,15 @@ def get_filing_checklist(event_description: str) -> dict | None:
 
 @app.get("/api/drafts")
 def list_drafts_endpoint(
-    x_user_id: str = Header("", alias="X-User-Id"),
+    user_id: str = Depends(get_current_user),
 ) -> list[dict]:
     """List saved filing drafts for the authenticated user."""
     from ecfiler.filing.drafts import list_drafts
 
     drafts = list_drafts()
     # Filter by user_id if available (drafts created before user isolation won't have one)
-    if x_user_id:
-        return [d for d in drafts if d.get("user_id", "") in ("", x_user_id)]
+    if user_id:
+        return [d for d in drafts if d.get("user_id", "") in ("", user_id)]
     return drafts
 
 
@@ -1021,7 +1121,7 @@ def store_pacer_credentials(request: PacerCredentialRequest) -> dict:
 
 @app.get("/api/pacer/credentials")
 def get_pacer_credentials(
-    x_user_id: str = Header("", alias="X-User-Id"),
+    user_id: str = Depends(get_current_user),
 ) -> dict:
     """Check whether PACER credentials are stored for a user.
 
@@ -1031,8 +1131,8 @@ def get_pacer_credentials(
 
     from ecfiler.config import CONFIG_DIR
 
-    if not x_user_id:
-        raise HTTPException(400, "X-User-Id header is required")
+    if not user_id:
+        raise HTTPException(400, "Authentication required")
 
     db_path = CONFIG_DIR / "users.db"
     if not db_path.exists():
@@ -1042,7 +1142,7 @@ def get_pacer_credentials(
         conn.row_factory = sqlite3.Row
         row = conn.execute(
             "SELECT username, password_encrypted FROM pacer_credentials WHERE user_id = ?",
-            (x_user_id,),
+            (user_id,),
         ).fetchone()
 
     if not row:
@@ -1143,6 +1243,7 @@ def waitlist_count() -> dict:
             row = conn.execute("SELECT COUNT(*) FROM waitlist").fetchone()
             return {"count": row[0] if row else 0}
         except Exception:
+            logger.exception("Failed to query waitlist count")
             return {"count": 0}
 
 
@@ -1180,7 +1281,7 @@ def _infer_court_type(court_id: str) -> str:
         registry = CourtRegistry()
         court = registry.get(court_id)
         return court.profile.court_type
-    except Exception:
+    except Exception:  # noqa: BLE001 — graceful fallback to heuristic
         if court_id.endswith("b"):
             return "bankruptcy"
         if court_id.startswith("ca"):

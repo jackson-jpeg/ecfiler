@@ -114,6 +114,20 @@ def validate_pdf(
         with pikepdf.open(path) as pdf:
             page_count = len(pdf.pages)
 
+            if page_count == 0:
+                errors.append("PDF has zero pages.")
+                return ValidationResult(
+                    valid=False,
+                    file_path=str(path),
+                    file_size_mb=size_mb,
+                    page_count=0,
+                    has_text=False,
+                    is_encrypted=False,
+                    has_form_fields=False,
+                    is_pdfa=None,
+                    errors=errors,
+                )
+
             # Check for encryption (even if opened, it may have been encrypted)
             is_encrypted = pdf.is_encrypted
 
@@ -122,10 +136,17 @@ def validate_pdf(
                 acroform = pdf.Root["/AcroForm"]
                 if "/Fields" in acroform and len(acroform["/Fields"]) > 0:
                     has_form_fields = True
-                    warnings.append(
-                        "PDF contains fillable form fields. "
-                        "CM/ECF may reject it — consider flattening."
-                    )
+                    # Check for XFA forms (newer standard, often problematic)
+                    if "/XFA" in acroform:
+                        warnings.append(
+                            "PDF contains XFA form data. "
+                            "CM/ECF may reject it — convert to static PDF first."
+                        )
+                    else:
+                        warnings.append(
+                            "PDF contains fillable form fields. "
+                            "CM/ECF may reject it — consider flattening."
+                        )
 
             # Check PDF/A conformance via metadata
             if check_pdfa:
@@ -134,19 +155,29 @@ def validate_pdf(
                     warnings.append("Not PDF/A conformant. Some courts prefer PDF/A.")
 
     except pikepdf.PasswordError:
-        is_encrypted = True
-        errors.append("PDF is password-protected. CM/ECF does not accept encrypted PDFs.")
-        return ValidationResult(
-            valid=False,
-            file_path=str(path),
-            file_size_mb=size_mb,
-            page_count=0,
-            has_text=False,
-            is_encrypted=True,
-            has_form_fields=False,
-            is_pdfa=None,
-            errors=errors,
-        )
+        # Try empty password — some PDFs have owner-only encryption
+        try:
+            with pikepdf.open(path, password="") as pdf:
+                page_count = len(pdf.pages)
+                is_encrypted = True
+                warnings.append(
+                    "PDF has owner-level encryption (empty password). "
+                    "It can be opened but some courts may reject it."
+                )
+        except Exception:
+            is_encrypted = True
+            errors.append("PDF is password-protected. CM/ECF does not accept encrypted PDFs.")
+            return ValidationResult(
+                valid=False,
+                file_path=str(path),
+                file_size_mb=size_mb,
+                page_count=0,
+                has_text=False,
+                is_encrypted=True,
+                has_form_fields=False,
+                is_pdfa=None,
+                errors=errors,
+            )
     except Exception as e:
         errors.append(f"Cannot open PDF: {e}")
         return ValidationResult(
@@ -161,7 +192,7 @@ def validate_pdf(
             errors=errors,
         )
 
-    if is_encrypted:
+    if is_encrypted and not warnings:
         errors.append("PDF is encrypted. CM/ECF does not accept encrypted PDFs.")
 
     # --- Text extraction check with PyMuPDF ---
@@ -175,10 +206,14 @@ def validate_pdf(
                 has_text = True
                 break
         doc.close()
-    except Exception:
+    except fitz.FileDataError:
+        errors.append("PDF is corrupted or unreadable by PyMuPDF.")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("Text extraction failed: %s", e)
         warnings.append("Could not extract text — PDF may not be searchable.")
 
-    if not has_text:
+    if not has_text and not errors:
         warnings.append(
             "No searchable text detected. CM/ECF requires searchable PDFs. "
             "Consider running OCR (ocrmypdf)."
@@ -238,7 +273,8 @@ def extract_title(file_path: str | Path) -> str:
 
         doc.close()
     except Exception:
-        pass
+        import logging
+        logging.getLogger(__name__).debug("Could not extract title from %s", file_path, exc_info=True)
 
     return Path(file_path).stem
 
@@ -250,4 +286,5 @@ def _check_pdfa_metadata(pdf: pikepdf.Pdf) -> bool:
             xmp = str(meta)
             return "pdfaid" in xmp.lower() or "PDF/A" in xmp
     except Exception:
+        # Many valid PDFs don't have XMP metadata — this is fine
         return False

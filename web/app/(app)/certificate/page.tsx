@@ -90,7 +90,7 @@ export default function CertificatePage() {
                       <option>CM/ECF</option><option value="email">Email</option><option value="mail">US Mail</option>
                     </select>
                     {recipients.length > 1 && (
-                      <button onClick={() => removeRecipient(i)} className="text-[#c4c4c4] hover:text-[#b91c1c] transition text-lg shrink-0">&times;</button>
+                      <button onClick={() => removeRecipient(i)} aria-label="Remove recipient" className="text-[#c4c4c4] hover:text-[#b91c1c] transition text-lg shrink-0">&times;</button>
                     )}
                   </div>
                 ))}

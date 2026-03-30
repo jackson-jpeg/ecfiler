@@ -204,6 +204,18 @@ class FilingHistory:
             row = conn.execute("SELECT COUNT(*) FROM filing_history").fetchone()
             return row[0] if row else 0
 
+    def count_for_user(self, user_id: str = "") -> int:
+        """Get total filing count for a specific user."""
+        with sqlite3.connect(self.db_path) as conn:
+            if user_id:
+                row = conn.execute(
+                    "SELECT COUNT(*) FROM filing_history WHERE user_id = ?",
+                    (user_id,),
+                ).fetchone()
+            else:
+                row = conn.execute("SELECT COUNT(*) FROM filing_history").fetchone()
+            return row[0] if row else 0
+
 
 # ── PDF Document Archive ────────────────────────────────────────────
 
@@ -293,6 +305,7 @@ def compress_old_pdfs(days_old: int = 30) -> int:
                 )
                 conn.commit()
         except Exception:
-            pass
+            import logging
+            logging.getLogger(__name__).exception("Failed to update DB after PDF compression")
 
     return compressed
