@@ -440,7 +440,14 @@
     "quirks": [
       "large_case_flag",
       "xml_case_opening"
-    ]
+    ],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "nywb",

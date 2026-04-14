@@ -166,3 +166,118 @@ class TestBankruptcyCourt:
         )
         court = BankruptcyCourt(profile)
         assert not court.supports_xml_filing
+
+
+class _FakeElement:
+    def __init__(self) -> None:
+        self.checked = False
+
+    def check(self) -> None:
+        self.checked = True
+
+
+class _FakePage:
+    """Minimal Playwright Page stub for fee-status selector tests."""
+
+    def __init__(
+        self,
+        present_selectors: dict[str, _FakeElement] | None = None,
+        select_option_fail_by_value: bool = False,
+        select_option_fail_all: bool = False,
+    ) -> None:
+        self.present = present_selectors or {}
+        self.select_option_calls: list[dict] = []
+        self.select_option_fail_by_value = select_option_fail_by_value
+        self.select_option_fail_all = select_option_fail_all
+
+    def query_selector(self, selector: str) -> _FakeElement | None:
+        return self.present.get(selector)
+
+    def select_option(self, selector: str, value=None, label=None):
+        self.select_option_calls.append({"selector": selector, "value": value, "label": label})
+        if self.select_option_fail_all:
+            raise RuntimeError("no matching option")
+        if self.select_option_fail_by_value and value is not None:
+            raise RuntimeError("no matching value")
+        return None
+
+
+class TestFeeStatusSelection:
+    def _court(self, fee_options=None, radios=None, fee_status_selector="select[name='fee_status']"):
+        selectors = CourtSelectors()
+        selectors.fee_status = fee_status_selector
+        if fee_options is not None:
+            selectors.fee_status_options = fee_options
+        if radios is not None:
+            selectors.fee_status_radios = radios
+        profile = CourtProfile(
+            court_id="test",
+            name="Test",
+            court_type="district",
+            ecf_url="https://ecf.test.uscourts.gov",
+            selectors=selectors,
+        )
+        return BaseCourt(profile)
+
+    def test_default_uses_lowercase_value(self) -> None:
+        court = self._court()
+        el = _FakeElement()
+        page = _FakePage(present_selectors={"select[name='fee_status']": el})
+        court.select_fee_status(page, "ifp")
+        assert page.select_option_calls == [
+            {"selector": "select[name='fee_status']", "value": "ifp", "label": None}
+        ]
+
+    def test_per_court_override_value(self) -> None:
+        court = self._court(fee_options={"paid": "Paid", "waived": "Waived", "ifp": "In Forma Pauperis"})
+        el = _FakeElement()
+        page = _FakePage(present_selectors={"select[name='fee_status']": el})
+        court.select_fee_status(page, "ifp")
+        assert page.select_option_calls[0]["value"] == "In Forma Pauperis"
+
+    def test_label_fallback_when_value_fails(self) -> None:
+        court = self._court(fee_options={"paid": "Paid", "waived": "Waived", "ifp": "In Forma Pauperis"})
+        el = _FakeElement()
+        page = _FakePage(
+            present_selectors={"select[name='fee_status']": el},
+            select_option_fail_by_value=True,
+        )
+        court.select_fee_status(page, "ifp")
+        assert len(page.select_option_calls) == 2
+        assert page.select_option_calls[1]["label"] == "In Forma Pauperis"
+
+    def test_radio_override_used_when_no_dropdown(self) -> None:
+        court = self._court(radios={"ifp": "input[value='IFP']"})
+        radio = _FakeElement()
+        page = _FakePage(present_selectors={"input[value='IFP']": radio})
+        court.select_fee_status(page, "ifp")
+        assert radio.checked
+
+    def test_missing_control_logs_warning_and_returns(self, caplog) -> None:
+        import logging
+
+        court = self._court()
+        page = _FakePage(present_selectors={})
+        with caplog.at_level(logging.WARNING, logger="ecfiler.courts.base"):
+            court.select_fee_status(page, "ifp")
+        assert any("Fee status control not found" in rec.message for rec in caplog.records)
+
+    def test_unknown_status_is_ignored(self, caplog) -> None:
+        import logging
+
+        court = self._court()
+        el = _FakeElement()
+        page = _FakePage(present_selectors={"select[name='fee_status']": el})
+        with caplog.at_level(logging.WARNING, logger="ecfiler.courts.base"):
+            court.select_fee_status(page, "bogus")
+        assert page.select_option_calls == []
+
+    def test_registered_court_has_fee_status_override(self) -> None:
+        registry = CourtRegistry()
+        nysd = registry.get("nysd")
+        assert nysd.selectors.fee_status_options.get("ifp") == "In Forma Pauperis"
+
+    def test_registered_court_without_override_uses_default(self) -> None:
+        registry = CourtRegistry()
+        court = registry.get("akd")
+        assert court.selectors.fee_status_options == {"paid": "paid", "waived": "waived", "ifp": "ifp"}

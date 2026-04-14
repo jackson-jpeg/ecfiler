@@ -56,7 +56,14 @@
     "quirks": [
       "extra_event_confirmation",
       "requires_consent"
-    ]
+    ],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "caed",
@@ -70,7 +77,14 @@
     "name": "Northern District of California",
     "court_type": "district",
     "ecf_url": "https://ecf.cand.uscourts.gov",
-    "quirks": []
+    "quirks": [],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "casd",
@@ -107,7 +121,14 @@
     "ecf_url": "https://ecf.dcd.uscourts.gov",
     "quirks": [
       "special_case_types"
-    ]
+    ],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "flmd",
@@ -130,7 +151,14 @@
     "ecf_url": "https://ecf.flsd.uscourts.gov",
     "quirks": [
       "requires_consent"
-    ]
+    ],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "gamd",
@@ -188,7 +216,14 @@
     "ecf_url": "https://ecf.ilnd.uscourts.gov",
     "quirks": [
       "large_case_flag"
-    ]
+    ],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "ilsd",
@@ -309,7 +344,14 @@
     "name": "District of Minnesota",
     "court_type": "district",
     "ecf_url": "https://ecf.mnd.uscourts.gov",
-    "quirks": []
+    "quirks": [],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "msnd",
@@ -404,7 +446,14 @@
     "ecf_url": "https://ecf.nysd.uscourts.gov",
     "quirks": [
       "large_case_flag"
-    ]
+    ],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "nywd",
@@ -567,7 +616,14 @@
     "name": "Eastern District of Texas",
     "court_type": "district",
     "ecf_url": "https://ecf.txed.uscourts.gov",
-    "quirks": []
+    "quirks": [],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "txnd",
@@ -618,7 +674,14 @@
     "name": "Eastern District of Virginia",
     "court_type": "district",
     "ecf_url": "https://ecf.vaed.uscourts.gov",
-    "quirks": []
+    "quirks": [],
+    "selectors": {
+      "fee_status_options": {
+        "paid": "Paid",
+        "waived": "Waived",
+        "ifp": "In Forma Pauperis"
+      }
+    }
   },
   {
     "court_id": "vawd",

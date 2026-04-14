@@ -72,6 +72,10 @@ class CourtSelectors:
     docket_text: str = "textarea, input[type='text'][name*='docket'], input[type='text'][name*='text']"
     brief_notice: str = "input[name='short_title'], input[type='text']"
     fee_status: str = "select[name='fee_status']"
+    fee_status_options: dict[str, str] = field(
+        default_factory=lambda: {"paid": "paid", "waived": "waived", "ifp": "ifp"}
+    )
+    fee_status_radios: dict[str, str] = field(default_factory=dict)
     # Attorney-party association (first filing in a case)
     attorney_association: str = "input[type='checkbox'][name*='attorney'], input[type='checkbox'][name*='assoc']"
     lead_attorney: str = "input[type='checkbox'][name*='lead']"
@@ -314,14 +318,66 @@ class BaseCourt:
     def select_fee_status(self, page: Page, fee_status: str = "paid") -> None:
         """Select fee status (paid, waived, IFP).
 
+        Best-effort: CM/ECF courts vary widely in how (or whether) they
+        prompt for fee status. We try the configured dropdown (by mapped
+        value, then by label), then configured radio buttons, then a
+        couple of generic fallbacks. If nothing matches, we log and
+        proceed — the court may not prompt for fee status on this event.
+
         Args:
             fee_status: "paid", "waived", or "ifp"
         """
-        selector = self.selectors.fee_status
-        el = page.query_selector(selector)
-        if el:
-            page.select_option(selector, value=fee_status)
-            logger.info("Selected fee status: %s", fee_status)
+        if fee_status not in ("paid", "waived", "ifp"):
+            logger.warning("Unknown fee_status %r; skipping", fee_status)
+            return
+
+        mapped_value = self.selectors.fee_status_options.get(fee_status, fee_status)
+
+        dropdown = page.query_selector(self.selectors.fee_status)
+        if dropdown:
+            try:
+                page.select_option(self.selectors.fee_status, value=mapped_value)
+                logger.info("Selected fee status (value=%s): %s", mapped_value, fee_status)
+                return
+            except Exception as e:
+                logger.debug("select_option by value=%r failed: %s", mapped_value, e)
+                try:
+                    page.select_option(self.selectors.fee_status, label=mapped_value)
+                    logger.info("Selected fee status (label=%s): %s", mapped_value, fee_status)
+                    return
+                except Exception as e2:
+                    logger.debug("select_option by label=%r failed: %s", mapped_value, e2)
+
+        radio_selector = self.selectors.fee_status_radios.get(fee_status)
+        if radio_selector:
+            radio = page.query_selector(radio_selector)
+            if radio:
+                try:
+                    radio.check()
+                    logger.info("Selected fee status radio: %s (%s)", fee_status, radio_selector)
+                    return
+                except Exception as e:
+                    logger.debug("radio check for %s failed: %s", fee_status, e)
+
+        for selector in (
+            f"input[type='radio'][name*='fee'][value='{mapped_value}']",
+            f"input[type='radio'][name*='fee'][value*='{mapped_value}' i]",
+            f"input[type='radio'][value='{mapped_value}']",
+        ):
+            radio = page.query_selector(selector)
+            if radio:
+                try:
+                    radio.check()
+                    logger.info("Selected fee status via fallback radio: %s", selector)
+                    return
+                except Exception as e:
+                    logger.debug("fallback radio %s failed: %s", selector, e)
+
+        logger.warning(
+            "Fee status control not found for court %s (status=%s); proceeding without setting fee status",
+            self.profile.court_id,
+            fee_status,
+        )
 
     def select_sealing_level(self, page: Page, level: str) -> None:
         """Select document sealing/restriction level.
