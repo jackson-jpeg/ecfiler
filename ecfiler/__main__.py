@@ -629,5 +629,58 @@ def run_mcp_server() -> None:
     mcp_main()
 
 
+@main.command("crawl-events")
+@click.argument("court_id")
+@click.option("--username", envvar="PACER_USERNAME", required=True, help="PACER username (env: PACER_USERNAME)")
+@click.option("--password", envvar="PACER_PASSWORD", required=True, help="PACER password (env: PACER_PASSWORD)")
+@click.option("--training-db-url", default=None, help="Override training DB base URL")
+@click.option("--output-dir", "-o", type=click.Path(), default="ecfiler/courts/data/event_codes", help="Output directory for catalog JSON")
+@click.option("--delay", type=float, default=1.0, help="Seconds between event-picker requests (default: 1.0)")
+@click.option("--headful", is_flag=True, help="Show the browser while crawling")
+def crawl_events(
+    court_id: str,
+    username: str,
+    password: str,
+    training_db_url: str | None,
+    output_dir: str,
+    delay: float,
+    headful: bool,
+) -> None:
+    """Enumerate all event codes from a court's CM/ECF training database.
+
+    Logs into the court's training DB (which is explicitly meant for practice
+    and accessible to any PACER account holder), walks every filing menu, and
+    extracts the full (code, description) catalog per category.
+    """
+    from pathlib import Path as _Path
+
+    from ecfiler.browser.event_crawler import EventCrawler, save_catalog
+    from ecfiler.browser.session import BrowserSession
+    from ecfiler.courts.registry import CourtRegistry
+
+    registry = CourtRegistry()
+    court = registry.get(court_id)
+    profile = court.profile
+    if training_db_url:
+        profile.training_db_url = training_db_url
+
+    console.print(f"[cyan]Crawling events for {profile.name} ({court_id})[/cyan]")
+    console.print(f"  Training DB: [dim]{profile.training_login_url}[/dim]")
+
+    with BrowserSession(headless=not headful, slow_mo=0) as session:
+        crawler = EventCrawler(profile, session, delay=delay)
+        if not crawler.login(username, password):
+            console.print("[red]Login failed[/red]")
+            raise click.Abort()
+        result = crawler.crawl()
+
+    out_path = save_catalog(result, _Path(output_dir))
+    console.print(f"[green]✓[/green] {len(result.events)} events → [bold]{out_path}[/bold]")
+    if result.warnings:
+        console.print(f"[yellow]{len(result.warnings)} warnings[/yellow]")
+        for w in result.warnings[:5]:
+            console.print(f"  - {w}")
+
+
 if __name__ == "__main__":
     main()

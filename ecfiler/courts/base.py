@@ -93,10 +93,17 @@ class CourtProfile:
     selectors: CourtSelectors = field(default_factory=CourtSelectors)
     quirks: list[str] = field(default_factory=list)
     event_codes: list[dict[str, str]] = field(default_factory=list)
+    training_db_url: str | None = None
 
     @property
     def login_url(self) -> str:
         return f"{self.ecf_url}/cgi-bin/login.pl"
+
+    @property
+    def training_login_url(self) -> str:
+        """Training DB login URL. Falls back to the conventional ecf-train subdomain."""
+        base = self.training_db_url or self.ecf_url.replace("://ecf.", "://ecf-train.")
+        return f"{base}/cgi-bin/login.pl"
 
     @property
     def filing_url(self) -> str:
