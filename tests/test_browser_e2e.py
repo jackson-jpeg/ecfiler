@@ -17,6 +17,12 @@ from pathlib import Path
 import fitz
 import pytest
 
+pytest.importorskip(
+    "uvicorn",
+    reason="E2E browser tests require `uvicorn` to start the mock CM/ECF server. "
+    "Install project deps: `pip install -r requirements.txt`.",
+)
+
 
 @pytest.fixture(scope="module")
 def mock_server():
