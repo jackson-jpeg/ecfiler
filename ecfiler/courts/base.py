@@ -211,8 +211,24 @@ class BaseCourt:
         if error:
             raise ECFFormError(f"Document upload failed: {error}")
 
-    def upload_attachment(self, page: Page, file_path: str, description: str = "") -> None:
-        """Upload an attachment document."""
+    def upload_attachment(
+        self,
+        page: Page,
+        file_path: str,
+        description: str = "",
+        label: str | None = None,
+    ) -> None:
+        """Upload an attachment document.
+
+        If `label` is provided and the page exposes a label/category field
+        (dropdown or text input), it is filled. Otherwise falls back to
+        description-only. After upload, verifies a new attachment row is
+        visible before returning.
+        """
+        rows_before = len(page.query_selector_all(
+            "tr:has(input[type='file']), .attachment-row, li.attachment"
+        ))
+
         add_btn = page.query_selector(
             "input[value='Add Attachment'], button:has-text('Add Attachment'), "
             "a:has-text('Add Attachment')"
@@ -229,6 +245,24 @@ class BaseCourt:
         file_inputs[-1].set_input_files(file_path)
         page.wait_for_load_state("networkidle")
 
+        if label:
+            label_field = page.query_selector(
+                "select[name*='category']:last-of-type, "
+                "select[name*='label']:last-of-type, "
+                "input[name*='category']:last-of-type, "
+                "input[name*='label']:last-of-type"
+            )
+            if label_field:
+                tag = label_field.evaluate("el => el.tagName")
+                if tag == "SELECT":
+                    try:
+                        label_field.evaluate("el => el.value = ''")
+                        page.select_option(label_field, label=label)
+                    except Exception:
+                        label_field.evaluate("(el, v) => el.value = v", label)
+                else:
+                    label_field.fill(label)
+
         if description:
             # Look for description field near the last file input
             desc_input = page.query_selector(
@@ -243,7 +277,16 @@ class BaseCourt:
                 else:
                     desc_input.fill(description)
 
-        logger.info("Uploaded attachment: %s (%s)", file_path, description)
+        rows_after = len(page.query_selector_all(
+            "tr:has(input[type='file']), .attachment-row, li.attachment"
+        ))
+        if rows_after <= rows_before and rows_before > 0:
+            logger.warning(
+                "Attachment row count did not increase after upload (%d -> %d)",
+                rows_before, rows_after,
+            )
+
+        logger.info("Uploaded attachment: %s (label=%s, desc=%s)", file_path, label, description)
 
     def fill_docket_text(self, page: Page, docket_text: str) -> None:
         """Fill the docket text field (required by most courts).

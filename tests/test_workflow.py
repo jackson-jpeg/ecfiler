@@ -103,6 +103,32 @@ class TestFilingModels:
         )
         assert data.is_bankruptcy
 
+    def test_filing_exhibit_package_ordering_and_labels(self) -> None:
+        from ecfiler.filing.models import ExhibitEntry, ExhibitPackageModel
+
+        pkg = ExhibitPackageModel(
+            exhibits=[
+                ExhibitEntry(file_path="contract.pdf", label="Exhibit A", description="Contract"),
+                ExhibitEntry(file_path="emails.pdf", label="Exhibit B", description="Emails", sealed=True),
+            ],
+            has_sealed_exhibits=True,
+        )
+        filing = Filing(
+            court_id="nysd",
+            case=CaseInfo(case_number="1:24-cv-01234"),
+            event=EventCode(code="12", description="Motion"),
+            exhibit_package=pkg,
+        )
+        # Ordering + labels survive round-trip through the pydantic model
+        assert filing.exhibit_package is not None
+        assert [e.label for e in filing.exhibit_package.exhibits] == ["Exhibit A", "Exhibit B"]
+        assert [e.file_path for e in filing.exhibit_package.exhibits] == ["contract.pdf", "emails.pdf"]
+        assert filing.exhibit_package.has_sealed_exhibits is True
+        # JSON round-trip
+        restored = Filing.model_validate_json(filing.model_dump_json())
+        assert restored.exhibit_package is not None
+        assert [e.label for e in restored.exhibit_package.exhibits] == ["Exhibit A", "Exhibit B"]
+
     def test_filing_is_case_opening(self) -> None:
         filing = Filing(
             court_id="nysd",

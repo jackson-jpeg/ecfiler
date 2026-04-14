@@ -201,6 +201,22 @@ class RedactionFinding(BaseModel):
     suggestion: str
 
 
+class ExhibitEntry(BaseModel):
+    """A single exhibit with label + description (UI-ordered)."""
+
+    file_path: str = ""
+    label: str = ""
+    description: str = ""
+    sealed: bool = False
+
+
+class ExhibitPackageModel(BaseModel):
+    """Filing-time exhibit package: ordered exhibits with auto-labels."""
+
+    exhibits: list[ExhibitEntry] = Field(default_factory=list)
+    has_sealed_exhibits: bool = False
+
+
 class Filing(BaseModel):
     """Complete filing record."""
 
@@ -217,6 +233,7 @@ class Filing(BaseModel):
     redaction_issues: list[RedactionFinding] = Field(default_factory=list)
     case_opening: CaseOpeningData | None = None  # Set when filing initiates a case
     is_response: bool = False  # True if this is a response to another filing
+    exhibit_package: ExhibitPackageModel | None = None
 
     @property
     def main_document(self) -> Document | None:
