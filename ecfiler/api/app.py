@@ -380,6 +380,28 @@ async def analyze_and_prepare_filing(
             warnings.append("Response filing without docket reference")
         warnings.extend(validation.warnings)
 
+        if court_type == "appellate":
+            from ecfiler.filing.appellate_rules import (
+                classify_appellate_doc,
+                validate_appellate_document,
+            )
+            from ecfiler.pdf.validator import extract_metrics
+
+            metrics = extract_metrics(tmp_path)
+            appellate_type = classify_appellate_doc(
+                analysis.document_type_specific or analysis.document_type,
+                event_desc,
+            )
+            appellate_result = validate_appellate_document(
+                appellate_type,
+                metrics.word_count,
+                metrics.page_count,
+                metrics.line_count,
+                metrics.text,
+            )
+            warnings.extend(appellate_result.errors)
+            warnings.extend(appellate_result.warnings)
+
         ready = (
             validation.valid
             and analysis.completeness_score >= 60
@@ -991,6 +1013,28 @@ async def analyze_multi_document(
             warnings.append(f"{len(attachments)} attachment(s): {total_size:.1f}MB total, {total_pages} pages")
         warnings.extend(attachment_warnings)
         warnings.extend(validation.warnings)
+
+        if court_type == "appellate":
+            from ecfiler.filing.appellate_rules import (
+                classify_appellate_doc,
+                validate_appellate_document,
+            )
+            from ecfiler.pdf.validator import extract_metrics
+
+            metrics = extract_metrics(main_path)
+            appellate_type = classify_appellate_doc(
+                analysis.document_type_specific or analysis.document_type,
+                event_desc,
+            )
+            appellate_result = validate_appellate_document(
+                appellate_type,
+                metrics.word_count,
+                metrics.page_count,
+                metrics.line_count,
+                metrics.text,
+            )
+            warnings.extend(appellate_result.errors)
+            warnings.extend(appellate_result.warnings)
 
         ready = validation.valid and analysis.completeness_score >= 60 and bool(event_code)
 

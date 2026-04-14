@@ -252,6 +252,43 @@ def extract_text(file_path: str | Path, max_pages: int = 50) -> str:
     return "\n\n--- PAGE BREAK ---\n\n".join(pages)
 
 
+@dataclass
+class DocumentMetrics:
+    """Approximate metrics for a PDF document (whitespace-split word count)."""
+
+    page_count: int
+    word_count: int
+    line_count: int
+    char_count: int
+    text: str
+
+
+def extract_metrics(file_path: str | Path, max_pages: int = 200) -> DocumentMetrics:
+    """Extract approximate word/line/page counts from a PDF.
+
+    Word counts are whitespace-split and won't match Microsoft Word exactly —
+    callers should surface this caveat to the filer.
+    """
+    doc = fitz.open(str(file_path))
+    try:
+        page_count = len(doc)
+        chunks: list[str] = []
+        for i in range(min(max_pages, page_count)):
+            chunks.append(doc[i].get_text())
+    finally:
+        doc.close()
+    text = "\n".join(chunks)
+    words = text.split()
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    return DocumentMetrics(
+        page_count=page_count,
+        word_count=len(words),
+        line_count=len(lines),
+        char_count=len(text),
+        text=text,
+    )
+
+
 def extract_title(file_path: str | Path) -> str:
     """Try to extract the document title from PDF metadata or first page."""
     try:
