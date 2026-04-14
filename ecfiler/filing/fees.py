@@ -105,23 +105,29 @@ def get_fee(event_description: str, court_type: str) -> FilingFee | None:
     else:
         fees = DISTRICT_FEES
 
-    # Common lookups
-    if "complaint" in desc_lower or "petition" in desc_lower and court_type == "district":
-        return fees.get("complaint", DISTRICT_FEES["complaint"])
-    if "removal" in desc_lower:
-        return fees.get("removal", DISTRICT_FEES["removal"])
-    if "appeal" in desc_lower:
-        return fees.get("appeal")
-    if "reopen" in desc_lower:
-        return fees.get("motion_reopen")
-    if "motion" in desc_lower:
-        return fees.get("motion", FilingFee(0, "No fee"))
-    if "brief" in desc_lower or "memorandum" in desc_lower:
-        return fees.get("brief", FilingFee(0, "No fee"))
+    # Common lookups — check responsive/zero-fee filings BEFORE complaint/petition
+    # so "Answer to Complaint", "Response in Opposition to Motion", etc. don't
+    # falsely match the fee-bearing initiating-document keywords.
     if "answer" in desc_lower:
         return fees.get("answer", FilingFee(0, "No fee"))
     if "response" in desc_lower or "opposition" in desc_lower:
         return fees.get("response", FilingFee(0, "No fee"))
+    if "reply" in desc_lower:
+        return fees.get("reply", FilingFee(0, "No fee"))
+    if "stipulation" in desc_lower:
+        return fees.get("stipulation", FilingFee(0, "No fee"))
+    if "brief" in desc_lower or "memorandum" in desc_lower:
+        return fees.get("brief", FilingFee(0, "No fee"))
+    if "reopen" in desc_lower:
+        return fees.get("motion_reopen")
+    if "appeal" in desc_lower:
+        return fees.get("appeal")
+    if "removal" in desc_lower:
+        return fees.get("removal", DISTRICT_FEES["removal"])
+    if "complaint" in desc_lower or ("petition" in desc_lower and court_type == "district"):
+        return fees.get("complaint", DISTRICT_FEES["complaint"])
+    if "motion" in desc_lower:
+        return fees.get("motion", FilingFee(0, "No fee"))
     if "notice" in desc_lower:
         return fees.get("notice", FilingFee(0, "No fee"))
 

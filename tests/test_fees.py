@@ -25,6 +25,22 @@ class TestDistrictFees:
         assert fee is not None
         assert fee.amount == 0
 
+    def test_answer_to_complaint_is_free(self) -> None:
+        # Regression: "Answer to Complaint" must not match "complaint" and charge $405.
+        fee = get_fee("Answer to Complaint", "district")
+        assert fee is not None
+        assert fee.amount == 0
+
+    def test_response_in_opposition_to_motion_is_free(self) -> None:
+        fee = get_fee("Response in Opposition to Motion to Dismiss", "district")
+        assert fee is not None
+        assert fee.amount == 0
+
+    def test_reply_is_free(self) -> None:
+        fee = get_fee("Reply in Support of Motion", "district")
+        assert fee is not None
+        assert fee.amount == 0
+
 
 class TestBankruptcyFees:
     def test_chapter7(self) -> None:
