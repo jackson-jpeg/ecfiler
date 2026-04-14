@@ -15,6 +15,7 @@ interface Exhibit {
   file: File;
   label: string;
   description: string;
+  sealed?: boolean;
 }
 
 const EXHIBIT_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -37,6 +38,7 @@ export default function WorkspacePage() {
   const [docketText, setDocketText] = useState("");
   const [isSealed, setIsSealed] = useState(false);
   const [isRedacted, setIsRedacted] = useState(false);
+  const [isIfp, setIsIfp] = useState(false);
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [showCertService, setShowCertService] = useState(false);
   const [showEventSearch, setShowEventSearch] = useState(false);
@@ -73,13 +75,16 @@ export default function WorkspacePage() {
   useEffect(() => {
     if (phase === "review" && filing) {
       sessionStorage.setItem("ecfiler_review", JSON.stringify({
-        filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, fileName, fileSize,
+        filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, fileName, fileSize,
+        exhibits: exhibits.map((e) => ({
+          name: e.file.name, size: e.file.size, label: e.label, description: e.description, sealed: !!e.sealed,
+        })),
       }));
     }
     if (phase === "ready" || phase === "done") {
       sessionStorage.removeItem("ecfiler_review");
     }
-  }, [phase, filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, fileName, fileSize]);
+  }, [phase, filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, fileName, fileSize, exhibits]);
 
   // Restore review state on mount (survives accidental refresh)
   useEffect(() => {
@@ -93,6 +98,7 @@ export default function WorkspacePage() {
           setEventCodeOverride(state.eventCodeOverride || "");
           setIsSealed(state.isSealed || false);
           setIsRedacted(state.isRedacted || false);
+          setIsIfp(state.isIfp || false);
           setShowCertService(state.showCertService || false);
           setFileName(state.fileName || "");
           setFileSize(state.fileSize || 0);
@@ -109,7 +115,7 @@ export default function WorkspacePage() {
   const reset = () => {
     setPhase("ready"); setFileName(""); setSteps([]); setFiling(null);
     setBrowserSteps([]); setScreenshot(""); setBrowserDone(false); setError("");
-    setExhibits([]); setIsSealed(false); setIsRedacted(false); setDocketText(""); setShowCertService(false); setShowEventSearch(false); setEventCodeOverride(""); setShowConfirmGate(false); setAttorneyAttest(false);
+    setExhibits([]); setIsSealed(false); setIsRedacted(false); setIsIfp(false); setDocketText(""); setShowCertService(false); setShowEventSearch(false); setEventCodeOverride(""); setShowConfirmGate(false); setAttorneyAttest(false);
     sessionStorage.removeItem("ecfiler_review");
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
   };
@@ -137,10 +143,35 @@ export default function WorkspacePage() {
     setExhibits((prev) => prev.map((e) => e.id === id ? { ...e, description } : e));
   }, []);
 
-  const handleFile = useCallback(async (file: File) => {
+  const updateExhibitLabel = useCallback((id: string, label: string) => {
+    setExhibits((prev) => prev.map((e) => e.id === id ? { ...e, label } : e));
+  }, []);
+
+  const toggleExhibitSealed = useCallback((id: string) => {
+    setExhibits((prev) => prev.map((e) => e.id === id ? { ...e, sealed: !e.sealed } : e));
+  }, []);
+
+  const moveExhibit = useCallback((index: number, dir: -1 | 1) => {
+    setExhibits((prev) => {
+      const next = [...prev];
+      const j = index + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[index], next[j]] = [next[j], next[index]];
+      return next.map((e, i) => ({ ...e, label: `Exhibit ${EXHIBIT_LABELS[i] || String(i + 1)}` }));
+    });
+  }, []);
+
+  const handleFile = useCallback(async (file: File, exhibitFiles?: File[]) => {
     setFileName(file.name); setFileSize(file.size); setPhase("analyzing"); setSteps([]);
+    const exhibitMeta = (exhibitFiles || []).map((f, i) => ({
+      name: f.name,
+      size: f.size,
+      label: `Exhibit ${EXHIBIT_LABELS[i] || String(i + 1)}`,
+      description: f.name.replace(/\.pdf$/i, "").replace(/[_-]/g, " "),
+      sealed: false,
+    }));
     try {
-      for await (const event of streamAnalysis(file)) {
+      for await (const event of streamAnalysis(file, exhibitMeta.length ? exhibitMeta : undefined)) {
         if (event.type === "step") setSteps((prev) => { const ex = prev.find((s) => s.id === event.data.id); if (ex) return prev.map((s) => s.id === event.data.id ? { ...s, ...event.data } : s); return [...prev, event.data]; });
         if (event.type === "result") {
           setFiling(event.data);
@@ -174,14 +205,15 @@ export default function WorkspacePage() {
         is_sealed: isSealed,
         is_redacted: isRedacted,
         include_cos: showCertService,
-        exhibits: exhibits.map((e) => ({ label: e.label, description: e.description })),
+        exhibits: exhibits.map((e) => ({ label: e.label, description: e.description, sealed: !!e.sealed })),
+        fee_status: (isIfp ? "ifp" : "paid") as "paid" | "waived" | "ifp",
       };
       for await (const event of streamBrowser(filing, options)) {
         if (event.type === "browser") { if (event.data.screenshot) setScreenshot(event.data.screenshot); setBrowserSteps((prev) => { const ex = prev.find((s) => s.step === event.data.step); if (ex) return prev.map((s) => s.step === event.data.step ? { ...s, ...event.data } : s); return [...prev, event.data]; }); }
         if (event.type === "done") { setBrowserDone(true); setBrowserMsg(event.message); toast("Filing submitted successfully", "success"); }
       }
     } catch (e: unknown) { setBrowserDone(true); setBrowserMsg(e instanceof Error ? e.message : "Failed"); }
-  }, [filing, docketText, eventCodeOverride, isSealed, isRedacted, showCertService, exhibits]);
+  }, [filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, exhibits]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -220,8 +252,9 @@ export default function WorkspacePage() {
         const files = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf" || f.name.endsWith(".pdf"));
         if (files.length === 0) return;
         if (phase === "ready") {
-          handleFile(files[0]);
-          if (files.length > 1) { const rest = new DataTransfer(); files.slice(1).forEach(f => rest.items.add(f)); addExhibits(rest.files); }
+          const rest = files.slice(1);
+          handleFile(files[0], rest);
+          if (rest.length > 0) { const dt = new DataTransfer(); rest.forEach(f => dt.items.add(f)); addExhibits(dt.files); }
         } else if (phase === "review") {
           addExhibits(e.dataTransfer.files);
         }
@@ -292,10 +325,11 @@ export default function WorkspacePage() {
                     e.preventDefault(); e.currentTarget.classList.remove("!border-[#1e3a5f]", "!bg-[#f0f4fa]", "!shadow-lg");
                     const files = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf" || f.name.endsWith(".pdf"));
                     if (files.length === 0) return;
-                    handleFile(files[0]);
-                    if (files.length > 1) {
+                    const rest = files.slice(1);
+                    handleFile(files[0], rest);
+                    if (rest.length > 0) {
                       const exhibitFiles = new DataTransfer();
-                      files.slice(1).forEach(f => exhibitFiles.items.add(f));
+                      rest.forEach(f => exhibitFiles.items.add(f));
                       addExhibits(exhibitFiles.files);
                     }
                   }}
@@ -315,10 +349,11 @@ export default function WorkspacePage() {
                   </div>
                   <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" aria-label="Select PDF files for filing" onChange={(e) => {
                     if (!e.target.files?.length) return;
-                    handleFile(e.target.files[0]);
-                    if (e.target.files.length > 1) {
+                    const restFiles = Array.from(e.target.files).slice(1);
+                    handleFile(e.target.files[0], restFiles);
+                    if (restFiles.length > 0) {
                       const rest = new DataTransfer();
-                      Array.from(e.target.files).slice(1).forEach(f => rest.items.add(f));
+                      restFiles.forEach(f => rest.items.add(f));
                       addExhibits(rest.files);
                     }
                   }} />
@@ -499,7 +534,7 @@ export default function WorkspacePage() {
               {[
                 { label: "PDF", value: `${filing.pdf_size_mb?.toFixed(1)}MB · ${filing.pdf_pages}p${filing.pdf_is_pdfa ? " · PDF/A" : ""}`, ok: filing.pdf_valid },
                 { label: "Redaction", value: filing.redaction_issues === 0 ? "Clean" : `${filing.redaction_issues} issue(s)`, ok: filing.redaction_issues === 0 },
-                { label: "Fee", value: filing.filing_fee_text || (filing.filing_fee ? `$${filing.filing_fee}` : "None"), ok: true },
+                { label: "Fee", value: isIfp ? "$0 (fee waiver requested)" : (filing.filing_fee_text || (filing.filing_fee ? `$${filing.filing_fee}` : "None")), ok: true },
                 { label: "Confidence", value: filing.confidence || "High", ok: filing.completeness_score >= 80 },
               ].map(({ label, value, ok }) => (
                 <div key={label} className={`rounded-xl border p-4 ${ok ? "bg-[#f0fdf4] border-[#bbf7d0]" : "bg-[#fffbeb] border-[#fde68a]"}`}>
@@ -655,6 +690,20 @@ export default function WorkspacePage() {
                     <div className="text-[11px] text-[#8a8a8a]">This is the publicly-available redacted version per Rule 5.2</div>
                   </div>
                 </label>
+                {filing.filing_fee ? (
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition ${isIfp ? "bg-[#1e3a5f] border-[#1e3a5f]" : "border-[#d4d0ca] group-hover:border-[#8a8a8a]"}`}>
+                      {isIfp && <span className="text-white text-[10px] font-bold">✓</span>}
+                    </div>
+                    <input type="checkbox" checked={isIfp} onChange={(e) => setIsIfp(e.target.checked)} className="hidden" />
+                    <div>
+                      <div className="text-[13px] font-medium text-[#1a1a1a]">Request fee waiver (IFP)</div>
+                      <div className="text-[11px] text-[#8a8a8a]">
+                        {isIfp ? "$0 (fee waiver requested)" : "File in forma pauperis — requires pending IFP application"}
+                      </div>
+                    </div>
+                  </label>
+                ) : null}
               </div>
             </div>
 
@@ -678,22 +727,64 @@ export default function WorkspacePage() {
                 </div>
               ) : (
                 <div className="p-4 space-y-2">
-                  {exhibits.map((ex) => (
+                  {exhibits.map((ex, i) => (
                     <div key={ex.id} className="flex items-center gap-3 p-3 bg-[#fafaf8] rounded-xl border border-[#f0eee9] group">
+                      <div className="flex flex-col gap-0.5 shrink-0">
+                        <button
+                          onClick={() => moveExhibit(i, -1)}
+                          disabled={i === 0}
+                          aria-label={`Move ${ex.label} up`}
+                          className="w-5 h-5 flex items-center justify-center rounded text-[#8a8a8a] hover:text-[#1e3a5f] hover:bg-[#f0eee9] disabled:opacity-20 disabled:cursor-not-allowed text-[11px]"
+                        >&#9650;</button>
+                        <button
+                          onClick={() => moveExhibit(i, 1)}
+                          disabled={i === exhibits.length - 1}
+                          aria-label={`Move ${ex.label} down`}
+                          className="w-5 h-5 flex items-center justify-center rounded text-[#8a8a8a] hover:text-[#1e3a5f] hover:bg-[#f0eee9] disabled:opacity-20 disabled:cursor-not-allowed text-[11px]"
+                        >&#9660;</button>
+                      </div>
                       <div className="w-9 h-9 bg-[#1e3a5f] text-white rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0">{ex.label.split(" ")[1]}</div>
                       <div className="flex-1 min-w-0">
-                        <input
-                          type="text"
-                          value={ex.description}
-                          onChange={(e) => updateExhibitDesc(ex.id, e.target.value)}
-                          className="w-full text-[13px] font-medium text-[#1a1a1a] bg-transparent outline-none border-b border-transparent focus:border-[#1e3a5f] transition pb-0.5"
-                          placeholder="Description..."
-                        />
-                        <div className="text-[10px] text-[#8a8a8a] font-mono mt-0.5">{ex.file.name} &middot; {(ex.file.size / 1024 / 1024).toFixed(1)}MB</div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={ex.label}
+                            onChange={(e) => updateExhibitLabel(ex.id, e.target.value)}
+                            aria-label="Exhibit label"
+                            className="w-24 text-[11px] font-semibold text-[#525252] bg-transparent outline-none border-b border-transparent focus:border-[#1e3a5f] transition"
+                          />
+                          <input
+                            type="text"
+                            value={ex.description}
+                            onChange={(e) => updateExhibitDesc(ex.id, e.target.value)}
+                            className="flex-1 text-[13px] font-medium text-[#1a1a1a] bg-transparent outline-none border-b border-transparent focus:border-[#1e3a5f] transition pb-0.5"
+                            placeholder="Description..."
+                          />
+                        </div>
+                        <div className="text-[10px] text-[#8a8a8a] font-mono mt-0.5 flex items-center gap-3">
+                          <span>{ex.file.name} &middot; {(ex.file.size / 1024 / 1024).toFixed(1)}MB</span>
+                          <label className="flex items-center gap-1 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={!!ex.sealed}
+                              onChange={() => toggleExhibitSealed(ex.id)}
+                              className="w-3 h-3 accent-[#1e3a5f]"
+                            />
+                            <span className="text-[10px] text-[#525252]">Sealed</span>
+                          </label>
+                        </div>
                       </div>
                       <button onClick={() => removeExhibit(ex.id)} aria-label="Remove exhibit" className="text-[#c4c4c4] hover:text-[#b91c1c] transition opacity-0 group-hover:opacity-100 text-lg shrink-0">&times;</button>
                     </div>
                   ))}
+                  {filing?.exhibit_issues && filing.exhibit_issues.length > 0 && (
+                    <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[11px] text-[#b91c1c]">
+                      <div className="font-semibold mb-1">Exhibit validation issues:</div>
+                      <ul className="list-disc list-inside space-y-0.5">
+                        {filing.exhibit_issues.map((msg, idx) => (<li key={idx}>{msg}</li>))}
+                      </ul>
+                    </div>
+                  )}
                   <button onClick={() => exhibitRef.current?.click()} className="w-full py-2.5 border border-dashed border-[#d4d0ca] rounded-xl text-[12px] text-[#8a8a8a] hover:text-[#1e3a5f] hover:border-[#1e3a5f] transition">+ Add more exhibits</button>
                 </div>
               )}
@@ -901,9 +992,9 @@ export default function WorkspacePage() {
                       <span className="text-[12px] font-semibold text-[#1a1a1a]">{filing.filing_party || "—"}</span>
                     </div>
                     {filing.filing_fee ? (
-                      <div className="flex justify-between">
-                        <span className="text-[12px] text-[#8a8a8a]">Fee</span>
-                        <span className="text-[12px] font-semibold text-[#1a1a1a]">{filing.filing_fee_text || `$${filing.filing_fee}`}</span>
+                      <div className="flex justify-between items-center py-1 -mx-1 px-2 rounded bg-[#fffbeb] border border-[#fde68a]">
+                        <span className="text-[12px] font-semibold text-[#b45309]">Filing Fee</span>
+                        <span className="text-[14px] font-bold text-[#b45309]">{isIfp ? "$0 (fee waiver requested)" : (filing.filing_fee_text || `$${filing.filing_fee}`)}</span>
                       </div>
                     ) : null}
                     {isSealed && (
@@ -1328,7 +1419,7 @@ export default function WorkspacePage() {
                 { label: "Event Code", value: filing.event_code },
                 ...(filing.filing_party ? [{ label: "Filed By", value: filing.filing_party }] : []),
                 ...(exhibits.length > 0 ? [{ label: "Attachments", value: exhibits.map(e => e.label).join(", ") }] : []),
-                ...(filing.filing_fee ? [{ label: "Fee", value: `$${filing.filing_fee}` }] : []),
+                ...(filing.filing_fee ? [{ label: "Fee", value: isIfp ? "$0 (fee waiver requested)" : `$${filing.filing_fee}` }] : []),
                 { label: "Status", value: "Submitted" },
               ].filter(f => f.value).map(({ label, value }) => (
                 <div key={label} className="flex px-5 py-3 border-b border-[#f0eee9] last:border-0">

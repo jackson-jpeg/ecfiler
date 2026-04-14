@@ -14,7 +14,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -211,6 +211,14 @@ class FilingPreview(BaseModel):
     # Ready to file?
     ready: bool
 
+    # Exhibits (echoed back with auto-labels + any validation issues)
+    exhibits: list[dict] = []
+    exhibit_issues: list[str] = []
+
+    # Fee information
+    filing_fee: float | None = None
+    filing_fee_text: str = ""
+
 
 # --- Agent endpoint: the magic ---
 
@@ -249,6 +257,7 @@ async def _validate_upload(document: UploadFile) -> bytes:
 @app.post("/api/file", response_model=FilingPreview)
 async def analyze_and_prepare_filing(
     document: UploadFile = File(..., description="PDF document to file"),
+    exhibits: str | None = Form(default=None, description="JSON array of exhibits [{name,label,description,sealed}]"),
 ) -> FilingPreview:
     """Upload a PDF. Get a complete filing ready for confirmation.
 
@@ -264,6 +273,7 @@ async def analyze_and_prepare_filing(
 
     from ecfiler.agent.document_analyzer import analyze_document
     from ecfiler.filing.events import search_events
+    from ecfiler.filing.fees import format_fee, get_fee
     from ecfiler.pdf.redaction_check import scan_document
     from ecfiler.pdf.validator import extract_text, validate_pdf
 
@@ -275,6 +285,38 @@ async def analyze_and_prepare_filing(
             "Set ANTHROPIC_API_KEY on the server. "
             "PDF validation and court lookup work without it.",
         )
+
+    # Parse exhibit metadata (client-supplied list; server re-labels to canonical A/B/C).
+    import json as _json
+    from ecfiler.filing.exhibits import ExhibitPackage, LabelStyle, MAX_EXHIBIT_BYTES
+
+    exhibit_entries: list[dict] = []
+    exhibit_issues: list[str] = []
+    if exhibits:
+        try:
+            raw = _json.loads(exhibits)
+            if not isinstance(raw, list):
+                raise ValueError("exhibits must be a JSON array")
+            pkg = ExhibitPackage(main_document=document.filename or "main.pdf", label_style=LabelStyle.LETTER)
+            for item in raw:
+                if not isinstance(item, dict):
+                    continue
+                ex = pkg.add_exhibit(
+                    item.get("name", "") or item.get("file_path", ""),
+                    item.get("description", ""),
+                    sealed=bool(item.get("sealed", False)),
+                )
+                size = int(item.get("size", 0) or 0)
+                if size > MAX_EXHIBIT_BYTES:
+                    exhibit_issues.append(
+                        f"{ex.label}: File too large ({size / 1024 / 1024:.1f}MB, max {MAX_EXHIBIT_BYTES // 1024 // 1024}MB)"
+                    )
+            exhibit_entries = [
+                {"name": e.filename, "label": e.label, "description": e.description, "sealed": e.sealed, "order": e.order}
+                for e in pkg.exhibits
+            ]
+        except (ValueError, _json.JSONDecodeError) as e:
+            raise HTTPException(400, f"Invalid exhibits payload: {e}")
 
     # Validate and read upload
     content = await _validate_upload(document)
@@ -308,6 +350,8 @@ async def analyze_and_prepare_filing(
                 warnings=validation.errors,
                 confidence="none",
                 ready=False,
+                exhibits=exhibit_entries,
+                exhibit_issues=exhibit_issues,
             )
 
         # 2. Extract text
@@ -342,6 +386,10 @@ async def analyze_and_prepare_filing(
             and bool(event_code)
         )
 
+        fee = get_fee(event_desc or "", court_type) if event_desc else None
+        filing_fee_amount = fee.amount if fee else None
+        filing_fee_text_val = format_fee(fee) if fee else ""
+
         return FilingPreview(
             document_type=analysis.document_type_specific or analysis.document_type,
             case_number=analysis.case_number,
@@ -363,6 +411,10 @@ async def analyze_and_prepare_filing(
             warnings=warnings,
             confidence=analysis.confidence,
             ready=ready,
+            exhibits=exhibit_entries,
+            exhibit_issues=exhibit_issues,
+            filing_fee=filing_fee_amount,
+            filing_fee_text=filing_fee_text_val,
         )
     finally:
         Path(tmp_path).unlink(missing_ok=True)
@@ -670,6 +722,7 @@ class FilingSubmitRequest(BaseModel):
     is_redacted: bool = False
     include_certificate_of_service: bool = False
     exhibits: list[ExhibitInfo] = []
+    fee_status: str = "paid"  # "paid" | "waived" | "ifp"
     dry_run: bool = True  # Default to dry run for safety
 
 

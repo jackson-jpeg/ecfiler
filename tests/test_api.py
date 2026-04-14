@@ -317,3 +317,50 @@ class TestCacheHeaders:
         response = client.get("/api/courts/nysd/events")
         assert response.status_code == 200
         assert "max-age=3600" in response.headers.get("cache-control", "")
+
+
+class TestFilingFeeInPreview:
+    def test_complaint_surface_fee(
+        self,
+        client: TestClient,
+        sample_pdf: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """analyze_and_prepare_filing should return filing_fee / filing_fee_text."""
+        from ecfiler.agent.document_analyzer import DocumentAnalysis
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+
+        def fake_analyze(text: str, api_key: str = "") -> DocumentAnalysis:
+            return DocumentAnalysis(
+                document_type="Complaint",
+                document_type_specific="Complaint",
+                case_number="1:24-cv-01234",
+                court_id="nysd",
+                case_caption="Smith v. Jones",
+                filing_party_name="Smith",
+                filing_party_role="Plaintiff",
+                is_response=False,
+                has_signature=True,
+                has_certificate_of_service=True,
+                attorney_name="Jane Doe",
+                suggested_event_code_category="complaint",
+                confidence="high",
+            )
+
+        monkeypatch.setattr(
+            "ecfiler.agent.document_analyzer.analyze_document", fake_analyze
+        )
+
+        with open(sample_pdf, "rb") as f:
+            response = client.post(
+                "/api/file",
+                files={"document": ("complaint.pdf", f, "application/pdf")},
+            )
+
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert "filing_fee" in data
+        assert "filing_fee_text" in data
+        assert data["filing_fee"] == 405.00
+        assert "$405.00" in data["filing_fee_text"]

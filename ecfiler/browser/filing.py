@@ -33,6 +33,7 @@ class FilingAutomation:
     court: BaseCourt
     browser: BrowserSession
     filing: Filing
+    fee_status: str = "paid"
     steps: list[FilingStep] = field(default_factory=list)
 
     def execute_all(self) -> bool:
@@ -72,6 +73,7 @@ class FilingAutomation:
 
         This should only be called after attorney confirmation.
         """
+        self.court.select_fee_status(self.browser.page, self.fee_status)
         self.court.click_final_submit(self.browser.page)
         self.browser.screenshot("submitted")
 
@@ -92,6 +94,21 @@ class FilingAutomation:
             self.court.upload_document(self.browser.page, main_doc.file_path)
 
     def _upload_attachments(self) -> None:
+        pkg = self.filing.exhibit_package
+        if pkg and pkg.exhibits:
+            # ExhibitPackage order is canonical when present (labels already assigned).
+            attachment_paths = {a.file_path: a for a in self.filing.attachments}
+            for ex in pkg.exhibits:
+                path = ex.file_path or (
+                    next(iter(attachment_paths)) if attachment_paths else ""
+                )
+                self.court.upload_attachment(
+                    self.browser.page,
+                    path,
+                    description=ex.description,
+                    label=ex.label or None,
+                )
+            return
         for att in self.filing.attachments:
             self.court.upload_attachment(
                 self.browser.page, att.file_path, att.description

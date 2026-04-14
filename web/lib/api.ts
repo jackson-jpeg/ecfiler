@@ -91,6 +91,8 @@ export interface FilingPreview {
   filing_fee_text?: string;
   has_certificate_of_service?: boolean;
   has_proposed_order?: boolean;
+  exhibits?: { name: string; label: string; description: string; sealed?: boolean; order?: number }[];
+  exhibit_issues?: string[];
 }
 
 export interface AnalysisStep {
@@ -141,10 +143,14 @@ export interface FilingRecord {
 }
 
 export async function* streamAnalysis(
-  file: File
+  file: File,
+  exhibits?: { name: string; size?: number; label: string; description: string; sealed?: boolean }[],
 ): AsyncGenerator<{ type: "step"; data: AnalysisStep } | { type: "result"; data: FilingPreview } | { type: "error"; message: string }> {
   const fd = new FormData();
   fd.append("document", file);
+  if (exhibits && exhibits.length > 0) {
+    fd.append("exhibits", JSON.stringify(exhibits));
+  }
 
   const resp = await fetch(`${API}/api/file/stream`, {
     method: "POST",
@@ -187,7 +193,8 @@ export interface FilingOptions {
   is_sealed?: boolean;
   is_redacted?: boolean;
   include_cos?: boolean;
-  exhibits?: { label: string; description: string }[];
+  exhibits?: { label: string; description: string; sealed?: boolean }[];
+  fee_status?: "paid" | "waived" | "ifp";
 }
 
 export async function* streamBrowser(
@@ -210,6 +217,7 @@ export async function* streamBrowser(
       is_redacted: options?.is_redacted || false,
       include_certificate_of_service: options?.include_cos || false,
       exhibits: options?.exhibits || [],
+      fee_status: options?.fee_status || "paid",
     }),
   });
   if (!resp.ok) throw new Error(await resp.text());
