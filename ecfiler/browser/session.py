@@ -213,9 +213,12 @@ class BrowserSession:
             "button:has-text('Accept')"
         )
         if redaction_btn:
-            redaction_btn.click()
-            page.wait_for_load_state("networkidle")
-            logger.info("Accepted redaction agreement")
+            try:
+                redaction_btn.click()
+                page.wait_for_load_state("networkidle")
+                logger.info("Accepted redaction agreement")
+            except Exception as e:
+                logger.warning("Redaction dialog click failed (%s) — continuing", e)
 
         # Verify we're on CM/ECF (not still on login page)
         url = page.url.lower()

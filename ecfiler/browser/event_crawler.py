@@ -61,11 +61,17 @@ class CrawlResult:
     warnings: list[str] = field(default_factory=list)
 
     def to_json_schema(self) -> dict:
-        """Group into the {categories: {name: [events]}} schema used by events.py."""
+        """Group into the {categories: {name: [events]}} schema used by events.py.
+
+        Dedupes (code, description) within each category — CM/ECF menus
+        sometimes surface the same event picker under multiple paths.
+        """
         grouped: dict[str, list[dict]] = {}
         for e in self.events:
             key = e.category if not e.subcategory else f"{e.category} / {e.subcategory}"
-            grouped.setdefault(key, []).append({"code": e.code, "description": e.description})
+            existing = grouped.setdefault(key, [])
+            if not any(x["code"] == e.code and x["description"] == e.description for x in existing):
+                existing.append({"code": e.code, "description": e.description})
         return {
             "description": f"Crawled event codes for {self.court_id}",
             "court_type": self.court_type,
@@ -146,14 +152,24 @@ class EventCrawler:
             return APPELLATE_MENUS
         return {}
 
-    def _collect_event_links(self, page: Page) -> list[tuple[str, str]]:
-        """From a CM/ECF category menu, collect (href, label) for each subcategory.
+    # Top-nav / cross-cutting links that aren't filing categories.
+    NON_FILING_LINK_WORDS = {
+        "query", "reports", "utilities", "search", "help", "logout",
+        "login", "home", "account", "manage", "maintain", "notice",
+        "docket report", "history", "written opinions", "civil cases",
+        "criminal cases", "judge", "hearing", "calendar",
+    }
 
-        CM/ECF menus are rendered as a list of <a> tags pointing to cgi scripts
-        that show checkbox or select lists of events.
+    def _collect_event_links(self, page: Page) -> list[tuple[str, str]]:
+        """From a CM/ECF category menu, collect (href, label) for each filing sub-category.
+
+        CM/ECF menus render filing groups as <a> tags pointing to cgi scripts
+        that show checkbox or select lists of events. Top-nav links (Query,
+        Reports, Utilities, etc.) point to non-filing pages and must be excluded.
         """
         anchors = page.query_selector_all("a[href*='cgi-bin/']")
         pairs: list[tuple[str, str]] = []
+        seen_hrefs: set[str] = set()
         for a in anchors:
             href = a.get_attribute("href") or ""
             text = (a.inner_text() or "").strip()
@@ -161,6 +177,12 @@ class EventCrawler:
                 continue
             if "DisplayMenu" in href:
                 continue
+            if href in seen_hrefs:
+                continue
+            low = text.lower()
+            if any(w in low for w in self.NON_FILING_LINK_WORDS):
+                continue
+            seen_hrefs.add(href)
             pairs.append((href, text))
         return pairs
 
@@ -179,13 +201,19 @@ class EventCrawler:
 
         pairs: list[tuple[str, str]] = []
 
-        # Select-option style
-        options = page.query_selector_all("select option")
-        for opt in options:
-            val = (opt.get_attribute("value") or "").strip()
-            txt = (opt.inner_text() or "").strip()
-            if val and txt and val.lower() not in {"", "none", "select one"}:
-                pairs.append((val, txt))
+        # Select-option style — only accept selects whose name/id look like an
+        # event picker. CM/ECF Nature-of-Suit and case-type pickers also use
+        # <select>, so unfiltered scraping produces hundreds of false positives.
+        event_selects = page.query_selector_all(
+            "select[name*='event' i], select[id*='event' i], "
+            "select[name='deferred'], select[name='selected_event']"
+        )
+        for sel in event_selects:
+            for opt in sel.query_selector_all("option"):
+                val = (opt.get_attribute("value") or "").strip()
+                txt = (opt.inner_text() or "").strip()
+                if val and txt and val.lower() not in {"", "none", "select one", "-"}:
+                    pairs.append((val, txt))
 
         # Checkbox style (covers event-picker pages that use multi-select)
         checkboxes = page.query_selector_all("input[type='checkbox']")

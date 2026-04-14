@@ -56,10 +56,11 @@ class TestEnumerateEvents:
         opt2.inner_text.return_value = "Answer"
         opt3.get_attribute.return_value = ""
         opt3.inner_text.return_value = "Select one"
-        page.query_selector_all.side_effect = lambda sel: {
-            "select option": [opt1, opt2, opt3],
-            "input[type='checkbox']": [],
-        }[sel]
+        event_select = MagicMock()
+        event_select.query_selector_all.return_value = [opt1, opt2, opt3]
+        page.query_selector_all.side_effect = lambda sel: (
+            [event_select] if "select" in sel and "event" in sel else []
+        )
 
         pairs = crawler._enumerate_events_on_page(page, "https://base", "/cgi-bin/x.pl")
         assert ("mot", "Motion to Dismiss") in pairs
@@ -72,10 +73,9 @@ class TestEnumerateEvents:
         cb.get_attribute.side_effect = lambda a: {"value": "103", "name": "event", "id": "cb-103"}.get(a)
         label = MagicMock()
         label.inner_text.return_value = "Motion for Summary Judgment"
-        page.query_selector_all.side_effect = lambda sel: {
-            "select option": [],
-            "input[type='checkbox']": [cb],
-        }[sel]
+        page.query_selector_all.side_effect = lambda sel: (
+            [cb] if sel == "input[type='checkbox']" else []
+        )
         page.query_selector.return_value = label
 
         pairs = crawler._enumerate_events_on_page(page, "https://base", "/cgi-bin/x.pl")
@@ -85,10 +85,9 @@ class TestEnumerateEvents:
         page = MagicMock()
         cb = MagicMock()
         cb.get_attribute.side_effect = lambda a: {"value": "1", "name": "other"}.get(a)
-        page.query_selector_all.side_effect = lambda sel: {
-            "select option": [],
-            "input[type='checkbox']": [cb],
-        }[sel]
+        page.query_selector_all.side_effect = lambda sel: (
+            [cb] if sel == "input[type='checkbox']" else []
+        )
         pairs = crawler._enumerate_events_on_page(page, "https://base", "/cgi-bin/x.pl")
         assert pairs == []
 

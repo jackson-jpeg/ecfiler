@@ -654,10 +654,13 @@ def crawl_events(
     """
     from pathlib import Path as _Path
 
+    from rich.console import Console
+
     from ecfiler.browser.event_crawler import EventCrawler, save_catalog
     from ecfiler.browser.session import BrowserSession
     from ecfiler.courts.registry import CourtRegistry
 
+    console = Console()
     registry = CourtRegistry()
     court = registry.get(court_id)
     profile = court.profile
