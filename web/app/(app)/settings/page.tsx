@@ -69,8 +69,8 @@ export default function SettingsPage() {
     { feature: "AI document analysis & event code matching", needsPacer: true },
     { feature: "AI docket text generation", needsPacer: true },
     { feature: "3-pass AI safety verification", needsPacer: true },
-    { feature: "Automated CM/ECF submission", needsPacer: true },
-    { feature: "Live browser view of filing", needsPacer: true },
+    { feature: "Filing package staging & guided CM/ECF handoff", needsPacer: true },
+    { feature: "Local CLI filing (credentials in your OS keyring)", needsPacer: true },
   ];
 
   const pacerUsernameInvalid = pacerUsername.length > 0 && !isEmailLike(pacerUsername);

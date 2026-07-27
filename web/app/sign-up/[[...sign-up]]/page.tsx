@@ -1,5 +1,6 @@
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
+import { COURT_COUNT } from "@/lib/facts";
 
 export default function SignUpPage() {
   return (
@@ -12,11 +13,11 @@ export default function SignUpPage() {
             <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-white text-[13px] font-bold border border-white/10">E</div>
             <span className="text-[18px] font-semibold text-white">ECFiler</span>
           </Link>
-          <h2 className="text-[28px] font-bold text-white leading-tight mb-4">File on CM/ECF<br />in under a minute</h2>
-          <p className="text-[15px] text-white/50 leading-relaxed mb-10">Drop a PDF. AI reads the document, extracts the case, court, and event code. You review and file.</p>
+          <h2 className="text-[28px] font-bold text-white leading-tight mb-4">Prepare a CM/ECF filing<br />in under a minute</h2>
+          <p className="text-[15px] text-white/50 leading-relaxed mb-10">Drop a PDF. AI reads the document, extracts the case, court, and event code. You review, stage, and file it yourself.</p>
           <div className="space-y-4">
             {[
-              "207 federal courts supported",
+              `${COURT_COUNT} federal courts supported`,
               "AI event code matching",
               "Rule 5.2 redaction scanning",
               "7 pre-filing safety checks",
@@ -43,7 +44,7 @@ export default function SignUpPage() {
           </div>
           <div className="hidden lg:block text-center mb-8">
             <h2 className="text-[22px] font-bold text-[#1a1a1a] mb-1">Create your account</h2>
-            <p className="text-[13px] text-[#8a8a8a]">Start filing on CM/ECF in under a minute</p>
+            <p className="text-[13px] text-[#8a8a8a]">Start preparing CM/ECF filings in under a minute</p>
           </div>
           <SignUp
             fallbackRedirectUrl="/onboarding"

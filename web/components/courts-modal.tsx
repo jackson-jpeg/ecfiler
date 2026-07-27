@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { COURT_COUNT } from "@/lib/facts";
 
 interface Court {
   court_id: string;
@@ -98,7 +99,7 @@ export function CourtsModal({ onClose }: Props) {
             <>
               <input
                 type="text" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus
-                placeholder="Search 207 federal courts..."
+                placeholder={`Search ${COURT_COUNT} federal courts...`}
                 className="w-full px-4 py-2.5 bg-white rounded-xl text-[14px] outline-none focus:ring-2 focus:ring-[#1e3a5f]/10 border border-[#e8e5e0] focus:border-[#1e3a5f] transition"
               />
               <div className="flex gap-1.5 mt-3">

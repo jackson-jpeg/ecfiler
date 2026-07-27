@@ -11,3 +11,4 @@ build/
 *.egg-info
 .next/
 node_modules/
+web/tsconfig.tsbuildinfo

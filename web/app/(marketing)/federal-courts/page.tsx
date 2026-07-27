@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { COURT_COUNT, COURT_BREAKDOWN } from "@/lib/facts";
 
 export const metadata: Metadata = {
-  title: "All 207 Federal Courts with CM/ECF Filing | ECFiler",
+  title: `All ${COURT_COUNT} Federal Courts with CM/ECF Filing | ECFiler`,
   description: "Complete directory of federal courts using CM/ECF: district, bankruptcy, and appellate courts with direct links to each court's electronic filing system.",
 };
 
@@ -106,16 +107,16 @@ export default function FederalCourtsPage() {
         </div>
         <h1 className="text-[28px] sm:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-3">Federal Court Directory</h1>
         <p className="text-[16px] text-[#525252] leading-relaxed max-w-2xl">
-          Every federal court in the United States uses CM/ECF for electronic filing. ECFiler supports all 207 of them. Click any court to visit its CM/ECF site.
+          Every federal court in the United States uses CM/ECF for electronic filing. ECFiler prepares and stages filings for all {COURT_COUNT} of them. Click any court to visit its CM/ECF site.
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-10">
         {[
-          { n: String(DISTRICT_COURTS.length), label: "District Courts", color: "text-[#1e3a5f]", bg: "bg-[#f0f4fa]", border: "border-[#bfdbfe]" },
-          { n: String(DISTRICT_COURTS.length), label: "Bankruptcy Courts", color: "text-[#7c3aed]", bg: "bg-[#f5f3ff]", border: "border-[#c4b5fd]" },
-          { n: String(APPELLATE_COURTS.length), label: "Appellate Courts", color: "text-[#b45309]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
+          { n: String(COURT_BREAKDOWN.district), label: "District Courts", color: "text-[#1e3a5f]", bg: "bg-[#f0f4fa]", border: "border-[#bfdbfe]" },
+          { n: String(COURT_BREAKDOWN.bankruptcy), label: "Bankruptcy Courts", color: "text-[#7c3aed]", bg: "bg-[#f5f3ff]", border: "border-[#c4b5fd]" },
+          { n: String(COURT_BREAKDOWN.appellate), label: "Appellate Courts", color: "text-[#b45309]", bg: "bg-[#fffbeb]", border: "border-[#fde68a]" },
         ].map(({ n, label, color, bg, border }) => (
           <div key={label} className={`${bg} border ${border} rounded-xl p-4 text-center`}>
             <div className={`text-[22px] font-bold ${color}`}>{n}</div>
@@ -148,14 +149,14 @@ export default function FederalCourtsPage() {
         <p className="text-[13px] text-[#6b21a8] leading-relaxed">
           Each federal judicial district has a corresponding bankruptcy court (e.g., <code className="text-[12px] bg-white/50 px-1 py-0.5 rounded">nysb</code> for the Southern District of New York Bankruptcy Court).
           Bankruptcy courts use the same CM/ECF system at URLs like <code className="text-[12px] bg-white/50 px-1 py-0.5 rounded">ecf.nysb.uscourts.gov</code>.
-          ECFiler supports all {DISTRICT_COURTS.length} bankruptcy courts.
+          ECFiler supports all {COURT_BREAKDOWN.bankruptcy} bankruptcy courts.
         </p>
       </div>
 
       {/* CTA */}
       <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-8 text-center">
-        <h2 className="text-[20px] font-bold text-white mb-2">File on any of these courts</h2>
-        <p className="text-[14px] text-white/50 mb-6">Drop a PDF. ECFiler detects the court automatically.</p>
+        <h2 className="text-[20px] font-bold text-white mb-2">Prepare filings for any of these courts</h2>
+        <p className="text-[14px] text-white/50 mb-6">Drop a PDF. ECFiler detects the court automatically and stages the filing for you to submit.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/sign-up" className="px-6 py-2.5 bg-white text-[#1e3a5f] text-[14px] font-semibold rounded-xl hover:bg-[#f0f4fa] transition shadow-lg">Start Filing Free</Link>
           <Link href="/courts" className="px-6 py-2.5 border border-white/20 text-white/70 text-[14px] font-semibold rounded-xl hover:text-white hover:border-white/40 transition">Search Courts</Link>

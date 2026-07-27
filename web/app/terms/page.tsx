@@ -1,10 +1,12 @@
+{/* LEGAL REVIEW REQUIRED before deploy — rewritten 2026-07-27 to match zero-custody architecture */}
 import type { Metadata } from "next";
 import Link from "next/link";
+import { COURT_COUNT, PRO_PRICE } from "@/lib/facts";
 
 export const metadata: Metadata = {
   title: "Terms of Service | ECFiler",
   description:
-    "Terms governing use of ECFiler, the AI-powered federal court e-filing platform. Covers attorney responsibilities, liability, and service terms.",
+    "Terms governing use of ECFiler, the AI-powered federal court filing preparation platform. Covers attorney responsibilities, liability, and service terms.",
 };
 
 const TOC = [
@@ -117,18 +119,20 @@ export default function TermsOfService() {
                   does not provide legal advice.
                 </strong>{" "}
                 The Service provides technology to help licensed attorneys
-                prepare and submit filings to the federal CM/ECF system. No
+                prepare, validate, and stage filings for the federal CM/ECF
+                system; the attorney reviews and submits every filing. No
                 attorney-client relationship is created between you and ECFiler
                 by your use of the Service.
               </p>
             </div>
             <p className="mt-3">
-              ECFiler automates portions of the CM/ECF filing workflow &mdash;
-              including document analysis, event code suggestion, docket text
-              generation, and PDF validation &mdash; but all filing decisions
-              remain the sole responsibility of the attorney of record. The
-              Service is a tool to assist your professional judgment, not a
-              replacement for it.
+              ECFiler assists with portions of the CM/ECF filing workflow
+              &mdash; including document analysis, event code suggestion,
+              docket text generation, and PDF validation &mdash; and produces a
+              validated filing package for you to submit. All filing decisions,
+              and the act of submission itself, remain the sole responsibility
+              of the attorney of record. The Service is a tool to assist your
+              professional judgment, not a replacement for it.
             </p>
           </section>
 
@@ -143,12 +147,13 @@ export default function TermsOfService() {
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
                 <strong>
-                  You are solely responsible for all filings made through
-                  ECFiler using your PACER credentials.
+                  You are solely responsible for every filing you submit to
+                  CM/ECF
                 </strong>{" "}
-                Every filing submitted through the Service carries the same
-                legal effect as a filing made directly through the CM/ECF
-                system.
+                &mdash; whether prepared with ECFiler&apos;s hosted tools or
+                filed locally through the ECFiler CLI using your own
+                credentials. A filing prepared or staged with ECFiler carries
+                the same legal effect as any filing made on CM/ECF.
               </li>
               <li>
                 You are responsible for verifying the accuracy of all
@@ -168,9 +173,10 @@ export default function TermsOfService() {
                 in the case and court you select.
               </li>
               <li>
-                You are responsible for the security of your PACER credentials
-                and ECFiler account. You must notify us immediately if you
-                believe your account has been compromised.
+                You are responsible for the security of your ECFiler account
+                and of your court credentials, which remain on your own
+                machine and are never held by ECFiler. You must notify us
+                immediately if you believe your account has been compromised.
               </li>
             </ul>
           </section>
@@ -213,7 +219,8 @@ export default function TermsOfService() {
             </h2>
             <p>
               ECFiler employs a 3-pass AI verification system that analyzes your
-              filing for potential issues before submission. This system checks
+              filing for potential issues before it is staged for you to
+              submit. This system checks
               for common errors including incorrect event codes, mismatched case
               numbers, formatting problems, and potential redaction issues. You
               acknowledge that:
@@ -251,29 +258,37 @@ export default function TermsOfService() {
               6. PACER Credentials
             </h2>
             <p>
-              To use the filing features of ECFiler, you must provide your PACER
-              credentials. By providing your credentials, you represent that:
+              <strong>
+                The Service does not collect, store, or transmit your PACER or
+                CM/ECF credentials.
+              </strong>{" "}
+              The hosted platform prepares, validates, and stages filings
+              without ever requiring a court password. Filing itself is
+              performed by you &mdash; either directly on CM/ECF, or locally
+              through the ECFiler CLI on your own machine, where your
+              credentials are held in your operating system&apos;s keyring and
+              never leave your device. With respect to any filing you make
+              using your credentials, you represent that:
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                You are the authorized holder of the PACER account or have
+                You are the authorized holder of the PACER account, or have
                 explicit authorization from the account holder to use those
                 credentials for electronic filing.
               </li>
               <li>
-                You understand that filings submitted using your credentials
-                through ECFiler carry the same legal force and effect as filings
-                made directly on CM/ECF.
+                You understand that filings you submit using your credentials
+                carry the same legal force and effect as any filing made on
+                CM/ECF.
               </li>
               <li>
-                You will not use ECFiler to submit filings using another
-                attorney&apos;s PACER credentials without their express written
-                authorization.
+                You will not submit filings using another attorney&apos;s
+                credentials without their express written authorization.
               </li>
             </ul>
             <p className="mt-3">
-              For details on how we store and protect your PACER credentials,
-              see our{" "}
+              For details on how court credentials are kept out of our
+              infrastructure entirely, see our{" "}
               <Link
                 href="/privacy#pacer-credentials"
                 className="text-[#1e3a5f] underline underline-offset-2 hover:text-[#162a47] transition"
@@ -310,9 +325,9 @@ export default function TermsOfService() {
               </li>
               <li>
                 You are responsible for verifying that your filing was
-                successfully received by the court. A successful submission
-                through ECFiler does not constitute confirmation of filing by
-                the court until you receive a Notice of Electronic Filing (NEF).
+                successfully received by the court. A staged filing package is
+                not a filing; your filing is complete only when you submit it
+                on CM/ECF and receive a Notice of Electronic Filing (NEF).
               </li>
               <li>
                 If CM/ECF is unavailable, you are responsible for pursuing
@@ -400,22 +415,26 @@ export default function TermsOfService() {
               Free Tier
             </h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Limited number of filings per month</li>
-              <li>Basic AI document analysis and event code suggestions</li>
-              <li>Standard PDF validation</li>
-              <li>Filing history limited to 90 days</li>
+              <li>PDF validation and PDF/A checks</li>
+              <li>Rule 5.2 redaction scanning</li>
+              <li>Federal court directory ({COURT_COUNT} courts)</li>
+              <li>Filing fee lookup</li>
+              <li>Certificate of service generator</li>
+              <li>Event code browser</li>
               <li>Community support only</li>
             </ul>
             <h3 className="text-[16px] font-semibold text-[#1a1a1a] mt-4 mb-2">
-              Pro Tier ($99/attorney/month)
+              Pro Tier (${PRO_PRICE}/attorney/month)
             </h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Unlimited filings</li>
-              <li>Advanced AI analysis with 3-pass verification</li>
-              <li>Certificate of service generation</li>
-              <li>Rule 5.2 redaction scanning</li>
-              <li>Filing fee lookup and calculation</li>
+              <li>Everything in the Free Tier</li>
+              <li>AI document analysis</li>
+              <li>AI docket text generation</li>
+              <li>AI event code matching</li>
+              <li>3-pass AI verification</li>
+              <li>Filing package staging and guided CM/ECF handoff</li>
               <li>Full filing history with document archival</li>
+              <li>Team management</li>
               <li>Priority support</li>
             </ul>
             <p className="mt-3">
@@ -442,9 +461,13 @@ export default function TermsOfService() {
                 user accounts, or ECFiler infrastructure.
               </li>
               <li>
-                Use automated scripts, bots, or other tools to access the
-                Service in a manner that exceeds reasonable use or circumvents
-                rate limits.
+                Access the Service through automated means in a manner that is
+                abusive or excessive &mdash; for example, degrading the Service
+                for other users, scraping at volume, or circumventing rate
+                limits. (For clarity: ECFiler&apos;s own court-facing
+                automation identifies itself with a disclosed user agent,
+                honors court guidance, and observes rate limits, and ordinary
+                use of the ECFiler CLI is not prohibited by this clause.)
               </li>
               <li>
                 Reverse-engineer, decompile, or attempt to extract the source

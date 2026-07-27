@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { InteractiveDemo } from "@/components/demo";
+import { COURT_COUNT, PRO_PRICE, TIERS } from "@/lib/facts";
 
 
 export default function LandingPage() {
@@ -71,13 +72,13 @@ export default function LandingPage() {
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-[#0f1f35] rounded-full text-[12px] font-semibold text-white mb-8 shadow-lg shadow-[#1e3a5f]/20">
               <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" /></span>
-              207 federal courts supported
+              {COURT_COUNT} federal courts supported
             </div>
             <h1 className="text-[36px] sm:text-[48px] md:text-[60px] leading-[1.05] font-bold tracking-[-0.04em] text-[#0f1f35] mb-6">
               Stop wrestling with<br />
               <span className="gradient-text-animated">CM/ECF forms</span>
             </h1>
-            <p className="text-[17px] sm:text-[19px] md:text-[21px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop a PDF. AI reads the document, extracts case number, court, event code, and filing party. You review and file with one click.</p>
+            <p className="text-[17px] sm:text-[19px] md:text-[21px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop a PDF. AI reads the document, extracts case number, court, event code, and filing party. Review, stage, and file it yourself &mdash; with everything validated first.</p>
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
               <Link href="/sign-up" className="w-full sm:w-auto px-10 py-4 bg-[#1e3a5f] text-white text-[16px] font-bold rounded-xl hover:bg-[#162a47] transition-all shadow-xl shadow-[#1e3a5f]/25 hover:shadow-2xl hover:shadow-[#1e3a5f]/30 hover:-translate-y-0.5 text-center">Start Filing Free</Link>
               <Link href="/what-is-cmecf" className="w-full sm:w-auto px-10 py-4 bg-white text-[#1a1a1a] text-[16px] font-semibold rounded-xl border-2 border-[#e8e5e0] hover:border-[#1e3a5f] hover:text-[#1e3a5f] transition-all text-center">Learn More</Link>
@@ -90,7 +91,7 @@ export default function LandingPage() {
       <section className="bg-[#0f1f35] border-y border-[#1e3a5f]">
         <div className="max-w-5xl mx-auto px-5 sm:px-8 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            ["207", "Federal Courts", "District, Bankruptcy, Appellate"],
+            [String(COURT_COUNT), "Federal Courts", "District, Bankruptcy, Appellate"],
             ["3-Pass", "AI Verification", "Before every filing"],
             ["<1min", "To Prepare", "AI does the heavy lifting"],
             ["$0", "To Start", "Free tools, no credit card"],
@@ -111,7 +112,7 @@ export default function LandingPage() {
           <div className="text-center mb-10">
             <div className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3">Live Demo</div>
             <h2 className="text-[24px] sm:text-[30px] font-bold text-white tracking-tight">See it in action</h2>
-            <p className="text-[14px] sm:text-[16px] text-white/50 mt-2 max-w-lg mx-auto">Watch AI analyze a motion, verify it with 3 safety passes, and file it on CM/ECF.</p>
+            <p className="text-[14px] sm:text-[16px] text-white/50 mt-2 max-w-lg mx-auto">Watch AI analyze a motion, verify it with 3 safety passes, and stage it for filing.</p>
           </div>
           <InteractiveDemo />
         </div>
@@ -129,7 +130,7 @@ export default function LandingPage() {
             {[
               { n: "01", t: "Drop your filing", d: "Upload any federal court document — motion, brief, complaint, notice. AI reads the entire document in seconds.", color: "from-[#1e3a5f] to-[#0f2440]", accent: "#1e3a5f" },
               { n: "02", t: "AI extracts everything", d: "Case number, court, event code, filing party, docket text. Every field extracted, cross-referenced, and verified with 3 safety passes.", color: "from-[#b8860b] to-[#8b6508]", accent: "#b8860b" },
-              { n: "03", t: "Review and file", d: "See exactly what CM/ECF will receive. Attest, click once, and watch the filing happen live in your browser.", color: "from-[#15803d] to-[#166534]", accent: "#15803d" },
+              { n: "03", t: "Review and file it yourself", d: "See exactly what CM/ECF will receive. Attest, and ECFiler hands you a validated filing package with a CM/ECF deep link and step-by-step instructions. You submit it on CM/ECF.", color: "from-[#15803d] to-[#166534]", accent: "#15803d" },
             ].map(({ n, t, d, color, accent }, i) => (
               <div key={n} className="relative p-8 md:p-10">
                 {i < 2 && <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-16 bg-[#e8e5e0]" />}
@@ -215,7 +216,7 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
             {[
-              { t: "207 federal courts", d: "Every district, bankruptcy, and appellate court. BAPs and special courts included.", icon: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21", accent: "from-[#1e3a5f] to-[#3b82f6]" },
+              { t: `${COURT_COUNT} federal courts`, d: "Every district, bankruptcy, and appellate court. BAPs and special courts included.", icon: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21", accent: "from-[#1e3a5f] to-[#3b82f6]" },
               { t: "AI event code matching", d: "Describe your filing in plain English. AI matches the correct CM/ECF event code from hundreds of options.", icon: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z", accent: "from-[#7c3aed] to-[#a855f7]" },
               { t: "Rule 5.2 redaction scan", d: "AI detects unredacted SSNs, DOBs, financial accounts, and minor names before you file.", icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z", accent: "from-[#15803d] to-[#22c55e]" },
               { t: "PDF pre-flight checks", d: "Validates size, searchable text, encryption, and PDF/A compliance before CM/ECF can reject your filing.", icon: "M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z", accent: "from-[#b91c1c] to-[#ef4444]" },
@@ -247,7 +248,7 @@ export default function LandingPage() {
             {[
               { icon: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z", title: "10+ min saved per filing", desc: "No more navigating CM/ECF menus. Drop a PDF and go.", stat: "10+" },
               { icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z", title: "3-pass safety checks", desc: "Nothing is filed without passing document integrity, AI cross-reference, and readiness verification.", stat: "3" },
-              { icon: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z", title: "Your credentials, encrypted", desc: "AES-256 encryption at rest. Credentials only decrypted at the moment of filing.", stat: "256" },
+              { icon: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z", title: "Your credentials, never here", desc: "Filing credentials stay in your machine's keyring. ECFiler's servers never see a court password.", stat: "0" },
               { icon: "M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z", title: "Full transparency", desc: "See every step. Edit the docket text. Attorney attestation required before filing.", stat: "100%" },
             ].map(({ icon, title, desc, stat }) => (
               <div key={title} className="bg-white border border-[#e8e5e0] rounded-2xl p-6 text-center hover:shadow-md transition-shadow">
@@ -270,7 +271,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-[12px] text-[#8a8a8a] font-medium">
             <span className="text-[10px] uppercase tracking-wider font-bold text-[#1e3a5f]">Built with</span>
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-              {["Claude AI", "Playwright", "Next.js", "PACER API", "CM/ECF NextGen"].map((t) => (
+              {["Claude AI", "Playwright (local CLI)", "Next.js"].map((t) => (
                 <span key={t} className="px-3.5 py-2 bg-[#fafaf8] border border-[#e8e5e0] rounded-lg text-[#525252] font-medium">{t}</span>
               ))}
             </div>
@@ -294,14 +295,7 @@ export default function LandingPage() {
               <div className="text-[13px] text-[#8a8a8a] mb-6">Forever. No credit card.</div>
               <Link href="/sign-up" className="block w-full py-3 text-center bg-white text-[#1e3a5f] text-[14px] font-semibold rounded-xl border-2 border-[#e8e5e0] hover:border-[#1e3a5f] hover:bg-[#f0f4fa] transition mb-6">Get Started</Link>
               <div className="space-y-3">
-                {[
-                  "PDF validation & PDF/A checks",
-                  "Rule 5.2 redaction scanning",
-                  "207 federal courts directory",
-                  "Filing fee lookup",
-                  "Certificate of service generator",
-                  "Event code browser",
-                ].map((f) => (
+                {TIERS.free.features.map((f) => (
                   <div key={f} className="flex items-center gap-2.5 text-[13px] text-[#525252]">
                     <div className="w-5 h-5 bg-[#f0fdf4] text-[#15803d] rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">&#10003;</div>
                     {f}
@@ -310,12 +304,7 @@ export default function LandingPage() {
               </div>
               <div className="mt-5 pt-5 border-t border-[#f0eee9]">
                 <div className="space-y-3">
-                  {[
-                    "AI document analysis",
-                    "AI docket text generation",
-                    "AI event code matching",
-                    "Automated CM/ECF filing",
-                  ].map((f) => (
+                  {TIERS.free.notIncluded.map((f) => (
                     <div key={f} className="flex items-center gap-2.5 text-[13px] text-[#c4c4c4]">
                       <div className="w-5 h-5 bg-[#f5f5f0] text-[#d4d0ca] rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">&mdash;</div>
                       {f}
@@ -330,24 +319,13 @@ export default function LandingPage() {
               <div className="absolute top-4 right-4 text-[10px] px-2.5 py-1 bg-[#b8860b] text-white rounded-full font-bold shadow-lg">Recommended</div>
               <div className="text-[11px] font-semibold text-white/40 uppercase tracking-wide mb-2">Pro</div>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-[42px] font-bold text-white">$99</span>
+                <span className="text-[42px] font-bold text-white">${PRO_PRICE}</span>
                 <span className="text-[14px] text-white/40">/attorney/mo</span>
               </div>
               <div className="text-[13px] text-white/40 mb-6">Cancel anytime. Stripe billing.</div>
               <Waitlist />
               <div className="space-y-3 mt-6">
-                {[
-                  "Everything in Free",
-                  "AI document analysis",
-                  "AI docket text generation",
-                  "AI event code matching",
-                  "3-pass AI safety verification",
-                  "Automated CM/ECF submission",
-                  "Live browser view of filing",
-                  "Filing history & PDF archive",
-                  "Team management",
-                  "Priority support",
-                ].map((f) => (
+                {TIERS.pro.features.map((f) => (
                   <div key={f} className="flex items-center gap-2.5 text-[13px] text-white/80">
                     <div className="w-5 h-5 bg-white/10 text-[#bbf7d0] rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">&#10003;</div>
                     {f}
@@ -364,7 +342,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px" }} />
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28 text-center">
           <h2 className="text-[28px] sm:text-[36px] md:text-[42px] font-bold tracking-tight text-white mb-4">Ready to modernize your filing?</h2>
-          <p className="text-[17px] text-white/50 mb-10 max-w-md mx-auto">Free tools. 207 courts. No credit card required.</p>
+          <p className="text-[17px] text-white/50 mb-10 max-w-md mx-auto">Free tools. {COURT_COUNT} courts. No credit card required.</p>
           <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
             <Link href="/sign-up" className="w-full sm:w-auto px-10 py-4 bg-white text-[#0f1f35] text-[16px] font-bold rounded-xl hover:bg-[#f5f5f0] transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 text-center">Get Started Free</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="w-full sm:w-auto px-10 py-4 border-2 border-white/20 text-white/80 text-[16px] font-semibold rounded-xl hover:border-white/40 hover:text-white transition-all text-center">Star on GitHub</a>
@@ -381,7 +359,7 @@ export default function LandingPage() {
                 <div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-md flex items-center justify-center text-white text-[9px] font-bold">E</div>
                 <span className="text-[13px] font-semibold text-[#1a1a1a]">ECFiler</span>
               </div>
-              <p className="text-[11px] text-[#8a8a8a] leading-relaxed">AI-powered federal court filing. 207 courts supported.</p>
+              <p className="text-[11px] text-[#8a8a8a] leading-relaxed">AI-powered federal court filing preparation. {COURT_COUNT} courts supported.</p>
             </div>
             <div>
               <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Product</div>

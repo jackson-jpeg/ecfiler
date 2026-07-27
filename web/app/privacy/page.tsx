@@ -1,15 +1,17 @@
+{/* LEGAL REVIEW REQUIRED before deploy — rewritten 2026-07-27 to match zero-custody architecture */}
 import type { Metadata } from "next";
 import Link from "next/link";
+import { RETENTION_DAYS } from "@/lib/facts";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | ECFiler",
   description:
-    "How ECFiler collects, stores, and protects your data — including PACER credentials, filing documents, and usage information.",
+    "How ECFiler collects, stores, and protects your data — including filing documents and usage information. Court credentials never reach our servers.",
 };
 
 const TOC = [
   { id: "information-we-collect", label: "1. Information We Collect" },
-  { id: "pacer-credentials", label: "2. PACER Credential Storage" },
+  { id: "pacer-credentials", label: "2. Court Credentials" },
   { id: "filing-documents", label: "3. Filing Document Retention" },
   { id: "sealed-documents", label: "4. Sealed Documents" },
   { id: "authentication", label: "5. Authentication" },
@@ -108,14 +110,14 @@ export default function PrivacyPolicy() {
               </li>
             </ul>
             <h3 className="text-[16px] font-semibold text-[#1a1a1a] mt-4 mb-2">
-              PACER / CM/ECF Credentials
+              Court Credentials
             </h3>
             <ul className="list-disc pl-5 space-y-1">
               <li>
-                <strong>PACER username and password</strong> &mdash; provided by
-                you to enable electronic filing through the CM/ECF system. These
-                credentials are encrypted at rest and are never displayed in
-                plaintext after initial entry. See Section 2 for details.
+                <strong>None.</strong> We do not collect your PACER or CM/ECF
+                username or password. Filing credentials remain in the
+                operating-system keyring on your own machine and never reach
+                our servers. See Section 2.
               </li>
             </ul>
             <h3 className="text-[16px] font-semibold text-[#1a1a1a] mt-4 mb-2">
@@ -138,8 +140,8 @@ export default function PrivacyPolicy() {
               </li>
               <li>
                 <strong>Filing history</strong> &mdash; records of filings
-                submitted through the Service, including timestamps, courts, and
-                status.
+                prepared and staged through the Service, including timestamps,
+                courts, and status.
               </li>
             </ul>
             <h3 className="text-[16px] font-semibold text-[#1a1a1a] mt-4 mb-2">
@@ -160,38 +162,36 @@ export default function PrivacyPolicy() {
           {/* 2 */}
           <section id="pacer-credentials">
             <h2 className="text-[20px] font-bold text-[#1a1a1a] mb-3">
-              2. PACER Credential Storage
+              2. Court Credentials
             </h2>
             <p>
-              Your PACER credentials are among the most sensitive data we handle.
-              We apply the following safeguards:
+              <strong>
+                We do not collect, store, transmit, or have access to your
+                PACER or CM/ECF credentials.
+              </strong>{" "}
+              This is an architectural guarantee, not just a policy:
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                Credentials are <strong>encrypted at rest using AES-256</strong>{" "}
-                encryption. The encryption key is stored separately from the
-                encrypted credential data and is not accessible to application
-                code outside the filing execution path.
+                The hosted Service never asks for a court password. It
+                prepares, validates, and stages filings; you submit them on
+                CM/ECF yourself.
               </li>
               <li>
-                Credentials are <strong>decrypted only at the moment of filing</strong>{" "}
-                &mdash; specifically, when an authenticated session with CM/ECF
-                is required to submit your document. Decryption occurs in an
-                isolated process and the plaintext credentials are not logged,
-                cached, or written to disk.
+                When you file through the local ECFiler CLI, your credentials
+                are read from the operating-system keyring on your own machine
+                (macOS Keychain, Windows Credential Manager, or Linux Secret
+                Service) and are used only for the session you initiate. They
+                are never sent to ECFiler servers, logged, or cached remotely.
               </li>
               <li>
-                We do <strong>not</strong> store your PACER credentials in
-                browser cookies, local storage, or any client-side mechanism.
+                Because no credential ever reaches our infrastructure, a breach
+                of ECFiler&apos;s servers cannot expose a court password.
               </li>
               <li>
-                PACER passwords are never displayed in the ECFiler interface
-                after initial entry. You may update or remove your stored
-                credentials at any time from your account settings.
-              </li>
-              <li>
-                All communication between ECFiler and the CM/ECF system occurs
-                over TLS 1.2 or higher.
+                <strong>Legacy note:</strong> an earlier version of the Service
+                stored credentials server-side. All server-stored credentials
+                from that model were permanently purged in July 2026.
               </li>
             </ul>
           </section>
@@ -208,15 +208,20 @@ export default function PrivacyPolicy() {
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                <strong>Active documents</strong> (filed within the last 30
-                days) are stored in their original form to support your filing
-                history and any resubmission needs.
+                <strong>Active documents</strong> (uploaded within the last{" "}
+                {RETENTION_DAYS} days) are stored in their original form to
+                support your filing history and any resubmission needs.
               </li>
               <li>
-                <strong>After 30 days</strong>, documents are compressed and
-                moved to archival storage. Compressed documents remain accessible
-                through your filing history but may take slightly longer to
-                retrieve.
+                <strong>After {RETENTION_DAYS} days</strong>, documents are
+                compressed and moved to archival storage. Compressed documents
+                remain accessible through your filing history but may take
+                slightly longer to retrieve.
+              </li>
+              <li>
+                <strong>Sealed or restricted documents are never accepted</strong>{" "}
+                by the hosted Service and therefore are never stored in any
+                form (see Section 4).
               </li>
               <li>
                 You may delete individual documents or your entire filing history
@@ -236,16 +241,19 @@ export default function PrivacyPolicy() {
             </h2>
             <div className="bg-[#fef3c7] border border-[#f59e0b]/30 rounded-xl p-4 mt-3">
               <p className="text-[14px] text-[#92400e] font-medium">
-                <strong>ECFiler never retains sealed documents on its servers.</strong>{" "}
-                When a filing is identified as sealed (either by the event code
-                selected or by you designating it as such), the uploaded PDF is
-                held in memory only for the duration of the filing transaction.
-                Once the filing is submitted to CM/ECF &mdash; or if the filing
-                is canceled &mdash; the document is immediately and
-                irreversibly purged. No copy is written to disk, logged, or
-                backed up. Your filing history will record that a sealed filing
-                was made (court, case number, timestamp) but will not contain the
-                document itself or its contents.
+                <strong>
+                  The hosted Service does not accept sealed or restricted
+                  documents at all.
+                </strong>{" "}
+                If a document is marked sealed, subject to a protective order,
+                or otherwise restricted from public filing, ECFiler refuses the
+                upload before any content is stored. There is no sealed-handling
+                mode on our servers: no sealed content is ever received, stored,
+                logged, or backed up. This refusal is a deliberate architectural
+                decision documented in our sealed-document policy. Sealed
+                material must be filed through the court&apos;s own procedures;
+                the local ECFiler CLI likewise hard-fails rather than ever
+                filing sealed content publicly.
               </p>
             </div>
           </section>
@@ -306,8 +314,8 @@ export default function PrivacyPolicy() {
                 the application.
               </li>
               <li>
-                Neither tool collects personally identifiable information, filing
-                content, case data, or PACER credentials.
+                Neither tool collects personally identifiable information,
+                filing content, or case data.
               </li>
             </ul>
             <p className="mt-3">
@@ -336,10 +344,11 @@ export default function PrivacyPolicy() {
               </li>
             </ul>
             <p className="mt-3">
-              All data transmitted between your browser and ECFiler, and between
-              ECFiler and CM/ECF, is encrypted in transit using TLS 1.2 or
-              higher. Data at rest is encrypted using AES-256 (see Section 2 for
-              credential-specific details).
+              All data transmitted between your browser and ECFiler is
+              encrypted in transit using TLS 1.2 or higher, and data at rest is
+              encrypted with industry-standard encryption. ECFiler&apos;s
+              servers do not communicate with CM/ECF and never hold court
+              credentials (see Section 2).
             </p>
           </section>
 
@@ -358,12 +367,6 @@ export default function PrivacyPolicy() {
                 circumstances:
               </p>
               <ul className="list-disc pl-5 space-y-1 mt-2">
-                <li>
-                  <strong>CM/ECF</strong> &mdash; your PACER credentials and
-                  filing documents are transmitted to the federal court&apos;s
-                  CM/ECF system when you submit a filing. This is the core
-                  function of the Service.
-                </li>
                 <li>
                   <strong>Clerk (authentication)</strong> &mdash; email and
                   account data as described in Section 5.
@@ -480,7 +483,8 @@ export default function PrivacyPolicy() {
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                Your PACER credentials are immediately and permanently deleted.
+                No court credentials need to be deleted &mdash; we never had
+                them (see Section 2).
               </li>
               <li>
                 Your filing history, uploaded documents, and all associated

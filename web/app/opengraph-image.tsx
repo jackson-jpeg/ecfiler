@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
+import { COURT_COUNT } from "@/lib/facts";
 
 export const runtime = "edge";
-export const alt = "ECFiler — AI-Powered Federal Court Filing";
+export const alt = "ECFiler — Federal Court Filing Preparation";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -63,7 +64,7 @@ export default async function Image() {
             marginBottom: "24px",
           }}
         >
-          The intelligent way to file on CM/ECF
+          The intelligent way to prepare CM/ECF filings
         </div>
 
         {/* Subline */}
@@ -76,13 +77,13 @@ export default async function Image() {
             marginBottom: "40px",
           }}
         >
-          Drop a PDF. AI extracts everything. File with one click.
+          Drop a PDF. AI extracts everything. You review and file.
         </div>
 
         {/* Stats */}
         <div style={{ display: "flex", gap: "40px" }}>
           {[
-            { n: "207", label: "Federal Courts" },
+            { n: String(COURT_COUNT), label: "Federal Courts" },
             { n: "7", label: "Safety Gates" },
             { n: "<1m", label: "To Prepare" },
           ].map((s) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { COURT_COUNT } from "@/lib/facts";
 
 const STEPS = [
   { label: "Validating PDF", detail: "2.3MB · 15 pages · searchable · PDF/A", icon: "doc" },
@@ -11,15 +12,14 @@ const STEPS = [
   { label: "Generating docket text", detail: "Cross-referencing case 1:24-cv-01234-ABC", icon: "gen" },
 ];
 
-const BROWSER_STEPS = [
-  { step: "Authenticating with PACER", desc: "Secure token via CSO API" },
-  { step: "Navigating to CM/ECF", desc: "ecf.nysd.uscourts.gov" },
-  { step: "Opening filing module", desc: "Civil → File a Document" },
-  { step: "Entering case number", desc: "1:24-cv-01234-ABC confirmed" },
-  { step: "Selecting event code", desc: "Motion to Dismiss (12)" },
-  { step: "Uploading PDF", desc: "motion_to_dismiss.pdf · 2.3MB" },
-  { step: "Submitting to court", desc: "Final submission confirmed" },
-  { step: "Filing complete", desc: "Docket #58 assigned by clerk" },
+const STAGING_STEPS = [
+  { step: "Analyzing document", desc: "Motion to Dismiss identified" },
+  { step: "Validating PDF", desc: "Searchable · PDF/A · 2.3MB" },
+  { step: "Scanning for redactions", desc: "Rule 5.2 — no issues found" },
+  { step: "Matching event code", desc: "Motion to Dismiss (12)" },
+  { step: "Checking fees", desc: "No filing fee for this event" },
+  { step: "Assembling package", desc: "PDF + docket text + instructions" },
+  { step: "Package staged — ready to file", desc: "CM/ECF deep link generated" },
 ];
 
 type Phase = "idle" | "analyzing" | "review" | "filing";
@@ -49,7 +49,7 @@ export function InteractiveDemo() {
       return () => clearTimeout(t);
     }
     if (phase === "filing") {
-      if (browserStep >= BROWSER_STEPS.length) {
+      if (browserStep >= STAGING_STEPS.length) {
         const t = setTimeout(() => { setPhase("analyzing"); setVisibleSteps(0); }, 4500);
         return () => clearTimeout(t);
       }
@@ -81,7 +81,7 @@ export function InteractiveDemo() {
   const progressPct = phase === "analyzing"
     ? Math.round((visibleSteps / STEPS.length) * 100)
     : phase === "filing"
-    ? Math.round((Math.min(browserStep, BROWSER_STEPS.length) / BROWSER_STEPS.length) * 100)
+    ? Math.round((Math.min(browserStep, STAGING_STEPS.length) / STAGING_STEPS.length) * 100)
     : 100;
 
   return (
@@ -96,7 +96,7 @@ export function InteractiveDemo() {
         <div className="flex-1 mx-6 sm:mx-12">
           <div className="bg-[#1a1a1a] rounded-lg px-4 py-1.5 text-[11px] sm:text-[12px] text-[#999] font-mono text-center flex items-center justify-center gap-2">
             <svg className="w-3 h-3 text-[#666] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-            {phase === "filing" ? "ecf.nysd.uscourts.gov" : "ecfiler.com/file"}
+            ecfiler.com/file
           </div>
         </div>
         {(phase === "analyzing" || phase === "filing") && (
@@ -146,11 +146,11 @@ export function InteractiveDemo() {
                   </svg>
                 </div>
                 <div className="text-[15px] font-bold text-[#1a1a1a] group-hover:text-[#1e3a5f] transition mb-1">Click to see a live demo</div>
-                <div className="text-[13px] text-[#8a8a8a]">Watch AI analyze a motion and file it on CM/ECF</div>
+                <div className="text-[13px] text-[#8a8a8a]">Watch AI analyze a motion and stage it for filing</div>
               </div>
               <div className="grid grid-cols-3 gap-3 mt-4">
                 {[
-                  { n: "207", label: "Federal Courts", sub: "All districts" },
+                  { n: String(COURT_COUNT), label: "Federal Courts", sub: "All districts" },
                   { n: "3-Pass", label: "AI Verification", sub: "Before every filing" },
                   { n: "<1min", label: "To Prepare", sub: "AI does the work" },
                 ].map(({ n, label, sub }) => (
@@ -256,19 +256,19 @@ export function InteractiveDemo() {
               <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-xl p-4 flex items-center justify-between shadow-lg shadow-[#1e3a5f]/20">
                 <div>
                   <div className="text-[13px] font-bold text-white">3 safety passes completed</div>
-                  <div className="text-[10px] text-white/50">All checks passed · Ready to file</div>
+                  <div className="text-[10px] text-white/50">All checks passed · Ready to stage</div>
                 </div>
                 <div className="px-5 py-2 bg-white text-[#1e3a5f] text-[12px] font-bold rounded-lg shadow-lg">
-                  Confirm &amp; File
+                  Attest &amp; Stage
                 </div>
               </div>
             </div>
           )}
 
-          {/* Filing — CM/ECF browser view */}
+          {/* Staging — filing package assembly view */}
           {phase === "filing" && (
             <div>
-              {/* Browser within the app */}
+              {/* Package panel within the app */}
               <div className="rounded-2xl border border-[#999] overflow-hidden shadow-xl shadow-black/15 mb-3">
                 {/* CM/ECF chrome */}
                 <div className="bg-[#e0ddd7] px-4 py-2 flex items-center gap-3 border-b border-[#ccc]">
@@ -279,9 +279,9 @@ export function InteractiveDemo() {
                   </div>
                   <div className="flex-1 bg-white rounded-md px-3 py-1 flex items-center gap-2">
                     <svg className="w-3 h-3 text-[#666] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-                    <span className="font-mono text-[11px] text-[#333]">ecf.nysd.uscourts.gov</span>
+                    <span className="font-mono text-[11px] text-[#333]">ecfiler.com/file/package</span>
                   </div>
-                  {browserStep < BROWSER_STEPS.length && (
+                  {browserStep < STAGING_STEPS.length && (
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1e3a5f] opacity-50" />
@@ -290,7 +290,7 @@ export function InteractiveDemo() {
                       <span className="text-[9px] font-bold text-[#1e3a5f] uppercase tracking-wider">Live</span>
                     </div>
                   )}
-                  {browserStep >= BROWSER_STEPS.length && (
+                  {browserStep >= STAGING_STEPS.length && (
                     <span className="text-[9px] font-bold text-[#15803d] uppercase tracking-wider">Done</span>
                   )}
                 </div>
@@ -301,18 +301,18 @@ export function InteractiveDemo() {
                     <svg className="w-4 h-4 text-white/90" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
                   </div>
                   <div>
-                    <div className="text-white font-serif text-[13px] font-bold">CM/ECF — S.D.N.Y.</div>
-                    <div className="text-blue-200/60 text-[9px] font-serif">U.S. District Court — Document Filing System</div>
+                    <div className="text-white font-serif text-[13px] font-bold">Filing Package — S.D.N.Y.</div>
+                    <div className="text-blue-200/60 text-[9px] font-serif">Staged for CM/ECF — you review and submit</div>
                   </div>
                 </div>
 
                 {/* Steps content */}
                 <div className="bg-white p-4 min-h-[160px]">
                   <div className="space-y-0">
-                    {BROWSER_STEPS.slice(0, browserStep).map((s, i) => {
-                      const done = i < browserStep - 1 || browserStep >= BROWSER_STEPS.length;
-                      const isLast = i === Math.min(browserStep, BROWSER_STEPS.length) - 1;
-                      const isFinal = i === BROWSER_STEPS.length - 1 && browserStep >= BROWSER_STEPS.length;
+                    {STAGING_STEPS.slice(0, browserStep).map((s, i) => {
+                      const done = i < browserStep - 1 || browserStep >= STAGING_STEPS.length;
+                      const isLast = i === Math.min(browserStep, STAGING_STEPS.length) - 1;
+                      const isFinal = i === STAGING_STEPS.length - 1 && browserStep >= STAGING_STEPS.length;
                       return (
                         <div key={s.step} className="flex items-center gap-3 py-1.5 demo-step-enter">
                           <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
@@ -326,14 +326,14 @@ export function InteractiveDemo() {
                       );
                     })}
                   </div>
-                  {browserStep >= BROWSER_STEPS.length && (
+                  {browserStep >= STAGING_STEPS.length && (
                     <div className="mt-3 pt-3 border-t border-[#e8e5e0] flex items-center gap-3 demo-step-enter">
                       <div className="w-8 h-8 bg-[#15803d] rounded-full flex items-center justify-center shadow-md shadow-green-400/30">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                       </div>
                       <div>
-                        <div className="text-[14px] font-bold text-[#15803d]">Filing Complete</div>
-                        <div className="text-[11px] text-[#666]">Docket #58 assigned · NEF sent to all parties</div>
+                        <div className="text-[14px] font-bold text-[#15803d]">Package Staged</div>
+                        <div className="text-[11px] text-[#666]">CM/ECF deep link + instructions ready · You submit the filing</div>
                       </div>
                     </div>
                   )}
@@ -348,15 +348,15 @@ export function InteractiveDemo() {
                       className="h-full rounded-full transition-all duration-700"
                       style={{
                         width: `${progressPct}%`,
-                        background: browserStep >= BROWSER_STEPS.length
+                        background: browserStep >= STAGING_STEPS.length
                           ? "linear-gradient(90deg, #15803d, #22c55e)"
                           : "linear-gradient(90deg, #1e3a5f, #3b82f6)",
                       }}
                     />
                   </div>
                 </div>
-                <span className={`text-[11px] font-bold tabular-nums ${browserStep >= BROWSER_STEPS.length ? "text-[#15803d]" : "text-[#1e3a5f]"}`}>
-                  {browserStep >= BROWSER_STEPS.length ? "Filed" : `${Math.min(browserStep, BROWSER_STEPS.length)}/${BROWSER_STEPS.length}`}
+                <span className={`text-[11px] font-bold tabular-nums ${browserStep >= STAGING_STEPS.length ? "text-[#15803d]" : "text-[#1e3a5f]"}`}>
+                  {browserStep >= STAGING_STEPS.length ? "Staged" : `${Math.min(browserStep, STAGING_STEPS.length)}/${STAGING_STEPS.length}`}
                 </span>
               </div>
             </div>

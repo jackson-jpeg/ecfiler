@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { COURT_COUNT } from "@/lib/facts";
 
 export const metadata: Metadata = {
   title: "What is CM/ECF? Guide to Federal Court Electronic Filing | ECFiler",
@@ -32,14 +33,14 @@ export default function WhatIsCMECF() {
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#f0f4fa] border border-[#bfdbfe] rounded-full text-[11px] font-semibold text-[#1e3a5f] mb-4">Resource Guide</div>
         <h1 className="text-[28px] sm:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-3">What is CM/ECF?</h1>
         <p className="text-[16px] sm:text-[18px] text-[#525252] leading-relaxed max-w-2xl">
-          CM/ECF (Case Management/Electronic Case Files) is the system used by all <strong>207 federal courts</strong> for electronic document filing. It replaced paper filing and is maintained by the Administrative Office of the U.S. Courts.
+          CM/ECF (Case Management/Electronic Case Files) is the system used by all <strong>{COURT_COUNT} federal courts</strong> for electronic document filing. It replaced paper filing and is maintained by the Administrative Office of the U.S. Courts.
         </p>
       </div>
 
       {/* Key facts */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-12">
         {[
-          { n: "207", label: "Federal Courts" },
+          { n: String(COURT_COUNT), label: "Federal Courts" },
           { n: "1996", label: "First Deployed" },
           { n: "100%", label: "Adoption Rate" },
           { n: "NextGen", label: "Current Version" },
@@ -120,8 +121,8 @@ export default function WhatIsCMECF() {
 
       {/* CTA */}
       <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-8 text-center">
-        <h2 className="text-[20px] font-bold text-white mb-2">ECFiler automates all of this</h2>
-        <p className="text-[14px] text-white/60 mb-6 max-w-md mx-auto">Drop a PDF. AI reads the document, extracts everything, and files with one click. 207 federal courts supported.</p>
+        <h2 className="text-[20px] font-bold text-white mb-2">ECFiler prepares all of this for you</h2>
+        <p className="text-[14px] text-white/60 mb-6 max-w-md mx-auto">Drop a PDF. AI reads the document, validates it, and stages a complete filing package. You review and submit on CM/ECF &mdash; the local CLI can automate the mechanical steps under your control. {COURT_COUNT} federal courts supported.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/sign-up" className="px-6 py-2.5 bg-white text-[#1e3a5f] text-[14px] font-semibold rounded-xl hover:bg-[#f0f4fa] transition shadow-lg">Start Filing Free</Link>
           <Link href="/federal-courts" className="px-6 py-2.5 border border-white/20 text-white/70 text-[14px] font-semibold rounded-xl hover:text-white hover:border-white/40 transition">Browse All Courts</Link>

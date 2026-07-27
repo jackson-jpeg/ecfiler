@@ -238,7 +238,7 @@ export default function OnboardingPage() {
                 <h2 className="text-xl font-bold tracking-tight text-[#1a1a1a]">PACER credentials</h2>
               </div>
               <p className="text-[#525252] text-sm mb-6 ml-12">
-                Optional for now. You can file without PACER — ECFiler validates, analyzes, and prepares your filing. PACER is only needed for automated submission.
+                Nothing to enter here — ECFiler never asks for your PACER password. You can prepare and stage filings without PACER. Filing happens locally via the ECFiler CLI, with your credentials in your OS keyring on your own machine.
               </p>
               <div className="bg-[#fafaf8] border border-[#e8e5e0] rounded-xl p-5 mb-6">
                 <div className="text-sm font-semibold text-[#1a1a1a] mb-3">What works without PACER:</div>

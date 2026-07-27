@@ -1,15 +1,15 @@
 # ECFiler
 
-Automated document filing for Federal CM/ECF court systems, powered by Claude API.
+Filing preparation and locally-controlled CM/ECF automation for federal courts, powered by Claude API.
 
 **[Try the App](https://ecfiler-production.up.railway.app)** | **[Landing Page](https://ecfiler.vercel.app)** | **[API Docs](https://ecfiler-production.up.railway.app/docs)**
 
-ECFiler is the first open-source tool for filing documents on CM/ECF. It uses Playwright browser automation (CM/ECF has no filing API) with Claude AI for intelligent event code selection, redaction scanning, and filing validation. Every filing requires explicit attorney confirmation before submission.
+ECFiler is an open-source tool for preparing and filing documents on CM/ECF. The hosted app **prepares, validates, and stages** filings — the human files. The CLI additionally automates the mechanical filing steps with Playwright (CM/ECF has no filing API), running **entirely on your own machine with your credentials in your OS keyring — no server ever sees a court password**. Every filing requires explicit attorney confirmation before submission, and every filing action is recorded in an append-only, hash-chained attestation log.
 
 ## Features
 
 - **Smart Filing** — drop a PDF, AI extracts case, court, party, event type. Zero form-filling.
-- **150 federal courts** — 94 district, 43 bankruptcy, 13 appellate
+- **207 federal courts** — 97 district, 94 bankruptcy, 16 appellate
 - **7 safety gates** — PDF validation, redaction scan, event code verification, completeness check, attorney CONFIRM, final submit watchdog, receipt capture
 - **Web UI + CLI + API** — three interfaces, same engine
 - **Claude AI** — document analysis, event code matching, redaction scanning, filing validation
@@ -117,13 +117,13 @@ brew install ghostscript tesseract     # macOS
 
 ## How It Works
 
-1. **Select court** — choose from 150 federal courts
+1. **Select court** — choose from 207 federal courts
 2. **Enter case number** — looked up on PACER
 3. **Describe your filing** — Claude suggests the right event code
 4. **Select documents** — PDF validation + redaction scanning
 5. **Pre-flight checks** — catches errors before browser starts
 6. **Review** — full summary, type CONFIRM to proceed
-7. **File** — Playwright submits to CM/ECF, captures receipt
+7. **File (CLI, local)** — Playwright submits to CM/ECF from your machine, captures the receipt and NEF; the hosted app instead stages a validated package for you to file
 
 ## Safety
 
@@ -137,10 +137,11 @@ Additional protections:
 - PDF validation blocks invalid documents
 - Claude scans for unredacted personal identifiers (Rule 5.2)
 - Claude validates event code matches document content
-- Sealed/restricted document warnings
+- Sealed/restricted hard-fail: a sealed document can never silently file publicly (see docs/sealed-document-policy.md); the hosted service refuses sealed content entirely
 - Browser retry with error recovery for transient failures
-- All filings logged to SQLite audit trail
-- Screenshots captured at every step
+- All filings logged to SQLite audit trail + append-only hash-chained attestation records (`ecfiler audit verify`)
+- Screenshots captured at every step; audit traces start only after login so credential entry is never captured
+- All court-facing traffic identifies itself with an honest ECFiler User-Agent, is rate-limited, and bulk operations honor the AO's 6pm–6am CT guidance
 
 ## API
 
@@ -151,7 +152,8 @@ Start the server with `ecfiler serve`, then visit http://localhost:8000/docs for
 | `/` | GET | Web UI |
 | `/api/file` | POST | Smart filing — upload PDF, get filing preview |
 | `/api/file/multi` | POST | Multi-document smart filing |
-| `/api/filing/submit` | POST | Submit to CM/ECF |
+| `/api/filing/stage` | POST | Stage a validated filing package (the human files) |
+| `/api/filing/stage/{code}` | GET | Fetch a staged package (used by `ecfiler stage-pull`) |
 | `/api/validate` | POST | PDF validation |
 | `/api/redaction-scan` | POST | Rule 5.2 scanning |
 | `/api/certificate-of-service` | POST | Generate certificate of service |
@@ -167,14 +169,14 @@ Start the server with `ecfiler serve`, then visit http://localhost:8000/docs for
 
 | Type | Count | Examples |
 |------|-------|---------|
-| District | 94 | S.D.N.Y. (`nysd`), C.D. Cal. (`cacd`), N.D. Ill. (`ilnd`) |
-| Bankruptcy | 43 | S.D.N.Y. (`nysb`), C.D. Cal. (`cacb`), D. Del. (`deb`) |
-| Appellate | 13 | 2nd Cir. (`ca2`), 9th Cir. (`ca9`), D.C. Cir. (`cadc`) |
+| District | 97 | S.D.N.Y. (`nysd`), C.D. Cal. (`cacd`), N.D. Ill. (`ilnd`) |
+| Bankruptcy | 94 | S.D.N.Y. (`nysb`), C.D. Cal. (`cacb`), D. Del. (`deb`) |
+| Appellate | 16 | 2nd Cir. (`ca2`), 9th Cir. (`ca9`), D.C. Cir. (`cadc`) |
 
 ## Development
 
 ```bash
-python -m pytest tests/ -v     # Run all 206 tests
+python -m pytest tests/ -v     # Run the test suite (~400 tests)
 ecfiler check                  # Verify dev setup
 ```
 

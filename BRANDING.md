@@ -2,11 +2,11 @@
 
 ## Positioning
 
-**One-liner:** Open-source automated filing for Federal CM/ECF courts.
+**One-liner:** Open-source filing preparation and locally-controlled automation for Federal CM/ECF courts.
 
 **Tagline:** File with confidence. File with code you can read.
 
-**Elevator pitch:** ECFiler is the first open-source tool that automates document filing on federal court CM/ECF systems. It uses AI to match your filing to the right event code, scans for redaction issues, validates your documents, and never submits without your explicit approval. Unlike $500/month proprietary tools, ECFiler's code is fully auditable — because when your bar license is on the line, you should be able to see exactly what's happening.
+**Elevator pitch:** ECFiler is an open-source tool that prepares, validates, and stages filings for federal court CM/ECF systems — and, from your own machine, automates the mechanical filing steps under your control. It uses AI to match your filing to the right event code, scans for redaction issues, validates your documents, and never submits without your explicit approval. Your court credentials never leave your machine. Unlike $500/month proprietary tools, ECFiler's code is fully auditable — because when your bar license is on the line, you should be able to see exactly what's happening.
 
 ## Voice & Tone
 
@@ -22,6 +22,8 @@
 
 ### Don't say:
 - "ECFiler automatically files your documents!" (misleading — attorney must confirm)
+- "Your credentials, encrypted on our servers" (we do not have them — that is the point)
+- "Automated CM/ECF submission" as a hosted feature (the hosted product stages; the human files)
 - "Never worry about filing again!" (they should still review)
 - "AI-powered legal assistant" (sounds like UPL)
 
@@ -34,10 +36,10 @@
 "Self-hosted, auditable, and extensible. ECFiler integrates into your existing workflow without vendor lock-in. Every filing is logged, every action has a screenshot."
 
 ### For legal tech community:
-"The first open-source CM/ECF filing tool. Built on Playwright + Claude API. 150 federal courts. Contributions welcome."
+"An open-source CM/ECF filing-preparation tool. Built on Playwright + Claude API. 207 federal courts. Contributions welcome."
 
 ### For bar associations / ethics committees:
-"ECFiler is a mechanical filing assistant, not a legal advisor. It validates documents and automates form submission. The attorney reviews and confirms every filing. All actions are logged for audit."
+"ECFiler is a mechanical filing assistant, not a legal advisor. It validates documents and automates mechanical form steps locally, under attorney supervision, with credentials that never leave the attorney's machine. The attorney reviews and confirms every filing. Every filing action is recorded in an append-only, hash-chained attestation log."
 
 ## Differentiation
 
@@ -49,8 +51,9 @@
 | Redaction scanning | ✓ | ✗ | Limited |
 | Attorney confirmation required | ✓ | N/A | N/A |
 | Self-hosted option | ✓ | ✗ | ✗ |
-| All 150 federal courts | ✓ | ✓ | ✓ |
-| Filing automation | ✓ | ✗ (read-only) | ✓ |
+| All 207 federal courts | ✓ | ✓ | ✓ |
+| Local attorney-controlled filing automation | ✓ | ✗ (read-only) | ✓ |
+| Zero server credential custody | ✓ | ✓ | ? |
 | Cost | Free | ~$200-500/mo | ~$300-600/mo |
 
 ## Target Audiences (Priority Order)

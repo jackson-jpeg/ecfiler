@@ -3,14 +3,15 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import { COURT_COUNT, PRO_PRICE } from "@/lib/facts";
 
 export const metadata: Metadata = {
-  title: "ECFiler — AI-Powered Federal Court Filing",
-  description: "Drop a PDF, AI extracts case, court, event code, and party. Review and file on CM/ECF with one click. 207 federal courts supported.",
-  keywords: ["CM/ECF", "federal court filing", "PACER", "e-filing", "legal tech", "court automation"],
+  title: "ECFiler — Federal Court Filing Preparation",
+  description: `Drop a PDF, AI extracts case, court, event code, and party. Review a validated filing package and submit it yourself on CM/ECF. ${COURT_COUNT} federal courts supported.`,
+  keywords: ["CM/ECF", "federal court filing", "PACER", "e-filing", "legal tech", "filing preparation"],
   openGraph: {
-    title: "ECFiler — The Intelligent Way to File on CM/ECF",
-    description: "Drop a PDF, AI extracts everything. Review what CM/ECF will receive. Confirm with one click. 207 federal courts.",
+    title: "ECFiler — The Intelligent Way to Prepare CM/ECF Filings",
+    description: `Drop a PDF, AI extracts everything. Review what CM/ECF will receive, then submit it yourself. ${COURT_COUNT} federal courts.`,
     url: "https://ecfiler.com",
     siteName: "ECFiler",
     type: "website",
@@ -18,8 +19,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ECFiler — AI-Powered Federal Court Filing",
-    description: "Drop a PDF, AI extracts everything. File on CM/ECF with one click. 207 federal courts.",
+    title: "ECFiler — Federal Court Filing Preparation",
+    description: `Drop a PDF, AI extracts everything. Stage a validated filing package for CM/ECF. ${COURT_COUNT} federal courts.`,
   },
   metadataBase: new URL("https://ecfiler.com"),
 };
@@ -51,15 +52,15 @@ export default function RootLayout({
                 "name": "ECFiler",
                 "applicationCategory": "LegalService",
                 "operatingSystem": "Web",
-                "description": "AI-powered tool for filing documents on federal CM/ECF court systems. Supports all 207 federal courts.",
+                "description": `AI-powered tool that prepares, validates, and stages documents for filing on federal CM/ECF court systems. The attorney reviews and submits every filing. Supports all ${COURT_COUNT} federal courts.`,
                 "url": "https://ecfiler.com",
                 "offers": [
                   { "@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free tier" },
-                  { "@type": "Offer", "price": "99", "priceCurrency": "USD", "description": "Pro tier per attorney per month" },
+                  { "@type": "Offer", "price": String(PRO_PRICE), "priceCurrency": "USD", "description": "Pro tier per attorney per month" },
                 ],
                 "featureList": [
                   "AI document analysis",
-                  "207 federal courts",
+                  `${COURT_COUNT} federal courts`,
                   "Event code matching",
                   "Rule 5.2 redaction scanning",
                   "PDF validation",
