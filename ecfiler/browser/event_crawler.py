@@ -13,7 +13,7 @@ crawled catalogs can drop in alongside the curated ones.
 from __future__ import annotations
 
 import json
-import time
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -96,6 +96,11 @@ class EventCrawler:
         self.profile = profile
         self.session = session
         self.delay = self.REQUEST_DELAY_SECONDS if delay is None else delay
+        # Jittered pacing per court; the shared instance also caps concurrency
+        # if multiple crawls run in one process.
+        from ecfiler.browser.throttle import Throttle
+
+        self._throttle = Throttle(min_interval=self.delay, jitter=0.5)
 
     def login(self, username: str, password: str) -> bool:
         """Log into the training DB. Uses the same PACER CSO form as prod."""
@@ -126,7 +131,7 @@ class EventCrawler:
 
             links = self._collect_event_links(page)
             for href, label in links:
-                time.sleep(self.delay)
+                self._throttle.pace(self.profile.court_id)
                 try:
                     events = self._enumerate_events_on_page(page, training_base, href)
                     for code, desc in events:

@@ -19,6 +19,25 @@ SCREENSHOTS_DIR = CONFIG_DIR / "screenshots"
 TRACES_DIR = CONFIG_DIR / "traces"
 
 
+def _safe_label(label: str) -> str:
+    """Filesystem-safe trace label (case numbers contain ':' and '/')."""
+    import re as _re
+
+    return _re.sub(r"[^A-Za-z0-9._-]+", "-", label).strip("-") or "session"
+
+
+def _prune_traces(keep: int) -> None:
+    """Keep only the newest `keep` trace archives."""
+    traces = sorted(
+        TRACES_DIR.glob("trace_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True
+    )
+    for old in traces[keep:]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
+
+
 class BrowserSession:
     """Manages a Playwright browser session for CM/ECF filing.
 
@@ -36,6 +55,8 @@ class BrowserSession:
         self._context: BrowserContext | None = None
         self._page: Page | None = None
         self._screenshot_count = 0
+        self._tracing_active = False
+        self._trace_label = "session"
 
         SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
         TRACES_DIR.mkdir(parents=True, exist_ok=True)
@@ -56,21 +77,34 @@ class BrowserSession:
             timeout=30_000,
             args=args,
         )
+        from ecfiler.useragent import USER_AGENT
+
         self._context = self._browser.new_context(
             viewport={"width": 1280, "height": 900},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
+            # ECFiler identifies itself honestly to the courts — never a
+            # spoofed browser string.
+            user_agent=USER_AGENT,
         )
         # Set default timeouts for all operations in this context
         self._context.set_default_timeout(self.DEFAULT_TIMEOUT)
         self._context.set_default_navigation_timeout(self.NAVIGATION_TIMEOUT)
-        # Start tracing for debug/audit
-        self._context.tracing.start(screenshots=True, snapshots=True)
+        # NOTE: audit tracing is NOT started here. Call begin_audit_trace()
+        # AFTER authentication completes, so credential-entry DOM snapshots
+        # never exist on disk.
         self._page = self._context.new_page()
         return self._page
+
+    def begin_audit_trace(self, label: str) -> None:
+        """Start the per-filing audit trace. Call after login completes.
+
+        The trace is saved by stop() as trace_<label>_<timestamp>.zip and
+        correlates with the filing's attestation record.
+        """
+        if self._context is None:
+            raise RuntimeError("Browser session not started.")
+        self._trace_label = _safe_label(label)
+        self._context.tracing.start(screenshots=True, snapshots=True)
+        self._tracing_active = True
 
     @property
     def page(self) -> Page:
@@ -79,23 +113,45 @@ class BrowserSession:
         return self._page
 
     def login_with_token(self, token: str, ecf_url: str) -> bool:
-        """Log into CM/ECF using a PACER API token.
+        """Log into CM/ECF using a PACER CSO token.
 
-        This bypasses the browser login form and MFA entirely by using
-        the login.pl?csession= endpoint that CM/ECF uses internally
-        after CSO authentication.
+        Primary mechanism: inject the NextGenCSO cookie and load the court's
+        main page, keeping the token out of URLs (URLs land in server access
+        logs, browser history, and Referer headers; cookies don't). Falls back
+        to the login.pl?csession= endpoint — confirmed working against real
+        SDNY CM/ECF (March 2026) — if the cookie route doesn't authenticate.
 
-        Tested working against real SDNY CM/ECF (March 2026).
+        The token value itself is never logged (see TokenRedactionFilter for
+        the backstop).
 
         Returns True if CM/ECF main menu loaded.
         """
+        from urllib.parse import urlparse
+
         page = self.page
+
+        def _menu_loaded() -> bool:
+            body = page.inner_text("body")
+            return any(
+                w in body for w in ["Query", "Civil", "Reports", "Utilities", "Log Out"]
+            )
+
+        # Primary: cookie injection, token never in a URL
+        domain = urlparse(ecf_url).hostname or ""
+        if domain:
+            self.inject_pacer_token(token, domain)
+            page.goto(f"{ecf_url}/cgi-bin/login.pl")
+            page.wait_for_load_state("networkidle")
+            if _menu_loaded():
+                logger.info("Cookie token login succeeded — CM/ECF main menu loaded")
+                return True
+            logger.info("Cookie token login did not authenticate; trying csession URL")
+
+        # Fallback: csession URL (the endpoint CM/ECF itself uses post-CSO)
         page.goto(f"{ecf_url}/cgi-bin/login.pl?csession={token}")
         page.wait_for_load_state("networkidle")
-        logger.info("Token login URL: %s", page.url[:80])
 
-        body = page.inner_text("body")
-        logged_in = any(w in body for w in ["Query", "Civil", "Reports", "Utilities", "Log Out"])
+        logged_in = _menu_loaded()
         if logged_in:
             logger.info("Token login succeeded — CM/ECF main menu loaded")
         else:
@@ -279,11 +335,17 @@ class BrowserSession:
     def stop(self) -> None:
         """Save trace and close browser."""
         if self._context:
-            try:
-                trace_path = TRACES_DIR / "latest_trace.zip"
-                self._context.tracing.stop(path=str(trace_path))
-            except Exception:
-                pass
+            if self._tracing_active:
+                try:
+                    from datetime import datetime
+
+                    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    trace_path = TRACES_DIR / f"trace_{self._trace_label}_{stamp}.zip"
+                    self._context.tracing.stop(path=str(trace_path))
+                    _prune_traces(keep=20)
+                except Exception:
+                    pass
+                self._tracing_active = False
             self._context.close()
 
         if self._browser:

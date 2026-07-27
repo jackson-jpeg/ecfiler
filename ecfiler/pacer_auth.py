@@ -13,6 +13,7 @@ import httpx
 import keyring
 
 from ecfiler.logging import get_logger
+from ecfiler.useragent import USER_AGENT
 
 logger = get_logger(__name__)
 
@@ -89,6 +90,7 @@ class PacerAuth:
                     headers={
                         "Content-Type": "application/json",
                         "Accept": "application/json",
+                        "User-Agent": USER_AGENT,
                     },
                 )
                 response.raise_for_status()

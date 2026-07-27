@@ -56,8 +56,8 @@ def setup(ctx: click.Context) -> None:
     if click.confirm("  Test authentication with PACER?", default=True):
         console.print("  [dim]Authenticating...[/dim]")
         try:
-            token = auth.authenticate()
-            console.print(f"  [green]✓[/green] Authentication successful (token: {token.token[:12]}...)")
+            auth.authenticate()
+            console.print("  [green]✓[/green] Authentication successful")
         except Exception as e:
             console.print(f"  [red]✗[/red] Authentication failed: {e}")
         finally:
@@ -637,6 +637,11 @@ def run_mcp_server() -> None:
 @click.option("--output-dir", "-o", type=click.Path(), default="ecfiler/courts/data/event_codes", help="Output directory for catalog JSON")
 @click.option("--delay", type=float, default=1.0, help="Seconds between event-picker requests (default: 1.0)")
 @click.option("--headful", is_flag=True, help="Show the browser while crawling")
+@click.option(
+    "--allow-peak",
+    is_flag=True,
+    help="Run outside the AO's requested 6pm-6am CT bulk window (use sparingly)",
+)
 def crawl_events(
     court_id: str,
     username: str,
@@ -645,6 +650,7 @@ def crawl_events(
     output_dir: str,
     delay: float,
     headful: bool,
+    allow_peak: bool,
 ) -> None:
     """Enumerate all event codes from a court's CM/ECF training database.
 
@@ -661,6 +667,17 @@ def crawl_events(
     from ecfiler.courts.registry import CourtRegistry
 
     console = Console()
+
+    from ecfiler.browser.throttle import is_bulk_window_open
+
+    if not is_bulk_window_open() and not allow_peak:
+        console.print(
+            "[yellow]Bulk crawling runs 6pm-6am Central per the AO's guidance for "
+            "scripted retrieval. Re-run within that window, or pass --allow-peak "
+            "if this crawl is genuinely time-sensitive.[/yellow]"
+        )
+        raise click.Abort()
+
     registry = CourtRegistry()
     court = registry.get(court_id)
     profile = court.profile

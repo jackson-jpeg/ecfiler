@@ -862,6 +862,10 @@ class FilingWorkflow:
 
             page = browser.page
 
+            # Start the audit trace only now — after authentication — so
+            # credential-entry snapshots never exist on disk.
+            browser.begin_audit_trace(self.filing.case.case_number)
+
             from ecfiler.browser.recovery import (
                 check_page_state,
                 retry_on_error,

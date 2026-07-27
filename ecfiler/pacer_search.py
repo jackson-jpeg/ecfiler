@@ -114,16 +114,21 @@ class PacerSearch:
         return results[0] if results else None
 
     def _search(self, endpoint: str, params: dict[str, str]) -> list[CaseResult]:
-        """Execute a PCL API search."""
+        """Execute a PCL API search — paced and identified."""
+        from ecfiler.browser.throttle import DEFAULT_THROTTLE
+        from ecfiler.useragent import USER_AGENT
+
         try:
-            response = self._client.get(
-                f"{self.base_url}/{endpoint}",
-                params=params,
-                headers={
-                    "Accept": "application/json",
-                    "X-NEXT-GEN-CSO": self.auth_token,
-                },
-            )
+            with DEFAULT_THROTTLE.slot("pcl"):
+                response = self._client.get(
+                    f"{self.base_url}/{endpoint}",
+                    params=params,
+                    headers={
+                        "Accept": "application/json",
+                        "X-NEXT-GEN-CSO": self.auth_token,
+                        "User-Agent": USER_AGENT,
+                    },
+                )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
