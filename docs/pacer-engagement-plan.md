@@ -1,5 +1,17 @@
 # PACER / AO Engagement + Full Federal Court Knowledge
 
+> **SUPERSESSION NOTICE (2026-07-27).** Sections A.2–A.4 of this document are
+> superseded by the federal engagement strategy in `docs/outreach/` (C1–C6) and
+> `docs/credential-architecture.md`. The A.2 "ask for confirmation" letter is the
+> exact move the new strategy forbids: it petitions the AO for a blessing it cannot
+> give, invites documented objection, and was premised on a credential-custody
+> architecture that has since been removed. Post-2025-breach, during an active
+> CM/ECF replacement program, the viable posture is contributing requirements as a
+> practitioner (see `docs/outreach/c4-white-paper.md`), not seeking permission for
+> browser automation. Track A.1 (PCL API), Track B (Free Law Project), Track C
+> (bar ethics opinion), Track D (compliance memo), Track E (court corpus), the
+> budget, and the risk register remain valid and are referenced by the new plan.
+
 ## Goal
 
 Secure legitimacy, technical access, and comprehensive data for ecfiler:
@@ -30,18 +42,18 @@ Pre-launch. Solo-attorney audience. We have time and no customers yet — spend 
 - Use for: live case validation, docket number normalization, court-of-origin detection.
 - **Deliverable**: working PCL integration in `ecfiler/` with rate limiting + caching. Target ~1 week of engineering.
 
-### A.2 AO vendor awareness letter
+### A.2 AO vendor awareness letter — **SUPERSEDED, do not send** (see notice at top)
 - Write a short letter introducing ecfiler: what it does, attorney-in-the-loop safety model (your 7-gate system, encryption, attestation), who you are.
 - **Ask**: confirmation that PACER account usage and CM/ECF filing-via-browser-automation-with-attorney-attestation is consistent with AO terms, OR guidance on what adjustments would make it so.
 - **Expected response**: AO will not endorse but will usually not object either. A non-objection email is a valuable asset.
 - Route: PSC first, then CM/ECF Working Group if they redirect.
 - **Deliverable**: paper trail regardless of response.
 
-### A.3 CM/ECF vendor listing
+### A.3 CM/ECF vendor listing — **SUPERSEDED** (folded into C2's narrow questions)
 - AO maintains a list of third-party CM/ECF-integrated tools for the **court-side** (Tyler, etc.). There's no official "filer-side" vendor list today.
 - Long shot, but worth asking in A.2 whether any listing process exists for filer-side tools — if yes, apply; if no, you've established the precedent question on record.
 
-### A.4 Training-database access confirmation
+### A.4 Training-database access confirmation — **SUPERSEDED as an A.2 rider; ask PSC directly if/when Track E scales beyond spot crawls**
 - Before the systematic scrape in Track E, confirm in the A.2 letter that using per-court training DBs to extract event-code catalogs for a compliance-assistance tool is acceptable. This is the lowest-risk variant of "we're scraping federal courts" that we can pitch.
 
 ---
