@@ -14,10 +14,12 @@ import os
 import tempfile
 from pathlib import Path
 
+import jwt
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from jwt import PyJWKClient
 from pydantic import BaseModel
 
 from ecfiler.logging import get_logger
@@ -30,6 +32,28 @@ STATIC_DIR = Path(__file__).parent / "static"
 _allowed_origins = os.environ.get("ECFILER_ALLOWED_ORIGINS", "http://localhost:3000")
 ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins.split(",") if o.strip()]
 
+
+def validate_auth_config(env: dict[str, str] | None = None) -> None:
+    """Fail fast on a misconfigured server rather than degrading to weaker auth.
+
+    Either CLERK_ISSUER must be set (production: verified Clerk JWTs) or
+    ECFILER_DEV_AUTH=1 must be set explicitly (local development: trusts the
+    X-User-Id header). Missing config must never silently mean "unauthenticated".
+    """
+    env = os.environ if env is None else env
+    if env.get("CLERK_ISSUER", "").strip():
+        return
+    if env.get("ECFILER_DEV_AUTH", "") == "1":
+        return
+    raise RuntimeError(
+        "ECFiler API auth is not configured. Set CLERK_ISSUER to your Clerk issuer "
+        "URL, or set ECFILER_DEV_AUTH=1 to explicitly opt into unauthenticated "
+        "local development mode."
+    )
+
+
+validate_auth_config()
+
 app = FastAPI(
     title="ECFiler API",
     description="AI-native filing for Federal CM/ECF courts",
@@ -40,8 +64,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-User-Id"],
 )
 
 
@@ -67,37 +91,31 @@ async def get_current_user(
     authorization: str = Header("", alias="Authorization"),
     x_user_id: str = Header("", alias="X-User-Id"),
 ) -> str:
-    """Extract authenticated user ID.
+    """Extract the authenticated user ID, or fail with 401.
 
-    Checks for a Clerk JWT in the Authorization header first.
-    Falls back to X-User-Id header for local/CLI use.
+    Production: a verified Clerk JWT in the Authorization header is the only
+    accepted credential. The X-User-Id header is honored solely when
+    ECFILER_DEV_AUTH=1 was set explicitly — it is a dev convenience, never a
+    fallback for missing or invalid tokens.
     """
-    # Try JWT token first
     if authorization.startswith("Bearer "):
-        token = authorization[7:]
-        user_id = _verify_clerk_token(token)
+        user_id = _verify_clerk_token(authorization[7:])
         if user_id:
             return user_id
 
-    # Fallback to X-User-Id for local/CLI mode
-    return x_user_id
+    if os.environ.get("ECFILER_DEV_AUTH", "") == "1" and x_user_id:
+        return x_user_id
+
+    raise HTTPException(401, "Authentication required")
 
 
 def _verify_clerk_token(token: str) -> str | None:
     """Verify a Clerk JWT and return the user ID (sub claim).
 
-    Returns None if verification fails or pyjwt is not installed.
+    Returns None if verification fails.
     """
-    try:
-        import jwt
-        from jwt import PyJWKClient
-    except ImportError:
-        logger.debug("pyjwt not installed — skipping JWT verification")
-        return None
-
     clerk_issuer = os.environ.get("CLERK_ISSUER", "")
     if not clerk_issuer:
-        # No issuer configured — can't verify
         return None
 
     try:
@@ -115,12 +133,6 @@ def _verify_clerk_token(token: str) -> str | None:
     except Exception:
         logger.debug("Clerk JWT verification failed", exc_info=True)
         return None
-
-
-# --- Rate limiting ---
-
-_user_request_counts: dict[str, int] = {}
-MAX_REQUESTS_PER_USER = 5  # Max concurrent requests per user on expensive endpoints
 
 
 @app.get("/", include_in_schema=False)

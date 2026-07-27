@@ -79,7 +79,7 @@ class TestDraftsAPI:
         from fastapi.testclient import TestClient
         from ecfiler.api.app import app
 
-        client = TestClient(app)
+        client = TestClient(app, headers={"X-User-Id": "test-user"})
         res = client.get("/api/drafts")
         assert res.status_code == 200
         assert isinstance(res.json(), list)
@@ -88,6 +88,6 @@ class TestDraftsAPI:
         from fastapi.testclient import TestClient
         from ecfiler.api.app import app
 
-        client = TestClient(app)
+        client = TestClient(app, headers={"X-User-Id": "test-user"})
         res = client.delete("/api/drafts/nonexistent")
         assert res.status_code == 404

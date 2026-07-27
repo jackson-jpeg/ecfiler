@@ -12,7 +12,8 @@ from ecfiler.api.app import app
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(app)
+    # Dev-auth mode (see conftest.py): user-scoped endpoints need X-User-Id.
+    return TestClient(app, headers={"X-User-Id": "test-user"})
 
 
 @pytest.fixture

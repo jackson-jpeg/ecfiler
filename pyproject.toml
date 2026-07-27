@@ -29,6 +29,7 @@ web = [
     "fastapi>=0.100",
     "uvicorn[standard]>=0.24",
     "python-multipart>=0.0.6",
+    "PyJWT[crypto]>=2.8.0",
 ]
 dev = [
     "pytest>=8.0",
