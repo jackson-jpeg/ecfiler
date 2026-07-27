@@ -63,7 +63,6 @@ def run_diagnostics(config_path: str | None = None) -> DiagnosticReport:
     report.checks.append(_check_event_codes())
     report.checks.append(_check_history_db())
     report.checks.append(_check_disk_space())
-    report.checks.append(_check_encryption_key())
 
     return report
 
@@ -296,12 +295,3 @@ def _check_disk_space() -> CheckResult:
         return CheckResult("disk_space", False, f"Cannot check disk space: {e}")
 
 
-def _check_encryption_key() -> CheckResult:
-    """Check that the encryption key is configured for credential storage."""
-    key = os.environ.get("ECFILER_ENCRYPTION_KEY", "")
-    if key:
-        return CheckResult("encryption_key", True, "Encryption key set (PACER credential storage ready)")
-    return CheckResult(
-        "encryption_key", False, "ECFILER_ENCRYPTION_KEY not set",
-        fix="export ECFILER_ENCRYPTION_KEY=$(python -c \"import secrets; print(secrets.token_urlsafe(32))\")",
-    )

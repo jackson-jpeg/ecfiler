@@ -1173,135 +1173,72 @@ def compress_old_filings() -> dict:
     return {"compressed": count}
 
 
-class PacerCredentialRequest(BaseModel):
-    username: str
-    password: str = ""
-    user_id: str = ""
+# --- Server-side PACER credential storage: removed 2026-07 ---
+#
+# ECFiler no longer accepts, stores, or handles CM/ECF or PACER credentials on
+# any server, consistent with the AO's July 10, 2023 guidance on sharing filer
+# credentials with third-party services. Credentials belong in the OS keyring on
+# the attorney's own machine (see docs/credential-architecture.md). The stub
+# below answers 410 for one release so stale clients fail loudly, and the
+# startup purge removes anything stored under the old model — including the
+# SQLite free pages that would otherwise retain ciphertext after a DROP.
 
 
-class PacerTestRequest(BaseModel):
-    username: str
-    user_id: str = ""
+def purge_stored_pacer_credentials(db_path: Path | None = None) -> int:
+    """Drop the legacy pacer_credentials table and scrub the database file.
+
+    Idempotent; returns the number of purged rows. VACUUM is load-bearing:
+    without it, dropped rows survive in SQLite free pages on disk.
+    """
+    import sqlite3
+    from datetime import datetime, timezone
+
+    from ecfiler.config import CONFIG_DIR
+
+    db_path = db_path or (CONFIG_DIR / "users.db")
+    if not db_path.exists():
+        return 0
+
+    conn = sqlite3.connect(db_path)
+    try:
+        (table_exists,) = conn.execute(
+            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='pacer_credentials'"
+        ).fetchone()
+        if not table_exists:
+            return 0
+        (count,) = conn.execute("SELECT count(*) FROM pacer_credentials").fetchone()
+        conn.execute("DROP TABLE pacer_credentials")
+        conn.commit()
+        conn.isolation_level = None  # VACUUM cannot run inside a transaction
+        conn.execute("VACUUM")
+    finally:
+        conn.close()
+
+    logger.warning(
+        "purged pacer_credentials: %d row(s) at %s",
+        count,
+        datetime.now(timezone.utc).isoformat(),
+    )
+    return count
+
+
+@app.on_event("startup")
+def _purge_legacy_credentials_on_startup() -> None:
+    purge_stored_pacer_credentials()
+
+
+_CREDENTIALS_GONE = (
+    "ECFiler no longer stores PACER or CM/ECF credentials server-side. "
+    "Run 'ecfiler setup' to keep credentials in your own machine's OS keyring. "
+    "See docs/credential-architecture.md."
+)
 
 
 @app.post("/api/pacer/credentials")
-def store_pacer_credentials(request: PacerCredentialRequest) -> dict:
-    """Store PACER credentials (AES-256-GCM encrypted) for a user."""
-    import sqlite3
-    from datetime import datetime
-
-    from ecfiler.config import CONFIG_DIR
-    from ecfiler.security import EncryptionError, encrypt_credential, is_encryption_configured
-
-    if not is_encryption_configured():
-        raise HTTPException(
-            503,
-            "Credential storage requires ECFILER_ENCRYPTION_KEY to be set on the server.",
-        )
-
-    if not request.user_id:
-        raise HTTPException(400, "user_id is required")
-
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    db_path = CONFIG_DIR / "users.db"
-
-    try:
-        password_encrypted = encrypt_credential(request.password, request.user_id) if request.password else ""
-    except EncryptionError as exc:
-        raise HTTPException(500, f"Encryption failed: {exc}")
-
-    with sqlite3.connect(db_path) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS pacer_credentials (
-                user_id TEXT PRIMARY KEY,
-                username TEXT NOT NULL,
-                password_encrypted TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        """)
-        conn.execute("""
-            INSERT OR REPLACE INTO pacer_credentials (user_id, username, password_encrypted, created_at)
-            VALUES (?, ?, ?, ?)
-        """, (request.user_id, request.username, password_encrypted, datetime.now().isoformat()))
-        conn.commit()
-
-    return {"status": "ok", "username": request.username}
-
-
 @app.get("/api/pacer/credentials")
-def get_pacer_credentials(
-    user_id: str = Depends(get_current_user),
-) -> dict:
-    """Check whether PACER credentials are stored for a user.
-
-    Never returns the actual password.
-    """
-    import sqlite3
-
-    from ecfiler.config import CONFIG_DIR
-
-    if not user_id:
-        raise HTTPException(400, "Authentication required")
-
-    db_path = CONFIG_DIR / "users.db"
-    if not db_path.exists():
-        return {"username": "", "has_password": False}
-
-    with sqlite3.connect(db_path) as conn:
-        conn.row_factory = sqlite3.Row
-        row = conn.execute(
-            "SELECT username, password_encrypted FROM pacer_credentials WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()
-
-    if not row:
-        return {"username": "", "has_password": False}
-
-    return {
-        "username": row["username"],
-        "has_password": bool(row["password_encrypted"]),
-    }
-
-
 @app.post("/api/pacer/test")
-def test_pacer_connection(request: PacerTestRequest) -> dict:
-    """Test PACER authentication by verifying stored credentials can be decrypted."""
-    import sqlite3
-
-    from ecfiler.config import CONFIG_DIR
-    from ecfiler.security import EncryptionError, decrypt_credential, is_encryption_configured
-
-    if not is_encryption_configured():
-        return {"ok": False, "message": "Encryption key not configured on server"}
-
-    user_id = request.user_id
-    if not user_id:
-        return {"ok": False, "message": "user_id is required"}
-
-    db_path = CONFIG_DIR / "users.db"
-    if not db_path.exists():
-        return {"ok": False, "message": "No credentials stored"}
-
-    with sqlite3.connect(db_path) as conn:
-        conn.row_factory = sqlite3.Row
-        row = conn.execute(
-            "SELECT username, password_encrypted FROM pacer_credentials WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()
-
-    if not row:
-        return {"ok": False, "message": "No credentials found for this user"}
-
-    if not row["password_encrypted"]:
-        return {"ok": False, "message": "No password stored"}
-
-    # Validate that decryption succeeds (proves the key is correct)
-    try:
-        decrypt_credential(row["password_encrypted"], user_id)
-    except EncryptionError:
-        return {"ok": False, "message": "Credential decryption failed — encryption key may have changed"}
-
-    return {"ok": True, "message": f"Credentials verified for PACER user '{row['username']}'"}
+def pacer_credentials_gone() -> None:
+    raise HTTPException(410, _CREDENTIALS_GONE)
 
 
 

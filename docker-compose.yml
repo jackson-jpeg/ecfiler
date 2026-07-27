@@ -5,7 +5,6 @@ services:
       - "8000:8000"
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - ECFILER_ENCRYPTION_KEY=${ECFILER_ENCRYPTION_KEY}
       - ECFILER_ALLOWED_ORIGINS=${ECFILER_ALLOWED_ORIGINS:-http://localhost:3000}
     volumes:
       - ecfiler-data:/data/.ecfiler
