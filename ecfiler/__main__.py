@@ -629,6 +629,81 @@ def run_mcp_server() -> None:
     mcp_main()
 
 
+@main.group("audit")
+def audit() -> None:
+    """Inspect the append-only attestation log."""
+
+
+@audit.command("verify")
+def audit_verify() -> None:
+    """Verify the attestation hash chain end to end."""
+    from rich.console import Console
+
+    from ecfiler.storage.attestation import AttestationLog
+
+    console = Console()
+    log = AttestationLog()
+    ok, problems = log.verify_chain()
+    if ok:
+        console.print(
+            f"[green]✓[/green] Attestation chain intact — head [bold]{log.chain_head()[:16]}…[/bold]"
+        )
+    else:
+        console.print("[red]✗ Attestation chain FAILED verification:[/red]")
+        for p in problems:
+            console.print(f"  - {p}")
+        raise click.Abort()
+
+
+@main.command("stage-pull")
+@click.argument("stage_code")
+@click.option(
+    "--server",
+    envvar="ECFILER_SERVER",
+    default="https://ecfiler-production.up.railway.app",
+    help="ECFiler server that staged the package (env: ECFILER_SERVER)",
+)
+@click.option(
+    "--token",
+    envvar="ECFILER_SESSION_TOKEN",
+    default="",
+    help="Your ECFiler web session token, for authenticating the pull",
+)
+def stage_pull(stage_code: str, server: str, token: str) -> None:
+    """Pull a filing package staged on ecfiler.com into a local draft.
+
+    The hosted app prepares and validates; filing happens here, on your
+    machine, with your credentials. This command bridges the two.
+    """
+    import httpx
+    from rich.console import Console
+
+    from ecfiler.filing.drafts import save_draft
+    from ecfiler.useragent import USER_AGENT
+
+    console = Console()
+    headers = {"User-Agent": USER_AGENT}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    url = f"{server.rstrip('/')}/api/filing/stage/{stage_code}"
+    try:
+        resp = httpx.get(url, headers=headers, timeout=30)
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        console.print(f"[red]Server refused the pull: {e.response.status_code}[/red]")
+        raise click.Abort()
+    except httpx.RequestError as e:
+        console.print(f"[red]Cannot reach {server}: {e}[/red]")
+        raise click.Abort()
+
+    package = resp.json()
+    name = f"staged_{package.get('case_number', stage_code)}"
+    path = save_draft(name, package, overwrite=True)
+    console.print(f"[green]✓[/green] Staged package saved as draft: [bold]{path}[/bold]")
+    console.print("  Review it, then file with the interactive workflow: [bold]ecfiler[/bold]")
+
+
 @main.command("crawl-events")
 @click.argument("court_id")
 @click.option("--username", envvar="PACER_USERNAME", required=True, help="PACER username (env: PACER_USERNAME)")

@@ -141,6 +141,11 @@ class TestHostedServiceRefusesSealed:
                 "filing_party_name": "Smith",
                 "filing_party_role": "plaintiff",
                 "document_path": "/tmp/test.pdf",
+                "attestation": {
+                    "attested": True,
+                    "attestor_name": "Jane Doe, Esq.",
+                    "attestation_text": "I have reviewed and take responsibility.",
+                },
             },
         )
         assert response.status_code == 200

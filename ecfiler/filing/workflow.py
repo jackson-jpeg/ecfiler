@@ -1009,17 +1009,65 @@ class FilingWorkflow:
             court.click_final_submit(page)
             browser.screenshot("submitted")
 
-            # Capture receipt
+            # Capture receipt — filename carries the real docket number when
+            # the receipt page yields one, never a literal "pending"
+            from datetime import datetime as _dt
+
             receipt_info = court.get_receipt_info(page)
-            receipt_path = browser.save_receipt(
-                self.filing.case.case_number, "pending"
+            docket_number = receipt_info.get("docket_number") or _dt.now().strftime(
+                "%Y%m%d%H%M%S"
             )
+            receipt_path = browser.save_receipt(
+                self.filing.case.case_number, docket_number
+            )
+
+            # Immutable attestation record: who confirmed, the exact gate
+            # language, the exact form payload, and the NEF text returned.
+            from ecfiler.storage.attestation import AttestationLog
+
+            try:
+                log = AttestationLog()
+                log.record(
+                    kind="submitted",
+                    attestor_name=self.config.attorney.name or "unnamed",
+                    attestation_text=(
+                        "Typed CONFIRM at attorney review (Safety Gate 5) and YES "
+                        "at the CM/ECF final confirmation screen (Safety Gate 6)."
+                    ),
+                    payload={
+                        "court_id": self.filing.court_id,
+                        "case_number": self.filing.case.case_number,
+                        "event_code": self.filing.event.code,
+                        "event_description": self.filing.event.description,
+                        "docket_text": docket_text,
+                        "fee_status": "paid",
+                        "filing_party": (
+                            self.filing.filing_party.party_name
+                            if self.filing.filing_party
+                            else ""
+                        ),
+                        "documents": [d.file_path for d in self.filing.documents],
+                        "sealing": [d.sealing.value for d in self.filing.documents],
+                    },
+                    context_text=confirm_text,
+                    nef_text=receipt_info.get("page_text", ""),
+                    trace_path=f"trace_{self.filing.case.case_number}",
+                )
+                # Anchor the chain outside this machine's database: the current
+                # chain head rides along on the receipt the filer keeps.
+                with open(receipt_path, "a") as rf:
+                    rf.write(
+                        f"\n<!-- ECFiler attestation chain head: {log.chain_head()} -->\n"
+                    )
+            except Exception:
+                logger.exception("Failed to record submission attestation")
 
             self.filing.status = FilingStatus.SUBMITTED
 
             return FilingReceipt(
                 court_id=self.filing.court_id,
                 case_number=self.filing.case.case_number,
+                docket_number=receipt_info.get("docket_number", ""),
                 event_description=self.filing.event.description,
                 confirmation_text=receipt_info.get("page_text", ""),
                 receipt_path=str(receipt_path),

@@ -209,41 +209,60 @@ class TestCertificateEndpoint:
         assert len(response.content) > 100
 
 
-class TestFilingSubmitEndpoint:
-    def test_dry_run_default(self, client: TestClient) -> None:
+_STAGE_PAYLOAD = {
+    "court_id": "nysd",
+    "case_number": "1:24-cv-01234",
+    "event_code": "12",
+    "event_description": "Motion to Dismiss",
+    "filing_party_name": "Smith",
+    "filing_party_role": "plaintiff",
+    "document_path": "/tmp/test.pdf",
+    "attestation": {
+        "attested": True,
+        "attestor_name": "Jane Doe, Esq.",
+        "attestation_text": "I have reviewed and take responsibility.",
+    },
+}
+
+
+class TestFilingStageEndpoint:
+    def test_stage_returns_package(self, client: TestClient) -> None:
+        response = client.post("/api/filing/stage", json=_STAGE_PAYLOAD)
+        assert response.status_code == 200
+        pkg = response.json()
+        assert pkg["stage_code"]
+        assert pkg["court_id"] == "nysd"
+        assert pkg["ecf_login_url"].startswith("https://")
+        assert len(pkg["instructions"]) >= 5
+        assert any("your own credentials" in i for i in pkg["instructions"])
+
+    def test_stage_roundtrip_fetch(self, client: TestClient) -> None:
+        pkg = client.post("/api/filing/stage", json=_STAGE_PAYLOAD).json()
+        fetched = client.get(f"/api/filing/stage/{pkg['stage_code']}")
+        assert fetched.status_code == 200
+        assert fetched.json()["case_number"] == "1:24-cv-01234"
+
+    def test_stage_unknown_code_404(self, client: TestClient) -> None:
+        assert client.get("/api/filing/stage/nonexistent").status_code == 404
+
+    def test_stage_unknown_court_404(self, client: TestClient) -> None:
         response = client.post(
-            "/api/filing/submit",
-            json={
-                "court_id": "nysd",
-                "case_number": "1:24-cv-01234",
-                "event_code": "12",
-                "event_description": "Motion to Dismiss",
-                "filing_party_name": "Smith",
-                "filing_party_role": "plaintiff",
-                "document_path": "/tmp/test.pdf",
-            },
+            "/api/filing/stage", json={**_STAGE_PAYLOAD, "court_id": "zzz"}
         )
+        assert response.status_code == 404
+
+    def test_submit_alias_answers_staged(self, client: TestClient) -> None:
+        """Deprecated /submit endpoint delegates to staging and says so —
+        the old 'submitted'/'dry_run' pretense is gone."""
+        response = client.post("/api/filing/submit", json=_STAGE_PAYLOAD)
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "dry_run"
-        assert "DRY RUN" in data["message"]
+        assert data["status"] == "staged"
+        assert "does not submit" in data["message"]
 
-    def test_explicit_dry_run(self, client: TestClient) -> None:
-        response = client.post(
-            "/api/filing/submit",
-            json={
-                "court_id": "nysd",
-                "case_number": "1:24-cv-01234",
-                "event_code": "12",
-                "event_description": "Motion to Dismiss",
-                "filing_party_name": "Smith",
-                "filing_party_role": "plaintiff",
-                "document_path": "/tmp/test.pdf",
-                "dry_run": True,
-            },
-        )
-        assert response.status_code == 200
-        assert response.json()["status"] == "dry_run"
+    def test_browser_stream_endpoint_gone(self, client: TestClient) -> None:
+        response = client.post("/api/filing/browser-stream", json=_STAGE_PAYLOAD)
+        assert response.status_code in (404, 405)
 
 
 class TestHistoryEndpoint:

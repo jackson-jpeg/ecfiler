@@ -766,8 +766,17 @@ class ExhibitInfo(BaseModel):
     description: str = ""
 
 
+class AttestationInfo(BaseModel):
+    """The human act behind a staging request — recorded, never inferred."""
+
+    attested: bool = False
+    attestor_name: str = ""
+    attestation_text: str = ""
+    client_timestamp: str = ""
+
+
 class FilingSubmitRequest(BaseModel):
-    """Request to submit a prepared filing."""
+    """Request to stage a prepared filing."""
 
     court_id: str
     case_number: str
@@ -783,7 +792,8 @@ class FilingSubmitRequest(BaseModel):
     include_certificate_of_service: bool = False
     exhibits: list[ExhibitInfo] = []
     fee_status: str = "paid"  # "paid" | "waived" | "ifp"
-    dry_run: bool = True  # Default to dry run for safety
+    dry_run: bool = True  # Deprecated: ignored — the hosted service only stages
+    attestation: AttestationInfo | None = None
 
 
 class FilingSubmitResponse(BaseModel):
@@ -876,79 +886,141 @@ async def generate_cos_pdf(request: CertificateRequest) -> FileResponse:
         )
 
 
-@app.post("/api/filing/browser-stream")
-async def stream_browser_view(request: FilingSubmitRequest) -> StreamingResponse:
-    """Stream live browser screenshots as ECFiler navigates CM/ECF.
+# --- Staging: the hosted product prepares; the human files -------------------
+#
+# There is no server-side submission to CM/ECF, and there never was: the
+# previous /api/filing/browser-stream endpoint rendered a synthetic animation
+# of a filing that did not happen. It has been deleted rather than relabeled.
+# What the hosted product actually does — validate, analyze, and assemble a
+# ready-to-file package — is now what it says it does.
 
-    Returns SSE events with base64 screenshots at each step:
-    - event: browser — step with screenshot
-    - event: browser_done — filing complete or failed
 
-    Uses demo mode with rendered screenshots when PACER isn't configured.
-    """
-    from ecfiler.api.browser_demo import stream_demo_filing
+class StagedPackage(BaseModel):
+    """Everything the filer needs to submit the filing themselves."""
 
-    return StreamingResponse(
-        stream_demo_filing(
-            court_id=request.court_id,
-            case_number=request.case_number,
-            event_description=request.event_description,
-            filing_party=request.filing_party_name,
-            is_sealed=request.is_sealed,
-            is_redacted=request.is_redacted,
-            exhibits=[{"label": e.label, "description": e.description} for e in request.exhibits],
+    stage_code: str
+    staged_at: str
+    court_id: str
+    court_name: str
+    ecf_login_url: str
+    ecf_filing_url: str
+    case_number: str
+    event_code: str
+    event_description: str
+    docket_text: str
+    filing_party: str
+    fee_text: str
+    fee_status: str
+    exhibits: list[ExhibitInfo] = []
+    checklist: list[dict] = []
+    instructions: list[str] = []
+
+
+def _build_staged_package(request: FilingSubmitRequest) -> StagedPackage:
+    from datetime import datetime, timezone
+    from secrets import token_urlsafe
+
+    from ecfiler.courts.registry import CourtRegistry
+    from ecfiler.filing.checklist import get_checklist
+    from ecfiler.filing.fees import format_fee, get_fee
+
+    try:
+        court = CourtRegistry().get(request.court_id)
+        profile = court.profile
+    except Exception:
+        raise HTTPException(404, f"Court '{request.court_id}' not found")
+
+    fee = get_fee(request.event_description, profile.court_type)
+    checklist = get_checklist(request.event_description)
+    docket_text = request.event_description
+
+    instructions = [
+        f"Log into CM/ECF for {profile.name} with your own credentials: {profile.login_url}",
+        "Select the filing menu for your case type and enter the case number "
+        f"{request.case_number}.",
+        f"Select the event: {request.event_description}.",
+        f"Select the filing party: {request.filing_party_name} "
+        f"({request.filing_party_role}).",
+        "Upload your main document PDF (the validated file from this session)."
+        + (
+            f" Upload {len(request.exhibits)} attachment(s) with the labels and "
+            "descriptions listed in this package."
+            if request.exhibits
+            else ""
         ),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        f"Confirm the docket text matches: \"{docket_text}\"",
+        f"Set fee status to '{request.fee_status}'"
+        + (f" — expected fee {format_fee(fee)}." if fee else "."),
+        "Review the court's confirmation screen carefully, then submit. "
+        "Save the NEF for your records.",
+    ]
+
+    return StagedPackage(
+        stage_code=token_urlsafe(8),
+        staged_at=datetime.now(timezone.utc).isoformat(),
+        court_id=request.court_id,
+        court_name=profile.name,
+        ecf_login_url=profile.login_url,
+        ecf_filing_url=profile.filing_url,
+        case_number=request.case_number,
+        event_code=request.event_code,
+        event_description=request.event_description,
+        docket_text=docket_text,
+        filing_party=f"{request.filing_party_name} ({request.filing_party_role})",
+        fee_text=format_fee(fee) if fee else "",
+        fee_status=request.fee_status,
+        exhibits=request.exhibits,
+        checklist=(
+            [{"text": i.text, "required": i.required} for i in checklist.items]
+            if checklist
+            else []
+        ),
+        instructions=instructions,
     )
 
 
-@app.post("/api/filing/submit", response_model=FilingSubmitResponse)
-def submit_filing(
+def _staged_dir(user_id: str) -> Path:
+    from ecfiler.config import CONFIG_DIR
+
+    safe_user = "".join(c for c in user_id if c.isalnum() or c in "._-") or "anon"
+    path = CONFIG_DIR / "staged" / safe_user
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+@app.post("/api/filing/stage", response_model=StagedPackage)
+def stage_filing(
     request: FilingSubmitRequest,
     user_id: str = Depends(get_current_user),
-) -> FilingSubmitResponse:
-    """Submit a prepared filing to CM/ECF.
+) -> StagedPackage:
+    """Assemble a validated, ready-to-file package. The human files it.
 
-    Sealed filings are refused outright — the hosted service never handles
-    sealed content (see docs/sealed-document-policy.md).
-
-    Logs every filing attempt to the history database.
-    Archives the PDF per-user (sealed documents are never retained).
+    Sealed filings are refused (docs/sealed-document-policy.md). The stage
+    code can be pulled into the local CLI with `ecfiler stage-pull <code>`.
     """
     from datetime import datetime
 
     from ecfiler.filing.models import FilingReceipt
-    from ecfiler.storage.history import FilingHistory, archive_filing_pdf
+    from ecfiler.storage.attestation import AttestationLog
+    from ecfiler.storage.history import FilingHistory
 
     if request.is_sealed:
         raise HTTPException(403, SEALED_REFUSED)
 
-    status = "dry_run" if request.dry_run else "submitted"
-    message = (
-        f"DRY RUN: Would file '{request.event_description}' "
-        f"in case {request.case_number} on court {request.court_id}."
-    ) if request.dry_run else (
-        f"Filed '{request.event_description}' in case {request.case_number} on {request.court_id}."
+    if request.attestation is None or not request.attestation.attested:
+        raise HTTPException(
+            422,
+            "Staging requires attorney attestation: set attestation.attested with "
+            "the attestor's name and the attestation text shown to them.",
+        )
+
+    package = _build_staged_package(request)
+
+    (_staged_dir(user_id) / f"{package.stage_code}.json").write_text(
+        package.model_dump_json(indent=2)
     )
 
-    # Archive PDF (sealed documents are excluded automatically)
-    pdf_path = ""
-    if request.document_path and not request.dry_run:
-        try:
-            doc_path = Path(request.document_path)
-            if doc_path.exists():
-                pdf_path = archive_filing_pdf(
-                    pdf_content=doc_path.read_bytes(),
-                    user_id=user_id,
-                    court_id=request.court_id,
-                    case_number=request.case_number,
-                    is_sealed=request.is_sealed,
-                )
-        except Exception:
-            logger.exception("Failed to archive filing PDF")
-
-    # Log to history
+    filing_id: int | None = None
     try:
         history = FilingHistory()
         receipt = FilingReceipt(
@@ -956,15 +1028,62 @@ def submit_filing(
             case_number=request.case_number,
             event_description=request.event_description,
             filed_at=datetime.now(),
-            pdf_path=pdf_path,
         )
-        history.log_filing(receipt, user_id=user_id, is_sealed=request.is_sealed)
+        filing_id = history.log_filing(receipt, user_id=user_id, status="staged")
     except Exception:
-        logger.exception("Failed to log filing to history")
+        logger.exception("Failed to log staged filing to history")
 
+    try:
+        AttestationLog().record(
+            kind="staged",
+            attestor_name=request.attestation.attestor_name or "unnamed",
+            attestation_text=request.attestation.attestation_text,
+            payload=request.model_dump(exclude={"attestation"}),
+            user_id=user_id,
+            filing_id=filing_id,
+            context_text=package.model_dump_json(),
+        )
+    except Exception:
+        logger.exception("Failed to record staging attestation")
+
+    return package
+
+
+@app.get("/api/filing/stage/{stage_code}", response_model=StagedPackage)
+def get_staged_package(
+    stage_code: str,
+    user_id: str = Depends(get_current_user),
+) -> StagedPackage:
+    """Fetch a previously staged package (e.g. from the CLI)."""
+    import json as _json
+
+    safe_code = "".join(c for c in stage_code if c.isalnum() or c in "._-")
+    path = _staged_dir(user_id) / f"{safe_code}.json"
+    if not path.exists():
+        raise HTTPException(404, "Staged package not found")
+    return StagedPackage(**_json.loads(path.read_text()))
+
+
+@app.post("/api/filing/submit", response_model=FilingSubmitResponse)
+def submit_filing(
+    request: FilingSubmitRequest,
+    user_id: str = Depends(get_current_user),
+) -> FilingSubmitResponse:
+    """DEPRECATED alias for /api/filing/stage — kept one release.
+
+    This endpoint never submitted anything to CM/ECF; its "submitted" and
+    "dry_run" statuses were a pretense over what was always staging. It now
+    delegates to the stage handler and answers honestly.
+    """
+    package = stage_filing(request, user_id)
     return FilingSubmitResponse(
-        status=status,
-        message=message,
+        status="staged",
+        message=(
+            f"Staged '{request.event_description}' for case {request.case_number} "
+            f"({request.court_id}). ECFiler does not submit from the hosted "
+            f"service — follow the package instructions to file it yourself, or "
+            f"pull it into the CLI with stage code {package.stage_code}."
+        ),
     )
 
 

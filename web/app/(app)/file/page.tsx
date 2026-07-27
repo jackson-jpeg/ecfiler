@@ -2,13 +2,13 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
-import { streamAnalysis, streamBrowser, getHistory, type FilingPreview, type AnalysisStep, type BrowserStep, type FilingOptions } from "@/lib/api";
+import { UserButton, useUser } from "@clerk/nextjs";
+import { streamAnalysis, stageFiling, getHistory, type FilingPreview, type AnalysisStep, type StagedPackage, type FilingOptions } from "@/lib/api";
 import { EventCodeSearch } from "@/components/event-code-search";
 import { CourtsModal } from "@/components/courts-modal";
 import { useToast } from "@/components/toast";
 
-type Phase = "ready" | "analyzing" | "review" | "filing" | "done" | "error";
+type Phase = "ready" | "analyzing" | "review" | "staging" | "done" | "error";
 
 interface Exhibit {
   id: string;
@@ -21,15 +21,13 @@ interface Exhibit {
 const EXHIBIT_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 export default function WorkspacePage() {
+  const { user } = useUser();
   const [phase, setPhase] = useState<Phase>("ready");
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState(0);
   const [steps, setSteps] = useState<AnalysisStep[]>([]);
   const [filing, setFiling] = useState<FilingPreview | null>(null);
-  const [browserSteps, setBrowserSteps] = useState<BrowserStep[]>([]);
-  const [screenshot, setScreenshot] = useState("");
-  const [browserDone, setBrowserDone] = useState(false);
-  const [browserMsg, setBrowserMsg] = useState("");
+  const [stagedPackage, setStagedPackage] = useState<StagedPackage | null>(null);
   const [error, setError] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [history, setHistory] = useState<any[]>([]);
@@ -44,8 +42,6 @@ export default function WorkspacePage() {
   const [showEventSearch, setShowEventSearch] = useState(false);
   const [eventCodeOverride, setEventCodeOverride] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [filingStartTime, setFilingStartTime] = useState<number | null>(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [showConfirmGate, setShowConfirmGate] = useState(false);
   const [attorneyAttest, setAttorneyAttest] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -64,16 +60,6 @@ export default function WorkspacePage() {
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
     fetch("/api/health").then(r => r.ok ? setBackendOk(true) : setBackendOk(false)).catch(() => setBackendOk(false));
   }, []);
-
-  // Elapsed time counter for filing phase
-  useEffect(() => {
-    if (phase === "filing" && !filingStartTime) setFilingStartTime(Date.now());
-    if (phase !== "filing") { setFilingStartTime(null); setElapsedTime(0); return; }
-    const interval = setInterval(() => {
-      if (filingStartTime) setElapsedTime(Math.floor((Date.now() - filingStartTime) / 1000));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [phase, filingStartTime]);
 
   // Auto-save review state to sessionStorage so accidental refreshes don't lose work.
   // Sealed filings are never persisted — memory only.
@@ -123,7 +109,7 @@ export default function WorkspacePage() {
 
   const reset = () => {
     setPhase("ready"); setFileName(""); setSteps([]); setFiling(null);
-    setBrowserSteps([]); setScreenshot(""); setBrowserDone(false); setError("");
+    setStagedPackage(null); setError("");
     setExhibits([]); setIsSealed(false); setIsRedacted(false); setIsIfp(false); setDocketText(""); setShowCertService(false); setShowEventSearch(false); setEventCodeOverride(""); setShowConfirmGate(false); setAttorneyAttest(false);
     sessionStorage.removeItem("ecfiler_review");
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
@@ -206,28 +192,62 @@ export default function WorkspacePage() {
 
   const handleConfirm = useCallback(async () => {
     if (!filing) return;
-    setPhase("filing"); setBrowserSteps([]); setScreenshot(""); setBrowserDone(false);
+    setPhase("staging");
     try {
-      const options = {
+      const options: FilingOptions = {
         docket_text: docketText || undefined,
         event_code_override: eventCodeOverride || undefined,
         is_sealed: isSealed,
         is_redacted: isRedacted,
         include_cos: showCertService,
-        exhibits: exhibits.map((e) => ({ label: e.label, description: e.description, sealed: !!e.sealed })),
+        exhibits: exhibits.map((e) => ({ label: e.label, description: e.description })),
         fee_status: (isIfp ? "ifp" : "paid") as "paid" | "waived" | "ifp",
       };
-      for await (const event of streamBrowser(filing, options)) {
-        if (event.type === "browser") { if (event.data.screenshot) setScreenshot(event.data.screenshot); setBrowserSteps((prev) => { const ex = prev.find((s) => s.step === event.data.step); if (ex) return prev.map((s) => s.step === event.data.step ? { ...s, ...event.data } : s); return [...prev, event.data]; }); }
-        if (event.type === "done") { setBrowserDone(true); setBrowserMsg(event.message); toast("Filing submitted successfully", "success"); }
-      }
-    } catch (e: unknown) { setBrowserDone(true); setBrowserMsg(e instanceof Error ? e.message : "Failed"); }
-  }, [filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, exhibits]);
+      // The checkbox gates this call; the server records exactly what was
+      // attested, by whom, and the language they saw.
+      const attestation = {
+        attested: true,
+        attestor_name: user?.fullName || user?.primaryEmailAddress?.emailAddress || "unnamed",
+        attestation_text:
+          `I have reviewed the document, docket text, event code, and all filing details above. ` +
+          `I am preparing this filing for submission to ${filing.court_id?.toUpperCase()} in ` +
+          `case ${filing.case_number}, and I take responsibility for what is filed.`,
+        client_timestamp: new Date().toISOString(),
+      };
+      const pkg = await stageFiling(filing, attestation, options);
+      setStagedPackage(pkg);
+      setPhase("done");
+      toast("Filing package staged", "success");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to stage filing package";
+      setError(msg); setPhase("error"); toast(msg, "error");
+    }
+  }, [filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, exhibits, user, toast]);
+
+  const copyText = useCallback((text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => toast(`${label} copied to clipboard`, "success"),
+      () => toast("Copy failed", "error"),
+    );
+  }, [toast]);
+
+  const downloadPackage = useCallback(() => {
+    if (!stagedPackage) return;
+    const blob = new Blob([JSON.stringify(stagedPackage, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `filing-package-${stagedPackage.stage_code}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [stagedPackage]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Cmd+Enter to file — only if confirmation gate is open and attested
+      // Cmd+Enter to stage — only if confirmation gate is open and attested
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && phase === "review" && filing?.ready && !hasSealedContent) {
         e.preventDefault();
         if (showConfirmGate && attorneyAttest) {
@@ -312,7 +332,7 @@ export default function WorkspacePage() {
       </header>
 
       {/* Main workspace */}
-      <div className={`${phase === "filing" ? "max-w-6xl" : "max-w-3xl"} mx-auto px-4 sm:px-6 py-6 sm:py-10 transition-all duration-500`}>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10 transition-all duration-500">
 
         {/* Ready state */}
         {phase === "ready" && (
@@ -393,7 +413,7 @@ export default function WorkspacePage() {
                     {[
                       { n: "1", text: "Drop a PDF — motion, brief, complaint, or any filing" },
                       { n: "2", text: "AI extracts case, court, event code, and party" },
-                      { n: "3", text: "Review verification checks and confirm" },
+                      { n: "3", text: "Review, stage the package, and file it yourself on CM/ECF" },
                     ].map((s) => (
                       <div key={s.n} className="flex gap-3">
                         <div className="w-5 h-5 bg-[#1e3a5f] text-white rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">{s.n}</div>
@@ -428,7 +448,7 @@ export default function WorkspacePage() {
                   <div className="space-y-2">
                     {[
                       { keys: ["⌘", "K"], label: "Command palette" },
-                      { keys: ["⌘", "↵"], label: "Confirm & file" },
+                      { keys: ["⌘", "↵"], label: "Confirm & stage" },
                       { keys: ["Esc"], label: "Cancel / close" },
                     ].map(({ keys, label }) => (
                       <div key={label} className="flex items-center justify-between">
@@ -529,7 +549,7 @@ export default function WorkspacePage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-[20px] font-bold text-[#1a1a1a]">Review Filing</h2>
-                <p className="text-[13px] text-[#525252]">AI has analyzed your document. Verify every field below — once filed, it cannot be undone.</p>
+                <p className="text-[13px] text-[#525252]">AI has analyzed your document. Verify every field below — you will submit the staged package on CM/ECF yourself.</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className={`text-[12px] px-3 py-1 rounded-full font-semibold border ${
@@ -561,7 +581,7 @@ export default function WorkspacePage() {
                 </svg>
                 <div>
                   <span className="font-semibold">{filing.court_id.toUpperCase()} requires PDF/A format.</span>{" "}
-                  Your document is not PDF/A — ECFiler will automatically convert it before filing.
+                  Your document is not PDF/A — convert it before you submit on CM/ECF.
                 </div>
               </div>
             )}
@@ -971,9 +991,9 @@ export default function WorkspacePage() {
                       onClick={() => { setShowConfirmGate(true); setAttorneyAttest(false); }}
                       disabled={!filing.ready}
                       className="px-8 py-3 bg-white text-[#1e3a5f] text-[14px] font-bold rounded-xl hover:bg-[#f0f4fa] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-lg"
-                      aria-label={filing.ready ? "Proceed to final confirmation" : "Cannot file — missing required fields"}
+                      aria-label={filing.ready ? "Proceed to final confirmation" : "Cannot stage — missing required fields"}
                     >
-                      Proceed to File &rarr;
+                      Proceed to Stage &rarr;
                     </button>
                   </div>
                 </div>
@@ -982,7 +1002,7 @@ export default function WorkspacePage() {
                     <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono border border-white/10">⌘</kbd>
                     <span>+</span>
                     <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/40 font-mono border border-white/10">Enter</kbd>
-                    <span>to file</span>
+                    <span>to stage</span>
                   </div>
                 )}
               </div>
@@ -1001,14 +1021,14 @@ export default function WorkspacePage() {
                     </div>
                     <div>
                       <div className="text-[16px] font-bold text-white">Final Confirmation Required</div>
-                      <div className="text-[12px] text-white/60">This action is irreversible. Once filed, this document becomes part of the permanent court record.</div>
+                      <div className="text-[12px] text-white/60">ECFiler stages the package — you submit it on CM/ECF. What you file becomes part of the permanent court record.</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Filing summary */}
                 <div className="bg-white px-6 py-5">
-                  <div className="text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wide mb-3">You are about to file</div>
+                  <div className="text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wide mb-3">You are about to stage</div>
                   <div className="bg-[#fafaf8] border border-[#e8e5e0] rounded-xl p-4 mb-4 space-y-2">
                     <div className="flex justify-between">
                       <span className="text-[12px] text-[#8a8a8a]">Court</span>
@@ -1122,9 +1142,9 @@ export default function WorkspacePage() {
                       <div className="text-[13px] font-semibold text-[#1a1a1a]">Attorney Attestation</div>
                       <div className="text-[12px] text-[#525252] leading-relaxed mt-1">
                         I have reviewed the document, docket text, event code, and all filing details above.
-                        I understand this filing will be submitted to <span className="font-semibold">{filing.court_id?.toUpperCase()}</span> in
-                        case <span className="font-mono font-semibold">{filing.case_number}</span> and
-                        will become part of the permanent court record. I take responsibility for this filing.
+                        I am preparing this filing for submission to <span className="font-semibold">{filing.court_id?.toUpperCase()}</span> in
+                        case <span className="font-mono font-semibold">{filing.case_number}</span>, and
+                        I take responsibility for what is filed.
                       </div>
                     </div>
                   </label>
@@ -1141,9 +1161,9 @@ export default function WorkspacePage() {
                       onClick={handleConfirm}
                       disabled={!attorneyAttest}
                       className="px-10 py-3.5 bg-[#b91c1c] text-white text-[14px] font-bold rounded-xl hover:bg-[#991b1b] disabled:opacity-20 disabled:cursor-not-allowed transition shadow-lg disabled:shadow-none"
-                      aria-label={attorneyAttest ? `File now to ${filing.court_id?.toUpperCase()}` : "Check the attestation box to proceed"}
+                      aria-label={attorneyAttest ? `Stage filing package for ${filing.court_id?.toUpperCase()}` : "Check the attestation box to proceed"}
                     >
-                      File Now — This Is Final
+                      Stage Filing Package
                     </button>
                   </div>
                 </div>
@@ -1152,283 +1172,19 @@ export default function WorkspacePage() {
           </div>
         )}
 
-        {/* Filing — browser view */}
-        {phase === "filing" && (() => {
-          const doneCount = browserSteps.filter((s) => s.status === "done").length;
-          const totalSteps = Math.max(browserSteps.length, 1);
-          const progressPct = browserDone ? 100 : Math.round((doneCount / totalSteps) * 95);
-          const elapsedMin = Math.floor(elapsedTime / 60);
-          const elapsedSec = elapsedTime % 60;
-          const elapsedStr = `${elapsedMin}:${String(elapsedSec).padStart(2, "0")}`;
-          const courtId = filing?.court_id || "nysd";
-          const courtName = courtId.toUpperCase();
-
-          return (
-          <div>
-            {/* Header row */}
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-[20px] font-bold text-[#1a1a1a]">Filing on CM/ECF</h2>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 font-mono text-[13px] text-[#525252] tabular-nums">
-                  <svg className="w-3.5 h-3.5 text-[#8a8a8a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  {elapsedStr}
-                </div>
-                <span className="text-[14px] font-bold text-[#1e3a5f] tabular-nums">{progressPct}%</span>
-              </div>
-            </div>
-            <p className="text-[13px] text-[#525252] mb-3">{courtName} &middot; {filing?.case_number || ""}</p>
-
-            {/* Progress bar */}
-            <div className="w-full h-[6px] bg-[#e8e5e0] rounded-full mb-5 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700 ease-out"
-                style={{
-                  width: `${progressPct}%`,
-                  background: browserDone
-                    ? "linear-gradient(90deg, #15803d, #22c55e)"
-                    : "linear-gradient(90deg, #1e3a5f, #2d5a8e, #1e3a5f)",
-                  backgroundSize: browserDone ? "100% 100%" : "200% 100%",
-                  animation: browserDone ? "none" : "ecf-shimmer 2s linear infinite",
-                }}
-              />
-            </div>
-            <style>{`@keyframes ecf-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
-
-            {/* Success banner with confetti */}
-            {browserDone && (
-              <div className="relative mb-5 rounded-2xl overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  {[
-                    { l: "5%", t: "10%", bg: "#fbbf24", w: "8px", h: "8px", r: "45deg", d: "0s", dur: "1.5s" },
-                    { l: "15%", t: "30%", bg: "#34d399", w: "6px", h: "12px", r: "-12deg", d: "0.2s", dur: "1.8s" },
-                    { l: "28%", t: "5%", bg: "#f87171", w: "10px", h: "6px", r: "30deg", d: "0.4s", dur: "1.3s" },
-                    { l: "42%", t: "15%", bg: "#60a5fa", w: "7px", h: "7px", r: "0deg", d: "0.1s", dur: "1.6s" },
-                    { l: "55%", t: "8%", bg: "#a78bfa", w: "5px", h: "10px", r: "60deg", d: "0.6s", dur: "1.2s" },
-                    { l: "68%", t: "25%", bg: "#fbbf24", w: "8px", h: "4px", r: "-20deg", d: "0.5s", dur: "1.7s" },
-                    { l: "78%", t: "12%", bg: "#34d399", w: "6px", h: "10px", r: "45deg", d: "0.3s", dur: "1.4s" },
-                    { l: "88%", t: "5%", bg: "#f87171", w: "7px", h: "7px", r: "-45deg", d: "0.7s", dur: "1.5s" },
-                    { l: "35%", t: "35%", bg: "#60a5fa", w: "5px", h: "8px", r: "15deg", d: "0.8s", dur: "1.3s" },
-                    { l: "92%", t: "30%", bg: "#a78bfa", w: "9px", h: "5px", r: "75deg", d: "0.15s", dur: "1.9s" },
-                  ].map((p, idx) => (
-                    <div key={idx} className="absolute rounded-sm animate-bounce" style={{ left: p.l, top: p.t, width: p.w, height: p.h, backgroundColor: p.bg, transform: `rotate(${p.r})`, animationDelay: p.d, animationDuration: p.dur }} />
-                  ))}
-                </div>
-                <div className="bg-gradient-to-r from-[#f0fdf4] via-[#dcfce7] to-[#f0fdf4] border border-[#bbf7d0] px-6 py-5 flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 bg-[#15803d] rounded-full flex items-center justify-center shadow-lg shadow-green-400/30">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                    </div>
-                    <div>
-                      <div className="text-[17px] font-bold text-[#15803d] tracking-wide">SUCCESS</div>
-                      <div className="text-[12px] text-[#166534]">{browserMsg || "Document filed successfully on CM/ECF"}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="font-mono text-[12px] text-[#15803d]/50">{elapsedStr} elapsed</span>
-                    <button onClick={() => setPhase("done")} className="px-6 py-2.5 bg-[#15803d] text-white text-[13px] font-bold rounded-xl hover:bg-[#166534] transition shadow-lg shadow-green-800/20">
-                      View Receipt
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Split panel: browser + timeline */}
-            <div className="flex gap-5">
-              {/* Left: Browser window */}
-              <div className="flex-1 min-w-0">
-                <div className="rounded-2xl border border-[#c4bfb6] overflow-hidden shadow-xl shadow-black/10">
-                  {/* Browser chrome */}
-                  <div className="bg-[#e8e5e0] px-4 py-2.5 flex items-center gap-3 border-b border-[#d4d0ca]">
-                    <div className="flex gap-[6px]">
-                      <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57] shadow-inner" />
-                      <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e] shadow-inner" />
-                      <div className="w-[11px] h-[11px] rounded-full bg-[#28c840] shadow-inner" />
-                    </div>
-                    <div className="flex-1 bg-white/70 rounded-md px-3 py-1 flex items-center gap-2">
-                      <svg className="w-3 h-3 text-[#8a8a8a] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-                      <span className="font-mono text-[11px] text-[#525252] truncate">https://ecf.{courtId}.uscourts.gov/cgi-bin/DktRpt.pl</span>
-                    </div>
-                    {!browserDone && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1e3a5f] opacity-50" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1e3a5f]" />
-                        </span>
-                        <span className="text-[10px] text-[#1e3a5f] font-bold uppercase tracking-wider">Live</span>
-                      </div>
-                    )}
-                    {browserDone && <span className="text-[10px] text-[#15803d] font-bold uppercase tracking-wider">Done</span>}
-                  </div>
-
-                  {/* Screenshot or mock CM/ECF */}
-                  <div className="bg-white min-h-[420px]">
-                    {screenshot ? (
-                      <img src={`data:image/png;base64,${screenshot}`} className="w-full" alt="CM/ECF" />
-                    ) : (
-                      <div className="select-none">
-                        {/* CM/ECF blue header */}
-                        <div className="bg-[#003366] px-4 py-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-white/10 rounded flex items-center justify-center border border-white/20">
-                              <svg className="w-5 h-5 text-white/90" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
-                            </div>
-                            <div>
-                              <div className="text-white font-serif text-[15px] font-bold">CM/ECF - {courtName}</div>
-                              <div className="text-blue-200/70 text-[11px] font-serif">U.S. District Court - Document Filing System</div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-white/40 text-[10px] font-mono tracking-wide">PACER</div>
-                            <div className="text-white/30 text-[9px] font-mono">NextGen</div>
-                          </div>
-                        </div>
-
-                        {/* Nav tabs */}
-                        <div className="bg-[#004080] px-4 py-1.5 flex items-center gap-1 border-b border-[#002244]">
-                          {["Query", "Reports", "Utilities", "Filing", "Search"].map((item, i) => (
-                            <span key={item} className={`text-[11px] px-3 py-1 rounded-t ${i === 3 ? "bg-white/20 text-white font-bold" : "text-blue-200/60"} cursor-default`}>{item}</span>
-                          ))}
-                        </div>
-
-                        {/* Breadcrumb */}
-                        <div className="bg-[#f0f0f0] px-4 py-2 border-b border-[#d0d0d0] text-[11px] text-[#555] font-serif flex items-center gap-1">
-                          <span className="text-[#1e3a5f] font-semibold">Civil</span>
-                          <span className="text-[#999]">&rsaquo;</span>
-                          <span>File a Document</span>
-                          <span className="text-[#999]">&rsaquo;</span>
-                          <span className="text-[#333]">{filing?.case_number || "Case"}</span>
-                        </div>
-
-                        {/* Form content */}
-                        <div className="p-5">
-                          <div className="mb-4">
-                            <div className="text-[14px] font-serif font-bold text-[#333] mb-1">E-File a Document</div>
-                            <div className="h-px bg-[#ccc]" />
-                          </div>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <label className="text-[11px] font-serif text-[#333] w-28 shrink-0 text-right">Case Number:</label>
-                              <div className="flex-1 h-7 bg-white border border-[#999] rounded-sm px-2 flex items-center shadow-inner shadow-black/5">
-                                <span className="text-[11px] font-mono text-[#333]">{filing?.case_number || ""}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <label className="text-[11px] font-serif text-[#333] w-28 shrink-0 text-right">Filing Type:</label>
-                              <div className="flex-1 h-7 bg-white border border-[#999] rounded-sm px-2 flex items-center shadow-inner shadow-black/5">
-                                <span className="text-[11px] font-mono text-[#555]">{filing?.event_description || "Motion"}</span>
-                                <svg className="w-3 h-3 text-[#999] ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <label className="text-[11px] font-serif text-[#333] w-28 shrink-0 text-right">Filing Party:</label>
-                              <div className="flex-1 h-7 bg-white border border-[#999] rounded-sm px-2 flex items-center shadow-inner shadow-black/5">
-                                <span className="text-[11px] font-mono text-[#555]">Attorney for Plaintiff</span>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-3 pt-1">
-                              <label className="text-[11px] font-serif text-[#333] w-28 shrink-0 text-right pt-2">PDF Document:</label>
-                              <div className="flex-1 border border-dashed border-[#999] rounded bg-[#fafafa] p-3">
-                                <div className="flex items-center gap-2">
-                                  <svg className="w-5 h-5 text-[#c00]" fill="currentColor" viewBox="0 0 24 24"><path d="M7 2C5.9 2 5 2.9 5 4v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8l-6-6H7zm7 7V3.5L18.5 8H14zM9 13h6v2H9v-2zm0 4h4v2H9v-2z" /></svg>
-                                  <span className="text-[11px] text-[#333] font-medium">{fileName || "document.pdf"}</span>
-                                  <span className="text-[10px] text-[#15803d] ml-2 font-semibold">Uploaded</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {!browserDone && (
-                            <div className="mt-6 pt-4 border-t border-[#e0e0e0] flex items-center gap-3">
-                              <div className="w-5 h-5 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
-                              <div>
-                                <div className="text-[12px] text-[#333] font-medium">ECFiler is navigating CM/ECF...</div>
-                                <div className="text-[10px] text-[#888]">{browserSteps.length > 0 ? browserSteps[browserSteps.length - 1].step : "Connecting to court system"}</div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Step timeline */}
-              <div className="w-[300px] shrink-0 hidden lg:block">
-                <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm sticky top-20">
-                  <div className="px-5 py-3.5 border-b border-[#e8e5e0] bg-[#fafaf8] flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-[#1a1a1a] uppercase tracking-wider">Filing Progress</span>
-                    <span className="text-[11px] font-mono text-[#8a8a8a]">{doneCount}/{browserSteps.length || 0}</span>
-                  </div>
-                  <div className="p-4 max-h-[500px] overflow-y-auto">
-                    {browserSteps.length === 0 && (
-                      <div className="flex items-center gap-3 py-4 px-2 text-[12px] text-[#8a8a8a]">
-                        <div className="flex gap-1">
-                          <div className="w-1.5 h-1.5 bg-[#1e3a5f] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <div className="w-1.5 h-1.5 bg-[#1e3a5f] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <div className="w-1.5 h-1.5 bg-[#1e3a5f] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                        </div>
-                        Initializing browser...
-                      </div>
-                    )}
-                    <div className="space-y-0">
-                      {browserSteps.map((s, i) => {
-                        const isDone = s.status === "done";
-                        const isActive = !isDone;
-                        const isLast = i === browserSteps.length - 1;
-                        return (
-                          <div key={s.step} className="relative flex gap-3">
-                            {!isLast && (
-                              <div className="absolute left-[10px] top-[24px] bottom-0 w-[2px] rounded-full transition-colors duration-300" style={{ background: isDone ? "#bbf7d0" : "#e8e5e0" }} />
-                            )}
-                            <div className={`relative w-[21px] h-[21px] rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300 ${isDone ? "bg-[#15803d] shadow-sm shadow-green-400/20" : "bg-[#1e3a5f] shadow-md shadow-[#1e3a5f]/30"}`}>
-                              {isDone ? (
-                                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                              ) : (
-                                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                              )}
-                            </div>
-                            <div className={`pb-5 min-w-0 transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-60"}`}>
-                              <div className={`text-[12px] font-semibold leading-tight ${isActive ? "text-[#1a1a1a]" : "text-[#525252]"}`}>{s.step}</div>
-                              <div className="text-[10px] text-[#8a8a8a] leading-snug mt-0.5">{s.description}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="px-5 py-3 border-t border-[#e8e5e0] bg-[#fafaf8] flex items-center justify-between">
-                    <span className="text-[10px] text-[#8a8a8a]">Elapsed</span>
-                    <span className="font-mono text-[11px] text-[#525252] tabular-nums">{elapsedStr}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile step list */}
-            <div className="lg:hidden mt-5 bg-white rounded-xl border border-[#e8e5e0] overflow-hidden shadow-sm">
-              <div className="px-4 py-2.5 border-b border-[#e8e5e0] bg-[#fafaf8] flex items-center justify-between">
-                <span className="text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wider">Steps</span>
-                <span className="text-[10px] font-mono text-[#8a8a8a]">{doneCount}/{browserSteps.length || 0}</span>
-              </div>
-              {browserSteps.map((s) => (
-                <div key={s.step} className="flex items-start gap-3 px-4 py-2.5 border-b border-[#f0eee9] last:border-0">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5 ${s.status === "done" ? "bg-[#f0fdf4] text-[#15803d]" : "bg-[#1e3a5f] text-white"}`}>
-                    {s.status === "done" ? "\u2713" : <span className="animate-pulse">{"\u25CF"}</span>}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold text-[#1a1a1a]">{s.step}</div>
-                    <div className="text-[10px] text-[#8a8a8a] truncate">{s.description}</div>
-                  </div>
-                </div>
-              ))}
+        {/* Staging — assembling the package */}
+        {phase === "staging" && (
+          <div className="max-w-xl mx-auto py-16">
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] shadow-sm px-8 py-12 text-center">
+              <div className="w-10 h-10 border-[3px] border-[#1e3a5f] border-t-transparent rounded-full animate-spin mx-auto mb-5" />
+              <div className="text-[16px] font-semibold text-[#1a1a1a]">Assembling your filing package&hellip;</div>
+              <div className="text-[12px] text-[#8a8a8a] mt-1.5">Validating filing details and generating step-by-step instructions</div>
             </div>
           </div>
-          );
-        })()}
+        )}
 
-        {/* Done */}
-        {phase === "done" && filing && (
+        {/* Done — package staged, the human files it */}
+        {phase === "done" && stagedPackage && (
           <div className="max-w-xl mx-auto py-8">
             {/* Success header */}
             <div className="text-center mb-8">
@@ -1437,46 +1193,111 @@ export default function WorkspacePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </div>
-              <h2 className="text-[24px] font-bold text-[#1a1a1a] mb-2">Filing Submitted</h2>
-              <p className="text-[14px] text-[#525252]">Your document has been filed on CM/ECF.</p>
+              <h2 className="text-[24px] font-bold text-[#1a1a1a] mb-2">Package staged — ready for you to file</h2>
+              <p className="text-[14px] text-[#525252]">ECFiler prepared and validated everything. You submit it on CM/ECF with your own credentials.</p>
             </div>
 
-            {/* Receipt card */}
-            <div className="bg-white rounded-2xl border border-[#e8e5e0] overflow-hidden shadow-sm mb-6">
-              <div className="px-5 py-3 bg-[#fafaf8] border-b border-[#f0eee9] flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Filing Receipt</span>
-                <span className="text-[10px] text-[#c4c4c4] font-mono">{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} at {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+            {/* Court card */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] shadow-sm p-5 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="text-[15px] font-bold text-[#1a1a1a]">{stagedPackage.court_name}</div>
+                <div className="text-[12px] text-[#8a8a8a] font-mono mt-0.5">{stagedPackage.case_number}</div>
               </div>
+              <a
+                href={stagedPackage.ecf_login_url}
+                target="_blank"
+                rel="noopener"
+                className="px-6 py-3 bg-[#1e3a5f] text-white text-[13px] font-bold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20 shrink-0 text-center"
+              >
+                Open {stagedPackage.court_id?.toUpperCase()} CM/ECF &rarr;
+              </a>
+            </div>
+
+            {/* Instructions */}
+            {stagedPackage.instructions?.length > 0 && (
+              <div className="bg-white rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden mb-5">
+                <div className="px-5 py-3 border-b border-[#f0eee9] bg-[#fafaf8]">
+                  <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">How to file this package</span>
+                </div>
+                <ol className="p-5 space-y-3">
+                  {stagedPackage.instructions.map((step, i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="w-5 h-5 bg-[#1e3a5f] text-white rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">{i + 1}</div>
+                      <div className="text-[13px] text-[#525252] leading-relaxed">{step}</div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Docket text */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden mb-5">
+              <div className="px-5 py-3 border-b border-[#f0eee9] bg-[#fafaf8] flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Docket text — paste into CM/ECF</span>
+                <button onClick={() => copyText(stagedPackage.docket_text, "Docket text")} className="text-[11px] text-[#1e3a5f] font-semibold hover:underline">Copy</button>
+              </div>
+              <div className="p-5">
+                <p className="font-mono text-[13px] text-[#1a1a1a] leading-relaxed bg-[#fafaf8] border border-[#f0eee9] rounded-xl p-4 whitespace-pre-wrap">{stagedPackage.docket_text}</p>
+              </div>
+            </div>
+
+            {/* Filing details */}
+            <div className="bg-white rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden mb-5">
               {[
-                { label: "Court", value: filing.court_id?.toUpperCase() },
-                { label: "Case", value: filing.case_number },
-                { label: "Docket Text", value: docketText || filing.event_description },
-                { label: "Event Code", value: filing.event_code },
-                ...(filing.filing_party ? [{ label: "Filed By", value: filing.filing_party }] : []),
-                ...(exhibits.length > 0 ? [{ label: "Attachments", value: exhibits.map(e => e.label).join(", ") }] : []),
-                ...(filing.filing_fee ? [{ label: "Fee", value: isIfp ? "$0 (fee waiver requested)" : `$${filing.filing_fee}` }] : []),
-                { label: "Status", value: "Submitted" },
-              ].filter(f => f.value).map(({ label, value }) => (
+                { label: "Event Code", value: `${stagedPackage.event_code} — ${stagedPackage.event_description}`, mono: true },
+                { label: "Filing Party", value: stagedPackage.filing_party },
+                ...(stagedPackage.fee_text ? [{ label: "Fee", value: stagedPackage.fee_text }] : []),
+                ...(stagedPackage.exhibits?.length > 0 ? [{ label: "Exhibits", value: stagedPackage.exhibits.map((e) => `${e.label}${e.description ? ` — ${e.description}` : ""}`).join("; ") }] : []),
+              ].filter((f) => f.value).map(({ label, value, mono }) => (
                 <div key={label} className="flex px-5 py-3 border-b border-[#f0eee9] last:border-0">
-                  <div className="w-[100px] shrink-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide pt-0.5">{label}</div>
-                  <div className="text-[13px] text-[#1a1a1a] font-medium">{value}</div>
+                  <div className="w-[110px] shrink-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide pt-0.5">{label}</div>
+                  <div className={`text-[13px] text-[#1a1a1a] font-medium ${mono ? "font-mono" : ""}`}>{value}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Pre-filing checklist */}
+            {stagedPackage.checklist?.length > 0 && (
+              <div className="bg-white rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden mb-5">
+                <div className="px-5 py-3 border-b border-[#f0eee9] bg-[#fafaf8]">
+                  <span className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide">Pre-filing checklist</span>
+                </div>
+                <div className="p-5 space-y-2.5">
+                  {stagedPackage.checklist.map((item, i) => (
+                    <label key={i} className="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 mt-0.5 accent-[#1e3a5f] shrink-0" />
+                      <span className="text-[13px] text-[#525252] leading-relaxed">
+                        {item.text}
+                        {item.required && <span className="ml-2 text-[9px] px-1.5 py-0.5 bg-[#fef2f2] text-[#b91c1c] rounded font-bold uppercase align-middle">Required</span>}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Stage code — CLI handoff */}
+            <div className="bg-[#0f1f35] rounded-2xl p-5 mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wide">Prefer to file from the terminal?</span>
+                <button onClick={() => copyText(`ecfiler stage-pull ${stagedPackage.stage_code}`, "Command")} className="text-[11px] text-white/60 font-semibold hover:text-white transition">Copy</button>
+              </div>
+              <code className="block font-mono text-[13px] text-[#7dd3fc] bg-white/5 border border-white/10 rounded-lg px-4 py-3 overflow-x-auto">ecfiler stage-pull {stagedPackage.stage_code}</code>
             </div>
 
             {/* Actions */}
             <div className="flex items-center justify-center gap-3">
               <button onClick={reset} className="px-8 py-3 bg-[#1e3a5f] text-white text-[14px] font-semibold rounded-xl hover:bg-[#162a47] transition shadow-lg shadow-[#1e3a5f]/20">
-                File Another Document
+                Start another filing
               </button>
-              <button onClick={() => setShowHistory(true)} className="px-5 py-3 border border-[#e8e5e0] text-[13px] text-[#525252] font-medium rounded-xl hover:bg-[#fafaf8] transition">
-                View History
+              <button onClick={downloadPackage} className="px-5 py-3 border border-[#e8e5e0] text-[13px] text-[#525252] font-medium rounded-xl hover:bg-[#fafaf8] transition">
+                Download package (JSON)
               </button>
             </div>
 
             {/* Disclaimer */}
             <p className="text-[10px] text-[#c4c4c4] text-center mt-6">
-              This receipt confirms submission to CM/ECF. The official Notice of Electronic Filing (NEF) will be sent by the court via email.
+              Nothing has been filed yet. ECFiler staged this package — you complete the filing on CM/ECF, and the court sends the official Notice of Electronic Filing (NEF).
             </p>
           </div>
         )}

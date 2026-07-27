@@ -102,13 +102,6 @@ export interface AnalysisStep {
   detail?: string;
 }
 
-export interface BrowserStep {
-  step: string;
-  status: "running" | "done";
-  description: string;
-  screenshot?: string;
-}
-
 export interface Court {
   court_id: string;
   name: string;
@@ -197,14 +190,47 @@ export interface FilingOptions {
   fee_status?: "paid" | "waived" | "ifp";
 }
 
-export async function* streamBrowser(
+/** A staged filing package — everything the filer needs to submit on CM/ECF themselves. */
+export interface StagedPackage {
+  stage_code: string;
+  staged_at: string;
+  court_id: string;
+  court_name: string;
+  ecf_login_url: string;
+  ecf_filing_url: string;
+  case_number: string;
+  event_code: string;
+  event_description: string;
+  docket_text: string;
+  filing_party: string;
+  fee_text: string;
+  fee_status: string;
+  exhibits: { label: string; description: string }[];
+  checklist: { text: string; required: boolean }[];
+  instructions: string[];
+}
+
+/**
+ * Stage a filing package. ECFiler validates and assembles everything;
+ * the human submits it on CM/ECF with their own credentials.
+ */
+export interface AttestationInfo {
+  attested: boolean;
+  attestor_name: string;
+  attestation_text: string;
+  client_timestamp: string;
+}
+
+export async function stageFiling(
   filing: FilingPreview,
+  attestation: AttestationInfo,
   options?: FilingOptions,
-): AsyncGenerator<{ type: "browser"; data: BrowserStep } | { type: "done"; message: string }> {
-  const resp = await fetch(`${API}/api/filing/browser-stream`, {
+): Promise<StagedPackage> {
+  const resp = await fetch(`${API}/api/filing/stage`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
+      attestation,
       court_id: filing.court_id,
       case_number: filing.case_number,
       event_code: options?.event_code_override || filing.event_code,
@@ -212,41 +238,18 @@ export async function* streamBrowser(
       filing_party_name: filing.filing_party?.split("(")[0]?.trim() || "",
       filing_party_role: filing.filing_party?.match(/\((\w+)\)/)?.[1] || "",
       document_path: "",
-      dry_run: false,
+      is_response: filing.is_response || false,
+      responds_to_docket: filing.responds_to_docket || "",
       is_sealed: options?.is_sealed || false,
       is_redacted: options?.is_redacted || false,
       include_certificate_of_service: options?.include_cos || false,
-      exhibits: options?.exhibits || [],
+      // Backend ExhibitInfo is {label, description} — never send the sealed flag.
+      exhibits: (options?.exhibits || []).map((e) => ({ label: e.label, description: e.description })),
       fee_status: options?.fee_status || "paid",
     }),
   });
   if (!resp.ok) throw new Error(await resp.text());
-
-  const reader = resp.body!.getReader();
-  const dec = new TextDecoder();
-  let buf = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    const parts = buf.split("\n\n");
-    buf = parts.pop() || "";
-
-    for (const part of parts) {
-      const lines = part.split("\n");
-      let event = "", data = "";
-      for (const l of lines) {
-        if (l.startsWith("event:")) event = l.slice(6).trim();
-        if (l.startsWith("data:")) data = l.slice(5).trim();
-      }
-      if (!data) continue;
-      const parsed = JSON.parse(data);
-
-      if (event === "browser") yield { type: "browser", data: parsed };
-      if (event === "browser_done") yield { type: "done", message: parsed.message };
-    }
-  }
+  return resp.json();
 }
 
 export async function searchCourts(query?: string, type?: string): Promise<Court[]> {

@@ -71,8 +71,12 @@ class FilingHistory:
         receipt: FilingReceipt,
         user_id: str = "",
         is_sealed: bool = False,
+        status: str = "submitted",
     ) -> int:
         """Log a filing to the history database.
+
+        status: "submitted" (CLI actually filed) or "staged" (hosted service
+        prepared a package for the human to file).
 
         Returns the row ID of the new record.
         """
@@ -91,7 +95,7 @@ class FilingHistory:
                     receipt.case_number,
                     receipt.docket_number,
                     receipt.event_description,
-                    "submitted",
+                    status,
                     receipt.filed_at.isoformat(),
                     receipt.confirmation_text[:5000],
                     receipt.receipt_path,
