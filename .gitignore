@@ -9,3 +9,5 @@ build/
 .env.local
 .env*.local
 *.egg-info
+.next/
+node_modules/
