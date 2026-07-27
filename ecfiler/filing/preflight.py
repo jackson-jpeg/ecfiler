@@ -16,6 +16,7 @@ Checks:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -23,6 +24,19 @@ from ecfiler.filing.models import Filing, SealingLevel
 from ecfiler.logging import get_logger
 
 logger = get_logger(__name__)
+
+# Language that suggests a filing touches sealed/restricted material. A hit on
+# an unsealed filing is never silently ignored: the attorney must either mark
+# the document sealed or explicitly confirm public filing.
+SEAL_KEYWORD_RE = re.compile(
+    r"\b(seal(?:ed|ing)?|restrict(?:ed|ion)?|redact(?:ed|ion)?|ex parte|in camera)\b",
+    re.IGNORECASE,
+)
+
+
+def scan_seal_keywords(text: str) -> list[str]:
+    """Return the distinct sealing-related terms found in text (lowercased)."""
+    return sorted({m.group(1).lower() for m in SEAL_KEYWORD_RE.finditer(text or "")})
 
 
 @dataclass
@@ -57,6 +71,7 @@ def run_preflight(filing: Filing) -> PreflightResult:
     _check_event_code(filing, result)
     _check_filing_party(filing, result)
     _check_sealing(filing, result)
+    _check_seal_keywords(filing, result)
     _check_response(filing, result)
     _check_case_opening(filing, result)
     _check_amended(filing, result)
@@ -127,17 +142,23 @@ def _check_filing_party(filing: Filing, result: PreflightResult) -> None:
 
 
 def _check_sealing(filing: Filing, result: PreflightResult) -> None:
-    """Check sealed document configuration."""
+    """Check sealed document configuration.
+
+    Sealed filings fail closed: misconfiguration is an error, never a warning —
+    a sealed document silently filed public is the worst possible outcome.
+    """
     for doc in filing.documents:
         if doc.is_sealed:
             result.add_warning(
                 f"'{doc.filename}' is marked as {doc.sealing.value} — "
-                f"verify the court's sealing procedure before filing"
+                f"the filing will abort unless the court's ECF sealing controls "
+                f"are found and set; some courts require conventional (paper) "
+                f"filing under seal per local rule"
             )
             if doc.sealing == SealingLevel.SEALED and not doc.description:
-                result.add_warning(
+                result.add_error(
                     f"Sealed document '{doc.filename}' has no description — "
-                    f"courts typically require a reason for sealing"
+                    f"courts require a reason for sealing; add one before filing"
                 )
 
         if doc.sealing == SealingLevel.EX_PARTE:
@@ -145,6 +166,28 @@ def _check_sealing(filing: Filing, result: PreflightResult) -> None:
                 f"'{doc.filename}' is an ex parte submission — "
                 f"opposing party will NOT be served"
             )
+
+
+def _check_seal_keywords(filing: Filing, result: PreflightResult) -> None:
+    """Flag sealing-related language on filings not marked sealed.
+
+    A hit is an error unless the attorney set confirmed_public explicitly.
+    'Motion to Unseal' and similar false positives are exactly why this is a
+    confirmable gate rather than a hard block.
+    """
+    has_sealed_docs = any(d.is_sealed for d in filing.documents) or bool(
+        filing.exhibit_package and filing.exhibit_package.has_sealed_exhibits
+    )
+    if has_sealed_docs or filing.confirmed_public:
+        return
+
+    hits = scan_seal_keywords(f"{filing.event.description} {filing.docket_text}")
+    if hits:
+        result.add_error(
+            f"Event or docket text mentions sealing-related terms ({', '.join(hits)}) "
+            f"but no document is marked sealed. Mark the document sealed, or set "
+            f"confirmed_public to attest this is intentionally a public filing."
+        )
 
 
 def _check_response(filing: Filing, result: PreflightResult) -> None:

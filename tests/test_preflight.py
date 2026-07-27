@@ -118,11 +118,27 @@ class TestPreflightSealing:
                     is_main=True,
                     validation=DocumentValidation(valid=True),
                     sealing=SealingLevel.SEALED,
+                    description="Confidential settlement exhibit",
                 )
             ]
         )
         result = run_preflight(filing)
         assert any("sealed" in w.lower() for w in result.warnings)
+
+    def test_sealed_without_description_is_error(self) -> None:
+        filing = _make_filing(
+            documents=[
+                Document(
+                    file_path=__file__,
+                    is_main=True,
+                    validation=DocumentValidation(valid=True),
+                    sealing=SealingLevel.SEALED,
+                )
+            ]
+        )
+        result = run_preflight(filing)
+        assert not result.passed
+        assert any("no description" in e.lower() for e in result.errors)
 
     def test_ex_parte_warns(self) -> None:
         filing = _make_filing(
@@ -231,3 +247,57 @@ class TestPreflightAmended:
         )
         result = run_preflight(filing)
         assert result.passed
+
+
+class TestPreflightSealKeywords:
+    def test_seal_keyword_without_sealed_flag_is_error(self) -> None:
+        result = run_preflight(
+            _make_filing(event=EventCode(code="99", description="Motion to Seal Document"))
+        )
+        assert not result.passed
+        assert any("sealing-related" in e.lower() for e in result.errors)
+
+    def test_seal_keyword_in_docket_text_is_error(self) -> None:
+        result = run_preflight(
+            _make_filing(docket_text="Exhibit A filed under seal per protective order")
+        )
+        assert not result.passed
+
+    def test_confirmed_public_passes_keyword_gate(self) -> None:
+        result = run_preflight(
+            _make_filing(
+                event=EventCode(code="99", description="Response to Motion to Seal"),
+                confirmed_public=True,
+            )
+        )
+        assert result.passed
+
+    def test_sealed_filing_skips_keyword_gate(self) -> None:
+        from ecfiler.filing.models import Document, DocumentValidation, SealingLevel
+
+        result = run_preflight(
+            _make_filing(
+                event=EventCode(code="99", description="Sealed Motion"),
+                documents=[
+                    Document(
+                        file_path=__file__,
+                        is_main=True,
+                        validation=DocumentValidation(valid=True),
+                        sealing=SealingLevel.SEALED,
+                        description="Sealed per protective order",
+                    )
+                ],
+            )
+        )
+        # No keyword error; the sealing checks themselves handle sealed docs
+        assert not any("sealing-related" in e.lower() for e in result.errors)
+
+    def test_no_keywords_passes(self) -> None:
+        result = run_preflight(_make_filing())
+        assert result.passed
+
+    def test_ex_parte_keyword_detected(self) -> None:
+        from ecfiler.filing.preflight import scan_seal_keywords
+
+        assert scan_seal_keywords("Ex Parte Motion for TRO") == ["ex parte"]
+        assert scan_seal_keywords("Motion for Extension") == []

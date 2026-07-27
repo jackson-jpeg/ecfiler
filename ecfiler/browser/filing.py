@@ -92,6 +92,12 @@ class FilingAutomation:
         main_doc = self.filing.main_document
         if main_doc:
             self.court.upload_document(self.browser.page, main_doc.file_path)
+            if main_doc.is_sealed or main_doc.sealing.value == "ex_parte":
+                # Raises SealingUnavailableError (aborting the filing) if the
+                # form offers no sealing control — never silently files public.
+                self.court.select_sealing_level(
+                    self.browser.page, main_doc.sealing.value
+                )
 
     def _upload_attachments(self) -> None:
         pkg = self.filing.exhibit_package
@@ -108,6 +114,8 @@ class FilingAutomation:
                     description=ex.description,
                     label=ex.label or None,
                 )
+                if ex.sealed:
+                    self.court.select_sealing_level(self.browser.page, "sealed")
             return
         for att in self.filing.attachments:
             self.court.upload_attachment(

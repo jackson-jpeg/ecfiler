@@ -234,6 +234,9 @@ class Filing(BaseModel):
     case_opening: CaseOpeningData | None = None  # Set when filing initiates a case
     is_response: bool = False  # True if this is a response to another filing
     exhibit_package: ExhibitPackageModel | None = None
+    # Attorney's explicit attestation that sealing-related language in the event
+    # or docket text notwithstanding, this filing is intentionally public.
+    confirmed_public: bool = False
 
     @property
     def main_document(self) -> Document | None:

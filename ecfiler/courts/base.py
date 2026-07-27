@@ -22,6 +22,14 @@ class ECFFormError(Exception):
     """Raised when a CM/ECF form interaction fails."""
 
 
+class SealingUnavailableError(ECFFormError):
+    """Sealing was requested but the court's form offers no sealing control.
+
+    Raised instead of continuing, because the continue path files a sealed
+    document on the public docket.
+    """
+
+
 @dataclass
 class CourtSelectors:
     """CSS selectors for CM/ECF form elements.
@@ -387,10 +395,17 @@ class BaseCourt:
         )
 
     def select_sealing_level(self, page: Page, level: str) -> None:
-        """Select document sealing/restriction level.
+        """Select document sealing/restriction level, or abort.
+
+        Fail-closed: if sealing was requested and this court's ECF form offers
+        no sealing control we can verify, raise rather than continue — the
+        alternative is a sealed document silently filed on the public docket.
 
         Args:
             level: "public", "sealed", "restricted", "ex_parte"
+
+        Raises:
+            SealingUnavailableError: sealing requested but no control found.
         """
         if level == "public":
             return  # Default, no action needed
@@ -412,9 +427,11 @@ class BaseCourt:
                 logger.info("Set sealing level: %s", level)
                 return
 
-        logger.warning(
-            "Sealing controls not found — document will be filed as public. "
-            "For sealed filings, verify the court's sealing procedure."
+        raise SealingUnavailableError(
+            f"Sealing level '{level}' was requested but no sealing control was "
+            f"found on this court's filing form. The filing was NOT submitted. "
+            f"This court may require filing conventionally under seal per its "
+            f"local rule — check the court's sealing procedure."
         )
 
     def select_related_entry(self, page: Page, docket_number: str) -> None:

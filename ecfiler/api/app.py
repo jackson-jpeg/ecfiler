@@ -28,6 +28,16 @@ logger = get_logger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
 
+# The hosted service refuses sealed/restricted content outright: a hosted
+# server is the wrong place for material a court has ordered protected. See
+# docs/sealed-document-policy.md.
+SEALED_REFUSED = (
+    "ECFiler's hosted service does not accept sealed or restricted documents. "
+    "File sealed documents through the local CLI on your own machine, or "
+    "conventionally under seal per the court's local rule. "
+    "See docs/sealed-document-policy.md."
+)
+
 # --- CORS configuration ---
 _allowed_origins = os.environ.get("ECFILER_ALLOWED_ORIGINS", "http://localhost:3000")
 ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins.split(",") if o.strip()]
@@ -289,6 +299,20 @@ async def analyze_and_prepare_filing(
     from ecfiler.pdf.redaction_check import scan_document
     from ecfiler.pdf.validator import extract_text, validate_pdf
 
+    # Refuse sealed content before anything else — the hosted service never
+    # handles it, regardless of server configuration.
+    if exhibits:
+        import json as _json_precheck
+
+        try:
+            _raw_precheck = _json_precheck.loads(exhibits)
+        except _json_precheck.JSONDecodeError:
+            _raw_precheck = []
+        if isinstance(_raw_precheck, list) and any(
+            isinstance(item, dict) and item.get("sealed") for item in _raw_precheck
+        ):
+            raise HTTPException(403, SEALED_REFUSED)
+
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         raise HTTPException(
@@ -309,6 +333,8 @@ async def analyze_and_prepare_filing(
             raw = _json.loads(exhibits)
             if not isinstance(raw, list):
                 raise ValueError("exhibits must be a JSON array")
+            if any(isinstance(item, dict) and item.get("sealed") for item in raw):
+                raise HTTPException(403, SEALED_REFUSED)
             pkg = ExhibitPackage(main_document=document.filename or "main.pdf", label_style=LabelStyle.LETTER)
             for item in raw:
                 if not isinstance(item, dict):
@@ -884,6 +910,9 @@ def submit_filing(
 ) -> FilingSubmitResponse:
     """Submit a prepared filing to CM/ECF.
 
+    Sealed filings are refused outright — the hosted service never handles
+    sealed content (see docs/sealed-document-policy.md).
+
     Logs every filing attempt to the history database.
     Archives the PDF per-user (sealed documents are never retained).
     """
@@ -891,6 +920,9 @@ def submit_filing(
 
     from ecfiler.filing.models import FilingReceipt
     from ecfiler.storage.history import FilingHistory, archive_filing_pdf
+
+    if request.is_sealed:
+        raise HTTPException(403, SEALED_REFUSED)
 
     status = "dry_run" if request.dry_run else "submitted"
     message = (

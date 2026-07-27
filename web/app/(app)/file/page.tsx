@@ -56,6 +56,10 @@ export default function WorkspacePage() {
   const dragCounter = useRef(0);
   const { toast } = useToast();
 
+  // Sealed content is refused by the hosted service — hard stop, no staging,
+  // no persistence beyond memory. See docs/sealed-document-policy.md.
+  const hasSealedContent = isSealed || exhibits.some((e) => !!e.sealed);
+
   useEffect(() => {
     getHistory().then((h) => setHistory(h.slice(0, 10))).catch(() => {});
     fetch("/api/health").then(r => r.ok ? setBackendOk(true) : setBackendOk(false)).catch(() => setBackendOk(false));
@@ -71,8 +75,13 @@ export default function WorkspacePage() {
     return () => clearInterval(interval);
   }, [phase, filingStartTime]);
 
-  // Auto-save review state to sessionStorage so accidental refreshes don't lose work
+  // Auto-save review state to sessionStorage so accidental refreshes don't lose work.
+  // Sealed filings are never persisted — memory only.
   useEffect(() => {
+    if (phase === "review" && filing && hasSealedContent) {
+      sessionStorage.removeItem("ecfiler_review");
+      return;
+    }
     if (phase === "review" && filing) {
       sessionStorage.setItem("ecfiler_review", JSON.stringify({
         filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, fileName, fileSize,
@@ -84,7 +93,7 @@ export default function WorkspacePage() {
     if (phase === "ready" || phase === "done") {
       sessionStorage.removeItem("ecfiler_review");
     }
-  }, [phase, filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, fileName, fileSize, exhibits]);
+  }, [phase, filing, docketText, eventCodeOverride, isSealed, isRedacted, isIfp, showCertService, fileName, fileSize, exhibits, hasSealedContent]);
 
   // Restore review state on mount (survives accidental refresh)
   useEffect(() => {
@@ -219,7 +228,7 @@ export default function WorkspacePage() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Cmd+Enter to file — only if confirmation gate is open and attested
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && phase === "review" && filing?.ready) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && phase === "review" && filing?.ready && !hasSealedContent) {
         e.preventDefault();
         if (showConfirmGate && attorneyAttest) {
           handleConfirm();
@@ -908,8 +917,34 @@ export default function WorkspacePage() {
               </div>
             ))}
 
+            {/* Sealed content — hard stop. The hosted service never stages or
+                submits sealed documents. */}
+            {hasSealedContent && (
+              <div className="border-2 border-[#b45309]/40 bg-[#fffbeb] rounded-2xl p-6">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-[#b45309] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  <div>
+                    <div className="text-[15px] font-bold text-[#92400e]">Sealed filings can&apos;t go through the hosted service</div>
+                    <div className="text-[13px] text-[#92400e]/90 mt-1.5 leading-relaxed">
+                      ECFiler&apos;s servers never handle documents a court has ordered protected — that includes
+                      staging them here. Nothing about this filing has been saved. To file under seal:
+                    </div>
+                    <ul className="text-[13px] text-[#92400e]/90 mt-2 space-y-1 list-disc pl-5">
+                      <li>Use the ECFiler CLI on your own machine, which files locally under your control, or</li>
+                      <li>File conventionally under seal per the court&apos;s local rule and sealing procedure.</li>
+                    </ul>
+                    <div className="text-[12px] text-[#92400e]/70 mt-3">
+                      Unchecking the sealed flags will re-enable hosted preparation for public filings.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Actions — Step 1: Review gate */}
-            {!showConfirmGate && (
+            {!showConfirmGate && !hasSealedContent && (
               <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-6 shadow-xl shadow-[#1e3a5f]/15">
                 <div className="flex items-center justify-between">
                   <div>
@@ -954,7 +989,7 @@ export default function WorkspacePage() {
             )}
 
             {/* Actions — Step 2: Final confirmation gate */}
-            {showConfirmGate && (
+            {showConfirmGate && !hasSealedContent && (
               <div className="border-2 border-[#b91c1c]/30 rounded-2xl overflow-hidden shadow-xl">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-[#7f1d1d] to-[#991b1b] px-6 py-4">

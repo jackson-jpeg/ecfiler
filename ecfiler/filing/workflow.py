@@ -894,6 +894,36 @@ class FilingWorkflow:
             browser.screenshot("event_selected")
             check_page_state(page)
 
+            # Re-scan the live event page for sealing-related language: the
+            # court's own event text is not known at preflight time.
+            from ecfiler.filing.preflight import scan_seal_keywords
+
+            main_doc_for_seal = self.filing.main_document
+            filing_is_sealed = bool(
+                (main_doc_for_seal and main_doc_for_seal.is_sealed)
+                or (self.filing.exhibit_package and self.filing.exhibit_package.has_sealed_exhibits)
+            )
+            if not filing_is_sealed and not self.filing.confirmed_public:
+                try:
+                    live_text = page.inner_text("body")[:5000]
+                except Exception:
+                    live_text = ""
+                live_hits = scan_seal_keywords(live_text)
+                if live_hits:
+                    console.print(
+                        f"\n  [bold yellow]This court's event page mentions "
+                        f"sealing-related terms:[/bold yellow] {', '.join(live_hits)}"
+                    )
+                    seal_confirm = Prompt.ask(
+                        "  This filing is NOT marked sealed. Type [bold]PUBLIC[/bold] "
+                        "to confirm intentionally filing on the public docket"
+                    )
+                    if seal_confirm.strip().upper() != "PUBLIC":
+                        console.print("  [yellow]Aborted at sealing check.[/yellow]")
+                        self.filing.status = FilingStatus.CANCELLED
+                        raise KeyboardInterrupt("Cancelled at sealing keyword check")
+                    self.filing.confirmed_public = True
+
             # Select filing party
             if self.filing.filing_party:
                 console.print("  [dim]Selecting filing party...[/dim]")
@@ -910,12 +940,24 @@ class FilingWorkflow:
                     lambda: court.upload_document(page, main_doc.file_path),
                     description="upload document",
                 )
+                if main_doc.sealing.value != "public":
+                    # Raises SealingUnavailableError and aborts the filing if
+                    # this court's form has no sealing control to set.
+                    console.print(
+                        f"  [dim]Setting sealing level: {main_doc.sealing.value}...[/dim]"
+                    )
+                    court.select_sealing_level(page, main_doc.sealing.value)
                 browser.screenshot("document_uploaded")
                 check_page_state(page)
 
             for att in self.filing.attachments:
                 console.print(f"  [dim]Uploading attachment: {att.filename}...[/dim]")
                 court.upload_attachment(page, att.file_path, att.description)
+                if att.sealing.value != "public":
+                    console.print(
+                        f"  [dim]Setting sealing level for attachment: {att.sealing.value}...[/dim]"
+                    )
+                    court.select_sealing_level(page, att.sealing.value)
 
             # Related entry
             if self.filing.related_entry:
