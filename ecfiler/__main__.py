@@ -740,6 +740,8 @@ def stage_pull(stage_code: str, server: str, token: str) -> None:
     The hosted app prepares and validates; filing happens here, on your
     machine, with your credentials. This command bridges the two.
     """
+    import os
+
     import httpx
     from rich.console import Console
 
@@ -750,6 +752,11 @@ def stage_pull(stage_code: str, server: str, token: str) -> None:
     headers = {"User-Agent": USER_AGENT}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    # QA/dry-run affordance: a server running with ECFILER_DEV_AUTH=1 accepts
+    # an X-User-Id header instead of a Clerk token. Ignored by production.
+    dev_user = os.environ.get("ECFILER_DEV_USER", "")
+    if dev_user:
+        headers["X-User-Id"] = dev_user
 
     url = f"{server.rstrip('/')}/api/filing/stage/{stage_code}"
     try:

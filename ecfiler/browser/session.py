@@ -366,6 +366,8 @@ class BrowserSession:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{timestamp}_{case_id}_{docket_number}.html"
+        # Never lose a receipt to a missing directory on a fresh machine.
+        RECEIPTS_DIR.mkdir(parents=True, exist_ok=True)
         path = RECEIPTS_DIR / filename
         path.write_text(self.get_page_html())
         return path
