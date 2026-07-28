@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { generateCOS } from "@/lib/api";
+import { generateCertificate } from "@/lib/certificate";
 
 export default function CertificatePage() {
   const [attorney, setAttorney] = useState("");
@@ -17,10 +17,10 @@ export default function CertificatePage() {
     setRecipients(recipients.map((r, j) => j === i ? { ...r, [field]: value } : r));
   };
 
-  const generate = async () => {
+  const generate = () => {
     setLoading(true);
     try {
-      const res = await generateCOS(attorney, caseNum, recipients.filter((r) => r.name || r.attorney_name));
+      const res = generateCertificate(recipients.filter((r) => r.name || r.attorney_name), attorney);
       setText(res.text);
     } finally {
       setLoading(false);

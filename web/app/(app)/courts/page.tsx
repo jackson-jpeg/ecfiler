@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { searchCourts, type Court } from "@/lib/api";
+import { searchCourts, type Court } from "@/lib/courts-data";
 
 export default function CourtsPage() {
   const [courts, setCourts] = useState<Court[]>([]);
@@ -15,7 +15,8 @@ export default function CourtsPage() {
     setLoading(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      searchCourts(query || undefined, type || undefined).then((c) => { setCourts(c); setLoading(false); });
+      setCourts(searchCourts(query || undefined, type || undefined));
+      setLoading(false);
     }, query ? 200 : 0);
   }, [query, type]);
 

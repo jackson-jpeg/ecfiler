@@ -102,12 +102,6 @@ export interface AnalysisStep {
   detail?: string;
 }
 
-export interface Court {
-  court_id: string;
-  name: string;
-  court_type: "district" | "bankruptcy" | "appellate";
-}
-
 export interface ValidationResult {
   valid: boolean;
   file_size_mb: number;
@@ -252,11 +246,28 @@ export async function stageFiling(
   return resp.json();
 }
 
-export async function searchCourts(query?: string, type?: string): Promise<Court[]> {
-  const params = new URLSearchParams();
-  if (query) params.set("search", query);
-  if (type) params.set("court_type", type);
-  const resp = await fetchWithTimeout(`${API}/api/courts?${params}`);
+// Court directory and certificate-of-service generation are client-side now —
+// see lib/courts-data.ts and lib/certificate.ts.
+
+export interface AccountDeletionResult {
+  deleted: boolean;
+  filing_history_rows: number;
+  archived_documents: number;
+  staged_packages: number;
+  attestation_payloads: number;
+}
+
+export async function deleteAccountData(): Promise<AccountDeletionResult> {
+  const resp = await fetchWithTimeout(`${API}/api/account`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!resp.ok) throw new Error(await resp.text());
+  return resp.json();
+}
+
+export async function exportAccountData(): Promise<Record<string, unknown>> {
+  const resp = await fetchWithTimeout(`${API}/api/export`, { headers: authHeaders() }, 60000);
   if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
 }
@@ -265,20 +276,6 @@ export async function validatePDF(file: File): Promise<ValidationResult> {
   const fd = new FormData();
   fd.append("document", file);
   const resp = await fetchWithTimeout(`${API}/api/validate`, { method: "POST", body: fd }, 60000);
-  if (!resp.ok) throw new Error(await resp.text());
-  return resp.json();
-}
-
-export async function generateCOS(
-  attorney: string,
-  caseNumber: string,
-  recipients: { name: string; attorney_name: string; method: string }[]
-): Promise<{ text: string }> {
-  const resp = await fetchWithTimeout(`${API}/api/certificate-of-service`, {
-    method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify({ attorney_name: attorney, case_number: caseNumber, recipients }),
-  });
   if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
 }

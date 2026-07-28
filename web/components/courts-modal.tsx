@@ -2,18 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { COURT_COUNT } from "@/lib/facts";
-
-interface Court {
-  court_id: string;
-  name: string;
-  court_type: string;
-}
-
-interface EventCode {
-  code: string;
-  description: string;
-  category: string;
-}
+import { searchCourts, getEvents, type Court, type EventCode } from "@/lib/courts-data";
 
 interface Props {
   onClose: () => void;
@@ -42,22 +31,14 @@ export function CourtsModal({ onClose }: Props) {
   }, [query]);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (debouncedQuery) params.set("search", debouncedQuery);
-    if (typeFilter !== "all") params.set("court_type", typeFilter);
-    fetch(`/api/courts?${params}`).then(r => r.json()).then(setCourts).catch(() => {});
+    setCourts(searchCourts(debouncedQuery || undefined, typeFilter !== "all" ? typeFilter : undefined));
   }, [debouncedQuery, typeFilter]);
 
   const selectCourt = useCallback((court: Court) => {
     setSelected(court);
-    setLoadingEvents(true);
-    setEvents([]);
+    setEvents(getEvents(court.court_id));
     setEventQuery("");
-    fetch(`/api/courts/${court.court_id}/events`)
-      .then(r => r.json())
-      .then(setEvents)
-      .catch(() => {})
-      .finally(() => setLoadingEvents(false));
+    setLoadingEvents(false);
   }, []);
 
   const setAsDefault = useCallback((courtId: string) => {
