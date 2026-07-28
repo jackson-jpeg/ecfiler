@@ -220,6 +220,29 @@ class FilingHistory:
                 row = conn.execute("SELECT COUNT(*) FROM filing_history").fetchone()
             return row[0] if row else 0
 
+    def get_all_for_user(self, user_id: str) -> list[dict]:
+        """Every filing-history row for one user, oldest first (for export)."""
+        if not user_id:
+            return []
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT * FROM filing_history WHERE user_id = ? ORDER BY id",
+                (user_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def delete_for_user(self, user_id: str) -> int:
+        """Delete every filing-history row for one user. Returns the count."""
+        if not user_id:
+            return 0
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute(
+                "DELETE FROM filing_history WHERE user_id = ?", (user_id,)
+            )
+            conn.commit()
+        return cursor.rowcount
+
 
 # ── PDF Document Archive ────────────────────────────────────────────
 
@@ -257,6 +280,22 @@ def archive_filing_pdf(
     pdf_path.write_bytes(pdf_content)
 
     return str(pdf_path.relative_to(DOCUMENTS_DIR))
+
+
+def delete_user_documents(user_id: str) -> int:
+    """Delete a user's entire archived-document tree. Returns files removed."""
+    if not user_id:
+        return 0
+    user_dir = (DOCUMENTS_DIR / user_id).resolve()
+    # user_id comes from a verified JWT sub, but never let a crafted value
+    # escape the documents root.
+    if DOCUMENTS_DIR.resolve() not in user_dir.parents:
+        return 0
+    if not user_dir.exists():
+        return 0
+    count = sum(1 for f in user_dir.rglob("*") if f.is_file())
+    shutil.rmtree(user_dir, ignore_errors=True)
+    return count
 
 
 def get_archived_pdf_path(relative_path: str) -> Path | None:

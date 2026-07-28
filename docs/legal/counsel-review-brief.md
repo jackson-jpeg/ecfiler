@@ -147,66 +147,59 @@ higher cap; whether the §5 verification disclaimers should also appear
 in-product at the moment a "passed" result is displayed, not only in the
 Terms; insurance requirements.
 
-### Q3 — Data-deletion promises vs. the append-only attestation log
+### Q3 — RESOLVED in engineering (2026-07-28): hash-don't-store. Confirm the disclosure language only.
 
-**The question.** Privacy §11 promises that on account deletion "filing
-history, uploaded documents, and all associated metadata are queued for
-permanent deletion and will be purged within 30 calendar days," and Privacy
-§9/CCPA §10 grant deletion rights. But the attestation store
-(`ecfiler/storage/attestation.py`) is deliberately append-only — SQLite
-triggers `attestations_no_update` / `attestations_no_delete` abort any
-modification — and each record contains `user_id`, `attestor_name`,
-`payload_json` (canonical filing payload: case numbers, parties, docket
-text), and NEF text, hash-chained so that deleting one record breaks the
-chain. Are the deletion promises compatible with keeping attestation
-records, and if not, what carve-out language (or crypto-shredding design)
-do we need?
+**What the question was.** Privacy §11's deletion promise conflicted with an
+append-only attestation store that held `user_id`, `attestor_name`, full
+filing payloads (case numbers, parties, docket text), and NEF text —
+undeletable by design.
 
-**Why it needs counsel.** This is a genuine conflict between a
-privacy-law obligation (CCPA deletion, our own contractual promise) and an
-integrity feature that exists precisely to be undeletable. CCPA's
-exception for "completing a transaction" may or may not stretch to
-permanent retention of signature-attestation records.
+**What we did.** Restructured the store
+(`ecfiler/storage/attestation.py`): case payloads and NEF text now live in a
+separate, deletable table (`attestation_payloads`) beside the chain, keyed by
+record and salted per record. The chain records themselves keep only salted
+hashes plus attestor name, attestation language, timestamps, and the internal
+account identifier. `DELETE /api/account` (implemented, tested —
+`tests/test_account_lifecycle.py`) deletes filing history, documents, staged
+packages, and the attestation payloads *including their salts*, so the
+remaining hashes cannot be brute-forced back to case data. The chain still
+verifies end to end after deletion (`tests/test_attestation.py::TestHashDontStore`).
+Privacy §11 now discloses the narrow remainder expressly (attestor name,
+attestation text, timestamps, account identifier, content-free hashes,
+retained indefinitely as integrity records).
 
-**Our current position.** Attestation records for CLI filings live on the
-attorney's own machine (not our problem to delete); hosted *staging*
-attestations live server-side and are currently not deleted by anything.
-The Privacy Policy does not mention the attestation log at all.
+**What still needs counsel (reduced scope).** Only whether the §11
+disclosure of the retained attestation-record remainder is adequate under
+CCPA — i.e., whether retaining attestor name + account identifier
+indefinitely as an integrity record fits a CCPA exception or needs consent
+language. The case-data conflict is gone.
 
-**What turns on the answer.** Either Privacy §11 gains an express
-attestation-record retention carve-out (disclosed, scoped, justified), or
-we engineer per-user crypto-shredding of payload contents while preserving
-the hash chain. Which one is a legal call, and it must be resolved
-**before** these pages deploy — the promise as written is one we cannot
-currently keep.
+### Q4 — RESOLVED in engineering (2026-07-28): the copy now describes what exists.
 
-### Q4 — Factual representations published ahead of the facts
+**What the question was.** The policy asserted (a) a completed July-2026
+credential purge whose record was blank, and (b) self-serve deletion and
+machine-readable export that had no endpoints.
 
-**The question.** Two places where the rewritten documents assert as
-accomplished fact things that are still pending. (a) Privacy §2 Legacy
-note: server-stored credentials "were permanently purged in July 2026" —
-but `docs/credential-architecture.md` §4 shows the purge record as "_to be
-completed at deploy time — date, row count, snapshot disposition,
-operator_," and pre-purge hosting-volume snapshot deletion is part of that
-checklist. (b) Privacy §3/§9/§11 and Terms §13 promise self-serve document
-deletion "from your account settings," machine-readable export, and a
-30-day post-termination export window — none of which exist as endpoints in
-the hosted API today (`ecfiler/api/app.py` has draft deletion only). May we
-publish these pages only after the purge record is complete and the
-deletion/export features ship, or is forward-looking language acceptable in
-the interim?
+**What we did.** (a) The purge record in
+`docs/credential-architecture.md` §4 is now complete — the honest version:
+the purge-bearing build was never deployed; the legacy Railway environment
+is dead (edge 404, observed 2026-07-27/28); the trial expired and Railway
+destroys trial volumes 30 days after credit expiry; the encryption key dies
+with the workspace. Privacy §2's legacy note was rewritten to claim only
+what is true: the capability was **removed** and the environment
+**decommissioned** — no "permanently purged" claim. (b) `GET /api/export`
+and `DELETE /api/account` exist, are wired to the settings page (export
+download + two-step delete), and are tested. §3/§9/§11 were redrafted to
+match: deletion is immediate, per-document deletion is not promised
+(whole-history deletion is what exists), and login-account removal is
+correctly attributed to the auth provider's account portal.
 
-**Why it needs counsel.** Publishing a privacy policy that misstates
-current practice is FTC Section 5 territory regardless of intent; counsel
-should sequence deploy-gating versus redrafting.
-
-**Our current position.** The pages carry a "LEGAL REVIEW REQUIRED before
-deploy" banner and are not yet live; our intent is to complete the purge
-record at deploy time and to build deletion/export before or with launch.
-
-**What turns on the answer.** Deploy order. Either the engineering ships
-first, or §§3, 9, 11 get redrafted to describe what exists ("contact
-privacy@ecfiler.com to request deletion") until it does.
+**What still needs counsel (reduced scope).** Confirm the rewritten §2
+legacy note before the review banner comes off. Terms §13 was re-checked
+2026-07-28: its 30-day post-termination export window is an operator-conduct
+commitment (we refrain from deleting for 30 days after *we* terminate an
+account) and the export endpoint it presumes now exists, so it stands as
+written.
 
 ---
 
