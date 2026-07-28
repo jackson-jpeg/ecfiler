@@ -7,7 +7,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# Use ECFILER_DATA_DIR env var if set (for persistent storage on Railway/Docker)
+# Use ECFILER_DATA_DIR env var if set (for persistent storage on a server/Docker)
 # Falls back to ~/.ecfiler for local development
 CONFIG_DIR = Path(os.environ.get("ECFILER_DATA_DIR", str(Path.home() / ".ecfiler")))
 CONFIG_FILE = CONFIG_DIR / "config.toml"

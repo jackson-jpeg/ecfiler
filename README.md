@@ -2,7 +2,7 @@
 
 Filing preparation and locally-controlled CM/ECF automation for federal courts, powered by Claude API.
 
-**[Try the App](https://ecfiler-production.up.railway.app)** | **[Landing Page](https://ecfiler.vercel.app)** | **[API Docs](https://ecfiler-production.up.railway.app/docs)**
+**[Try the App](https://www.ecfiler.com)** | **[API Docs](https://api.ecfiler.com/docs)**
 
 ECFiler is an open-source tool for preparing and filing documents on CM/ECF. The hosted app **prepares, validates, and stages** filings — the human files. The CLI additionally automates the mechanical filing steps with Playwright (CM/ECF has no filing API), running **entirely on your own machine with your credentials in your OS keyring — no server ever sees a court password**. Every filing requires explicit attorney confirmation before submission, and every filing action is recorded in an append-only, hash-chained attestation log.
 
@@ -21,7 +21,7 @@ ECFiler is an open-source tool for preparing and filing documents on CM/ECF. The
 
 ### Option A: Try it now (hosted)
 
-Visit **https://ecfiler-production.up.railway.app** — drop a PDF and go. No install needed.
+Visit **https://www.ecfiler.com** — drop a PDF and go. No install needed.
 
 ### Option B: Self-host
 

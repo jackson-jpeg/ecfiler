@@ -15,3 +15,4 @@ web/tsconfig.tsbuildinfo
 
 # Playwright MCP session artifacts
 .playwright-mcp/
+web/.env*

@@ -342,9 +342,10 @@ export default function PrivacyPolicy() {
                 2 Type II standards.
               </li>
               <li>
-                <strong>Railway</strong> &mdash; hosts the backend API server,
-                database, and document storage. Railway infrastructure is
-                provisioned in U.S.-based data centers.
+                <strong>Self-hosted backend</strong> &mdash; the backend API
+                server, database, and document storage run on infrastructure
+                we operate directly (a dedicated virtual private server), not
+                on a third-party application platform.
               </li>
             </ul>
             <p className="mt-3">
@@ -376,9 +377,9 @@ export default function PrivacyPolicy() {
                   account data as described in Section 5.
                 </li>
                 <li>
-                  <strong>Vercel and Railway</strong> &mdash; as infrastructure
-                  providers, these companies process data on our behalf under
-                  data processing agreements.
+                  <strong>Vercel and our hosting provider</strong> &mdash; as
+                  infrastructure providers, these companies process data on our
+                  behalf under their standard data processing terms.
                 </li>
                 <li>
                   <strong>Legal compliance</strong> &mdash; we may disclose

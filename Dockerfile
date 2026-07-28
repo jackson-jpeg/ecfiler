@@ -23,7 +23,7 @@ RUN playwright install chromium --with-deps
 RUN groupadd -r ecfiler && useradd -r -g ecfiler -d /data -s /sbin/nologin ecfiler
 
 ENV PORT=8000
-# Create persistent data directory (mount a Railway volume here)
+# Create persistent data directory (mount a volume here)
 RUN mkdir -p /data/.ecfiler && chown -R ecfiler:ecfiler /data
 ENV ECFILER_DATA_DIR=/data/.ecfiler
 EXPOSE 8000

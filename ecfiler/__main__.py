@@ -725,7 +725,7 @@ def session_status(qa: bool, probe: bool) -> None:
 @click.option(
     "--server",
     envvar="ECFILER_SERVER",
-    default="https://ecfiler-production.up.railway.app",
+    default="https://api.ecfiler.com",
     help="ECFiler server that staged the package (env: ECFILER_SERVER)",
 )
 @click.option(

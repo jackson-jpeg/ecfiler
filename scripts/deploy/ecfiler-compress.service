@@ -1,0 +1,10 @@
+[Unit]
+Description=ECFiler archived-PDF compression (30-day-old files)
+
+[Service]
+Type=oneshot
+User=ecfiler
+Group=ecfiler
+EnvironmentFile=/etc/ecfiler/api.env
+WorkingDirectory=/opt/ecfiler
+ExecStart=/opt/ecfiler/.venv/bin/python -c "from ecfiler.storage.history import compress_old_pdfs; print(compress_old_pdfs(days_old=30))"

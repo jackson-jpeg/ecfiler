@@ -1313,7 +1313,7 @@ export default function WorkspacePage() {
             {error.includes("Failed to fetch") || error.includes("network") ? (
               <div className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-4 mb-6 text-left">
                 <div className="text-[12px] font-semibold text-[#92400e] mb-1">Connection issue</div>
-                <div className="text-[11px] text-[#78350f]">The backend server may be starting up. Railway free tier spins down after inactivity. Try again in 10-15 seconds.</div>
+                <div className="text-[11px] text-[#78350f]">The backend server may be temporarily unreachable. Try again in a few seconds.</div>
               </div>
             ) : (
               <div className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-4 mb-6 text-left">
