@@ -17,9 +17,9 @@ Tallahassee, FL 32317
 Dear Members of the Authority:
 
 Enclosed please find our completed Third Party Vendor Application and the $500.00
-non-refundable application fee. I am a docketing specialist based in Tampa and the
-developer of ECFiler, a filing-preparation platform currently in production use for
-federal CM/ECF practice. ECFiler's document-intelligence pipeline — PDF validation,
+non-refundable application fee. I am an independent software developer based in Tampa
+and the author of ECFiler, an open-source filing-preparation tool for federal CM/ECF
+practice. ECFiler's document-intelligence pipeline — PDF validation,
 PDF/A conversion, confidential-information redaction scanning, lead-document and exhibit
 handling, and a per-submission audit trail — is built and operating today; we are
 applying now to obtain the Third Party Vendor and ECF Specification and begin the XML

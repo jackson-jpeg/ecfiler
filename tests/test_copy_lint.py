@@ -70,6 +70,59 @@ def test_no_forbidden_copy() -> None:
     )
 
 
+def _outreach_files() -> list[Path]:
+    """Correspondence drafts destined for courts, the AO, and state authorities."""
+    out: list[Path] = []
+    for surface in ("docs/outreach", "docs/fl/drafts"):
+        d = REPO / surface
+        if d.is_dir():
+            out.extend(p for p in d.rglob("*.md") if p.is_file())
+    return out
+
+
+# Jackson is an independent software developer. He is not an attorney, not a
+# paralegal, and not employed by a law firm. Earlier drafts of the outreach
+# letters described him as "a docketing specialist at a national law firm" and
+# asserted a filing practice ("our staff", "I support attorneys filing in this
+# district daily") that does not exist. Those letters are addressed to a federal
+# clerk's office, the Administrative Office, and the Florida E-Filing Authority;
+# a fabricated professional identity in that correspondence is a far worse
+# problem than any it was meant to solve. This lint keeps it from coming back.
+FALSE_IDENTITY_PHRASES = [
+    "docketing specialist",
+    "[firm name]",
+    "national law firm",
+    "our firm",
+    "our staff",
+    "i support attorneys filing",
+]
+
+
+# Everything after this marker in a draft is editorial commentary — the
+# "why this reads the way it does" notes — not text that gets sent. Those
+# notes are allowed to quote the retired framing in order to explain it.
+NOTES_MARKER = "<!-- lint:notes -->"
+
+
+def _letter_body(path: Path) -> str:
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    return text.split(NOTES_MARKER, 1)[0].lower()
+
+
+def test_outreach_identity_is_truthful() -> None:
+    violations: list[str] = []
+    for path in _outreach_files():
+        body = _letter_body(path)
+        for phrase in FALSE_IDENTITY_PHRASES:
+            if phrase in body:
+                violations.append(f"{path.relative_to(REPO)}: '{phrase}'")
+    assert violations == [], (
+        "False professional identity in outbound correspondence:\n"
+        + "\n".join(violations)
+        + f"\n(Editorial notes may discuss it below a {NOTES_MARKER} marker.)"
+    )
+
+
 def test_court_count_single_source() -> None:
     """The wrong court counts (150 / 94-43-13 breakdown) must not reappear."""
     stale = ["150 federal courts", "43 bankruptcy", "13 appellate"]

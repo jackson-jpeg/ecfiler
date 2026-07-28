@@ -2,23 +2,30 @@
 
 **A practitioner's perspective for the case-management modernization program**
 
-Jackson Sanger — Docketing Specialist, [FIRM NAME], Tampa, Florida
-[email] · July 2026 · 5 pages
+Jackson Sanger — Independent Developer, ECFiler Project
+realjacksons@gmail.com · github.com/jackson-jpeg/ecfiler · July 2026
 
-*Draft for Jackson's review. Written to be forwardable inside the AO: no product
-pitch, every requirement anchored to a security or accuracy benefit, sources cited.
-Bracketed items need his real details.*
+*Written to be forwardable inside the AO: no product pitch, every requirement
+anchored to a security or accuracy benefit, sources cited.*
 
 ---
 
 ## 1. Who this is from, and why
 
-I am a docketing specialist at a national law firm. My work is the layer between
-attorneys and CM/ECF: preparing filings, selecting events, tracking NEFs, and
-reconciling dockets across dozens of districts, daily and at volume. I also build
-software against the Judiciary's documented public interfaces (the PACER
-Authentication API and Case Locator API), so I see both what the systems promise and
-what integrators actually do to work around their gaps.
+I am an independent software developer, not an attorney and not a filing agent. I
+build ECFiler, an open-source tool that prepares federal filings and helps a filer
+check them against local requirements before submission. It works against the
+Judiciary's documented public interfaces — the PACER Authentication API and the Case
+Locator API — and against CM/ECF itself through the filer's own browser session, on
+the filer's own machine, under the filer's own credentials, which the tool never
+transmits or stores on a server.
+
+That vantage point is narrower than a practitioner's and I will not overstate it: I
+do not file on behalf of clients, and nothing here should be read as a report on how
+any particular firm operates. What I can describe precisely is what the sanctioned
+interfaces do and do not offer to anyone trying to build compliant automation on top
+of them, and where those gaps push integrators toward practices the Judiciary has
+itself warned against.
 
 This paper describes what professional filing operations need from the interfaces of
 a modernized case-management system. It is written now because the requirements for

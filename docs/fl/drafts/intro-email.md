@@ -10,7 +10,7 @@ contact per `docs/fl/test-case-checklist.md`: support@myflcourtaccess.com, 850-5
 
 Hello,
 
-I'm a docketing specialist in Tampa preparing a Third Party Vendor application for
+I'm an independent software developer in Tampa preparing a Third Party Vendor application for
 batch (machine-to-machine) filing, and I'd like to confirm I'm working from current
 materials before mailing it. Is the application posted on the Certified Vendors page
 (rev. 01-01-2021) still the current version, and is the $500 fee and P.O. Box 16428
