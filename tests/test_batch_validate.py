@@ -11,7 +11,10 @@ from ecfiler.__main__ import main
 
 @pytest.fixture
 def runner() -> CliRunner:
-    return CliRunner()
+    # NO_COLOR keeps rich from highlighting numerals, which otherwise splits
+    # "3 passed" into "\x1b[1;36m3\x1b[0m passed" and breaks substring
+    # assertions on machines where rich decides colour is available.
+    return CliRunner(env={"NO_COLOR": "1", "TERM": "dumb"})
 
 
 @pytest.fixture
