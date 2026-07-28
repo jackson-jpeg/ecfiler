@@ -12,3 +12,6 @@ build/
 .next/
 node_modules/
 web/tsconfig.tsbuildinfo
+
+# Playwright MCP session artifacts
+.playwright-mcp/
