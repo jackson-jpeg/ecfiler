@@ -26,10 +26,12 @@ the PACER account of record so "account in good standing" verifies cleanly]`
 **City / State:** Tampa, Florida
 
 **Affiliation / employer / organization:**
-Self-employed software developer; author and maintainer of ECFiler, an open-source
-court filing-preparation tool (github.com/jackson-jpeg/ecfiler). *(If ECFiler LLC
-exists by submission — see `docs/fl/entity-recommendation.md` — give the affiliation
-as "ECFiler LLC (founder)" and keep the open-source description.)*
+Applying in personal capacity. Litigation docketing specialist by profession
+(legal sector; no employer is named or represented in this application), and author
+and maintainer of ECFiler, an open-source court filing-preparation tool
+(github.com/jackson-jpeg/ecfiler). *(If ECFiler LLC exists by submission — see
+`docs/fl/entity-recommendation.md` — give the project affiliation as "ECFiler LLC
+(founder)" and keep the personal-capacity framing.)*
 
 **PACER account holder:** Yes — individual PACER account in good standing, held since
 `[JACKSON — year account opened]`. Also registered on the QA-PACER test environment
@@ -39,15 +41,18 @@ the AO's developer updates list.
 **User category:** `[VERIFY AT SUBMIT — the form's category list is unpublished until
 it opens. Selection rule: pick the category for technology/service
 providers/developers if one exists; otherwise "commercial user" or "other" with a
-one-line description. Do NOT select "attorney" (Jackson is not one) and do not
-shoehorn into a legal-professional category. One-line description if a text field is
-offered:]* Independent developer of open-source filing-preparation software; frequent
-individual PACER user supporting that development.
+one-line description. Do NOT select "attorney" (Jackson is not one). One-line
+description if a text field is offered:]* Litigation docketing specialist and
+independent developer of open-source filing-preparation software; high-frequency
+PACER user in both capacities, applying as an individual.
 
 **Frequency / nature of PACER usage (usage-description field):**
-Regular individual use, typically `[JACKSON — honest frequency, e.g. "several times
-per week"]`: retrieving dockets and filed documents across district, bankruptcy, and
-appellate courts to develop and test open-source filing-preparation tooling; daily
+High-frequency professional and individual use. PACER and CM/ECF are my daily working
+environment as a litigation docketing specialist (stated in personal capacity; no
+employer represented), and my individual account sees regular use — typically
+`[JACKSON — honest frequency on the individual account, e.g. "several times per
+week"]` — retrieving dockets and filed documents across district, bankruptcy, and
+appellate courts to develop and test open-source filing-preparation tooling, plus
 development use of the documented public interfaces (PACER Authentication API, PACER
 Case Locator API, and the courts' published CM/ECF lookup feeds) and of court training
 environments intended for practice filings. All automated access is rate-limited,
@@ -57,21 +62,23 @@ for bulk operations.
 **Commitment to collecting feedback from peers (if asked directly):**
 Yes. I maintain an open-source project with public issue tracking, and I am in regular
 contact with the open-source legal technology community and the solo and small-firm
-users it serves. I commit to soliciting, collecting, and synthesizing their feedback
-between meetings and bringing it to the group in usable, specific form.
+filers it is built for. I also work alongside docketing and filing professionals
+daily. I commit to soliciting, collecting, and synthesizing feedback from both
+communities between meetings and bringing it to the group in usable, specific form.
 
 ---
 
 ## Statement of interest (~250 words — final)
 
-I am an independent software developer and the author of ECFiler, an open-source tool
-that helps filers prepare compliant federal court submissions: PDF and PDF/A
-validation, redaction scanning under Rule 5.2, event-code verification, and pre-filing
-checklists, with every automated step confirmed by the human filer. I work with the
-Judiciary's electronic public access systems every day from both sides: as a PACER
-account holder retrieving dockets and filings, and as a developer building against the
-documented public interfaces — the Authentication API, the PACER Case Locator API, and
-the courts' published lookup feeds.
+I am a litigation docketing specialist by profession and, in my personal capacity, the
+author of ECFiler, an open-source tool built to help filers prepare compliant federal
+court submissions: PDF and PDF/A validation, redaction scanning under Rule 5.2,
+event-code verification, and pre-filing checklists, with every automated step
+confirmed by the human filer. I work with the Judiciary's electronic public access
+systems every day from both sides: professionally, in PACER and CM/ECF as part of
+litigation docketing work, and as a developer building against the documented public
+interfaces — the Authentication API, the PACER Case Locator API, and the courts'
+published lookup feeds. I apply as an individual; no employer is represented here.
 
 I am applying because the modernization of case management and public access systems
 will determine what independent and open-source tools can responsibly do for the users
@@ -83,9 +90,10 @@ commercial vendors, and I can state them concretely, from working code rather th
 opinion.
 
 I would contribute specific, current, technical experience of the public access
-interfaces as they exist today; a commitment to gathering and synthesizing feedback
-from the open-source legal technology community and the small-firm users it serves;
-and a contributor-of-requirements posture — I am not seeking special access for my own
+interfaces as they exist today, informed by daily professional use; a commitment to
+gathering and synthesizing feedback from the open-source legal technology community
+and the solo and small-firm filers it is built for; and a
+contributor-of-requirements posture — I am not seeking special access for my own
 project, but a channel for developer-users to be heard. I would gladly attend the
 annual meeting and do the between-meeting work.
 
@@ -95,8 +103,13 @@ annual meeting and do the between-meeting work.
 
 **Jackson Sanger** — Tampa, FL · realjacksons@gmail.com · `[JACKSON — phone]`
 
-**Independent software developer; author and maintainer, ECFiler** (`[JACKSON — start
-year]`–present)
+**Litigation docketing specialist** (`[JACKSON — years, stated honestly; employer
+deliberately unnamed — this application is personal]`)
+- Daily PACER and CM/ECF work across federal district, bankruptcy, and appellate
+  courts: docketing, deadline calculation, filing mechanics.
+
+**Author and maintainer, ECFiler** (`[JACKSON — start year]`–present, personal
+open-source project)
 - ECFiler: open-source (MIT) filing-preparation tool for federal CM/ECF practice —
   PDF/PDF-A validation and conversion, Rule 5.2 redaction scanning, event-code
   verification, certificate-of-service generation, pre-flight checks, and an
@@ -123,11 +136,16 @@ The application presents Jackson as exactly what he is: a solo, independent deve
 of open-source filing-preparation tooling and a frequent individual PACER user. Points
 of discipline, in order:
 
-1. **No borrowed credentials.** An earlier draft of this file framed the applicant as
-   a law-firm docketing specialist; that framing was inaccurate for Jackson and has
-   been removed. The AO's criteria reward genuine experience and good standing —
-   misstating user identity on a Judiciary application would poison every other
-   engagement track (C1–C6).
+1. **True profession, personal capacity, no employer.** Jackson is in fact a
+   litigation docketing specialist in Tampa — the profession is real and is claimed,
+   because the AO's criteria reward genuine high-frequency professional PACER
+   experience. What is never claimed: the employer's name or description (a firm that
+   has not consented must not be implicated, and the AO's reply would file next to
+   its name), any organizational voice ("we", "our staff"), or any suggestion that
+   ECFiler is used in that professional work or by anyone — it has never filed for a
+   client. Session-2 drafts removed the profession entirely on the mistaken premise
+   it was fabricated; session 3 restored the true profession while keeping every
+   employer reference out. `tests/test_copy_lint.py` enforces all of this.
 2. **Developer-user, not vendor.** ECFiler is disclosed plainly and by name (it is the
    basis of the experience claimed), but the application does not pitch it. The
    posture throughout is contributor of requirements on behalf of the developer- and
@@ -141,8 +159,9 @@ of discipline, in order:
    public project with public issue tracking.
 4. **Consistency check before submit:** the identity here must match C2
    (`docs/outreach/c2-dev-mailbox-email.md`) and any other correspondence already
-   sent to the AO or PSC. If C2 was sent with the old docketing-specialist framing,
-   reconcile before this application goes in. `[VERIFY AT SUBMIT]`
+   sent to the AO or PSC. C2 speaks as an independent developer and does not mention
+   the profession — that is consistent (this file adds a fact, contradicts nothing),
+   but re-read whatever was actually sent before this goes in. `[VERIFY AT SUBMIT]`
 
 ## Submission mechanics
 

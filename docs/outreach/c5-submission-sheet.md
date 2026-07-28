@@ -28,11 +28,12 @@ So there is no Gmail draft for C5 — a draft addressed to a guessed
 
 ## "How can we assist you?" — paste this
 
-> I am an independent software developer in Tampa. I am not an attorney and I do
-> not file in this district; I build an open-source tool that attorneys and their
-> staff can run to help prepare filings, and I would like to build it to match
-> what this court expects. I have a question I could not answer from the
-> Administrative Procedures for Electronic Filing.
+> I write in a personal capacity. By profession I am a litigation docketing
+> specialist in Tampa; separately, I build an open-source tool that attorneys and
+> their staff can run to help prepare filings, and I would like to build it to
+> match what this court expects. I am not an attorney, and this inquiry is not
+> made on behalf of any employer or client. I have a question I could not answer
+> from the Administrative Procedures for Electronic Filing.
 >
 > The tool runs entirely on the filer's own computer. It assists with document
 > validation, deadline checks, and pre-filling filing information, and it submits

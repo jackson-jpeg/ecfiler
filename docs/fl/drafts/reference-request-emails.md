@@ -87,7 +87,7 @@ CPA or an established client — see note above.]`
 Hello,
 
 I operate the Stripe account for ECFiler LLC (account `[acct_XXXX / registered
-email]`), in use since `[MONTH YEAR]`. I'm applying to the Florida Courts E-Filing
+email]`), open since `[MONTH YEAR]`. I'm applying to the Florida Courts E-Filing
 Authority, a Florida public body, to be certified as a third-party e-filing vendor.
 The application requires three references regarding the financial stability of the
 company, and its declaration authorizes the Authority to verify my statements with
@@ -116,29 +116,35 @@ Managing Member, ECFiler LLC
 
 ---
 
-## Email 3 — Long-standing infrastructure vendor (Railway)
+## Email 3 — Paid infrastructure vendor (Hostinger)
 
-**To:** `[Railway support (team@railway.com or the in-app support channel) — Railway
-hosts the ECFiler production app, so this is a real, ongoing paid vendor relationship.
-Ask support who can serve as the verification contact; a billing/accounts person is
-ideal. Any hosting or infrastructure vendor with a comparable paid history works the
-same way; an accountant or established client is stronger still, if available.]`
+*An earlier draft used Railway here. That is no longer truthful: the Railway
+relationship was a free trial that has expired, and ECFiler's backend now runs on the
+Hostinger VPS (`docs/hosting-topology.md`). Hostinger is a real, ongoing **paid**
+hosting relationship — currently in Jackson's name, so per the sequencing note above
+it belongs on the form only if the account (or a successor account) is in the LLC's
+name, or listed transparently as the principal's account hosting the company's
+infrastructure. A CPA or established client remains the stronger substitute.*
+
+**To:** `[Hostinger support/billing — ask who can serve as the verification contact
+for a government vendor application; a billing/accounts person is ideal. Any
+infrastructure vendor with a comparable paid history works the same way.]`
 
 **Subject:** Vendor reference request — ECFiler LLC application to the Florida Courts E-Filing Authority
 
 Hello,
 
-I'm a paying Railway customer — ECFiler LLC's production application has been hosted
-on Railway since `[MONTH YEAR]` under the account `[ACCOUNT EMAIL/WORKSPACE]`. I'm
-applying to the Florida Courts E-Filing Authority (the public body operating Florida's
-court e-filing portal) for certification as a third-party filing vendor, and the
+I'm a paying Hostinger customer — the VPS hosting ECFiler's backend has been on
+Hostinger since `[MONTH YEAR]` under the account `[ACCOUNT EMAIL]`. I'm applying to
+the Florida Courts E-Filing Authority (the public body operating Florida's court
+e-filing portal) for certification as a third-party filing vendor, and the
 application asks for three references on the financial stability of the company.
 
-May I list Railway as a vendor reference? Concretely, that means: the Authority may
-contact you to confirm that ECFiler LLC is a customer in good standing with a timely
-payment history, and my application authorizes you to answer that inquiry. Could you
-let me know the right contact (name or department, phone, email) to put on the form
-for such a verification request?
+May I list Hostinger as a vendor reference? Concretely, that means: the Authority may
+contact you to confirm a customer relationship in good standing with a timely payment
+history, and my application authorizes you to answer that inquiry. Could you let me
+know the right contact (name or department, phone, email) to put on the form for such
+a verification request?
 
 Thank you.
 
@@ -148,9 +154,10 @@ Jackson Sanger
 Managing Member, ECFiler LLC
 `[PHONE]` · `[EMAIL]`
 
-> **What this reference needs to be able to state if contacted:** that ECFiler LLC is
-> a customer in good standing; duration of the relationship; that invoices have been
-> paid on time; no collections or payment disputes.
+> **What this reference needs to be able to state if contacted:** customer in good
+> standing; duration of the relationship; invoices paid on time; no collections or
+> payment disputes. **Fill `[MONTH YEAR]` from the actual Hostinger billing history,
+> and reconcile the account-name question before listing.**
 
 ---
 

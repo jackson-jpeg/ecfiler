@@ -12,20 +12,24 @@ anchored to a security or accuracy benefit, sources cited.*
 
 ## 1. Who this is from, and why
 
-I am an independent software developer, not an attorney and not a filing agent. I
-build ECFiler, an open-source tool that prepares federal filings and helps a filer
-check them against local requirements before submission. It works against the
-Judiciary's documented public interfaces — the PACER Authentication API and the Case
-Locator API — and against CM/ECF itself through the filer's own browser session, on
-the filer's own machine, under the filer's own credentials, which the tool never
+I write in a personal capacity, from two vantage points. By profession I am a
+litigation docketing specialist: PACER and CM/ECF are my daily working environment,
+at the frequency and failure-mode exposure that only docketing work produces. No
+employer is named or represented in this paper, and nothing here reports on how any
+particular firm operates. Separately, as an independent open-source developer, I
+build ECFiler, a tool that prepares federal filings and helps a filer check them
+against local requirements before submission. It works against the Judiciary's
+documented public interfaces — the PACER Authentication API and the Case Locator
+API — and against CM/ECF itself through the filer's own browser session, on the
+filer's own machine, under the filer's own credentials, which the tool never
 transmits or stores on a server.
 
-That vantage point is narrower than a practitioner's and I will not overstate it: I
-do not file on behalf of clients, and nothing here should be read as a report on how
-any particular firm operates. What I can describe precisely is what the sanctioned
-interfaces do and do not offer to anyone trying to build compliant automation on top
-of them, and where those gaps push integrators toward practices the Judiciary has
-itself warned against.
+I am not an attorney and not a filing agent, and ECFiler has never filed on behalf
+of a client. What I can describe precisely is, first, the mechanics of high-volume
+docketing work as practiced daily, and second, what the sanctioned interfaces do
+and do not offer to anyone trying to build compliant automation on top of them —
+and where those gaps push integrators toward practices the Judiciary has itself
+warned against.
 
 This paper describes what professional filing operations need from the interfaces of
 a modernized case-management system. It is written now because the requirements for

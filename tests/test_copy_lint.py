@@ -80,21 +80,61 @@ def _outreach_files() -> list[Path]:
     return out
 
 
-# Jackson is an independent software developer. He is not an attorney, not a
-# paralegal, and not employed by a law firm. Earlier drafts of the outreach
-# letters described him as "a docketing specialist at a national law firm" and
-# asserted a filing practice ("our staff", "I support attorneys filing in this
-# district daily") that does not exist. Those letters are addressed to a federal
-# clerk's office, the Administrative Office, and the Florida E-Filing Authority;
-# a fabricated professional identity in that correspondence is a far worse
-# problem than any it was meant to solve. This lint keeps it from coming back.
-FALSE_IDENTITY_PHRASES = [
-    "docketing specialist",
+# The identity rules for outbound correspondence, settled in session 3:
+#
+# Jackson IS a litigation docketing specialist at a law firm in Tampa — the
+# profession is real, and claiming it (in personal capacity) is allowed and
+# often the right move. What outbound documents must never do:
+#
+#   1. Name, describe, or allude to the employer. A letter that reads as a
+#      firm inquiry implicates an employer who has not consented, and the
+#      recipient's answer files next to that name. Not "[FIRM NAME]", not
+#      "a national law firm", not letterhead.
+#   2. Use organizational voice. There is one person: no "we", "our", "us"
+#      in any letter body — no "our filings", "our staff", "our computers".
+#   3. Claim ECFiler is in use anywhere. It has never filed for a client;
+#      no asserted user base, production operation, or filing practice.
+#
+# Session 1 violated rule 1 and 3 ("docketing specialist at a national law
+# firm ... our staff ... filing in this district daily"); session 2
+# over-corrected by banning the true profession outright. This lint enforces
+# the three real rules instead.
+EMPLOYER_ATTRIBUTION_PHRASES = [
     "[firm name]",
     "national law firm",
+    "a national firm",
+    "my firm",
     "our firm",
-    "our staff",
+    "the firm i work",
+    "my employer",
+    "on behalf of my employer",
+    "firm letterhead",
     "i support attorneys filing",
+]
+
+IN_USE_CLAIM_PHRASES = [
+    "operating today",
+    "in production use",
+    "in daily use",
+    "in use since",
+    "our staff",
+    "used by attorneys",
+    "attorneys rely on",
+    "has filed for",
+    "files for clients",
+]
+
+# Words that may only appear in a letter body as part of an allowed phrase.
+import re
+
+PLURAL_VOICE_RE = re.compile(r"\b(we|our|us)\b")
+
+# Lines where first-person plural is legitimately not Jackson's voice:
+# quoted court/form labels, quotes from official documents, and named-entity
+# constructions. Keep this list short and literal.
+PLURAL_ALLOWED_SUBSTRINGS = [
+    "how can we assist you",  # the M.D. Fla. web form's own field label
+    "> the undersigned",  # quoted declaration text from the FL application form
 ]
 
 
@@ -109,17 +149,52 @@ def _letter_body(path: Path) -> str:
     return text.split(NOTES_MARKER, 1)[0].lower()
 
 
-def test_outreach_identity_is_truthful() -> None:
+def test_outreach_no_employer_attribution() -> None:
     violations: list[str] = []
     for path in _outreach_files():
         body = _letter_body(path)
-        for phrase in FALSE_IDENTITY_PHRASES:
+        for phrase in EMPLOYER_ATTRIBUTION_PHRASES:
             if phrase in body:
                 violations.append(f"{path.relative_to(REPO)}: '{phrase}'")
     assert violations == [], (
-        "False professional identity in outbound correspondence:\n"
+        "Employer named or implicated in outbound correspondence:\n"
         + "\n".join(violations)
         + f"\n(Editorial notes may discuss it below a {NOTES_MARKER} marker.)"
+    )
+
+
+def test_outreach_no_in_use_claims() -> None:
+    violations: list[str] = []
+    for path in _outreach_files():
+        body = _letter_body(path)
+        for phrase in IN_USE_CLAIM_PHRASES:
+            if phrase in body:
+                violations.append(f"{path.relative_to(REPO)}: '{phrase}'")
+    assert violations == [], (
+        "ECFiler-in-use claim in outbound correspondence (it has never filed "
+        "for a client):\n" + "\n".join(violations)
+    )
+
+
+def test_outreach_singular_voice() -> None:
+    """No organizational 'we/our/us' in letter bodies — there is one person."""
+    violations: list[str] = []
+    for path in _outreach_files():
+        body = _letter_body(path)
+        for lineno, line in enumerate(body.splitlines(), start=1):
+            if any(allowed in line for allowed in PLURAL_ALLOWED_SUBSTRINGS):
+                continue
+            m = PLURAL_VOICE_RE.search(line)
+            if m:
+                violations.append(
+                    f"{path.relative_to(REPO)}:{lineno}: '{m.group(0)}' in: "
+                    f"{line.strip()[:80]}"
+                )
+    assert violations == [], (
+        "Organizational voice in outbound correspondence:\n"
+        + "\n".join(violations)
+        + f"\n(Editorial notes below {NOTES_MARKER} are exempt; quoted form "
+        "labels can be allowlisted in PLURAL_ALLOWED_SUBSTRINGS.)"
     )
 
 

@@ -14,11 +14,12 @@ attachments, no product name.
 
 Dear [Clerk of Court / ECF Help Desk],
 
-I am an independent software developer in Tampa. I am not an attorney and I do not
-file in this district; I build an open-source tool that attorneys and their staff can
+I write in a personal capacity. By profession I am a litigation docketing specialist
+in Tampa; separately, I build an open-source tool that attorneys and their staff can
 run to help prepare filings, and I would like to build it to match what this court
-expects. I have a question I could not answer from the Administrative Procedures for
-Electronic Filing, and I would be grateful for the court's guidance.
+expects. I am not an attorney, and this inquiry is not made on behalf of any employer
+or client. I have a question I could not answer from the Administrative Procedures
+for Electronic Filing, and I would be grateful for the court's guidance.
 
 The tool runs entirely on the filer's own computer. It assists with document
 validation, deadline checks, and pre-filling filing information, and it submits only
@@ -49,13 +50,16 @@ realjacksons@gmail.com · github.com/jackson-jpeg/ecfiler
 
 ### Why the draft is framed this way
 
-- **Identity is truthful.** An earlier draft opened "I am a docketing specialist at
-  [FIRM NAME] in Tampa, and I support attorneys filing in this district daily," and
-  described "our filings … operated by our staff." None of that is true: Jackson is a
-  solo developer who does not file. Asserting a fabricated practice to a federal
-  clerk's office would be far worse than the awkwardness of asking as an outsider,
-  and the honest framing — a developer asking what the court wants — is a question
-  clerks are used to receiving.
+- **Identity is truthful, and scoped.** Jackson is in fact a litigation docketing
+  specialist in Tampa, and the letter claims that profession because it earns the
+  question a serious read. What it deliberately does not do: name or describe the
+  employer (a firm that has not consented must not appear in a letter the clerk's
+  answer will file next to), use any organizational voice ("our filings", "our
+  staff"), tie the inquiry to any employment practice, or claim ECFiler is in use by
+  anyone — it has never filed for a client. The first-session draft did all of
+  that; the second session over-corrected by deleting the profession entirely;
+  this draft states the true profession in personal capacity, which is the stable
+  place to land.
 - It asks about *how the tool is actually used* (filer-operated, on the filer's
   machine, filer's own login, per-filing authorization) rather than about hypothetical
   autonomy. A "yes, that's ordinary account use" answer is achievable and citable; a
