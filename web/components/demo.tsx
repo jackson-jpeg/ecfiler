@@ -99,15 +99,9 @@ export function InteractiveDemo() {
             ecfiler.com/file
           </div>
         </div>
-        {(phase === "analyzing" || phase === "filing") && (
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-            </span>
-            <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider">Live</span>
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px] font-bold text-[#febc2e] uppercase tracking-wider">Scripted demo</span>
+        </div>
       </div>
 
       {/* App content */}
@@ -125,8 +119,7 @@ export function InteractiveDemo() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <span className="text-[9px] text-[#999]">Connected</span>
+              <span className="text-[9px] text-[#999]">Sample data</span>
             </div>
             <div className="w-6 h-6 bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8e] rounded-full ring-1 ring-black/5" />
           </div>
@@ -145,14 +138,14 @@ export function InteractiveDemo() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
                   </svg>
                 </div>
-                <div className="text-[15px] font-bold text-[#1a1a1a] group-hover:text-[#1e3a5f] transition mb-1">Click to see a live demo</div>
-                <div className="text-[13px] text-[#8a8a8a]">Watch AI analyze a motion and stage it for filing</div>
+                <div className="text-[15px] font-bold text-[#1a1a1a] group-hover:text-[#1e3a5f] transition mb-1">Click to play the walkthrough</div>
+                <div className="text-[13px] text-[#8a8a8a]">A scripted run with sample data — how a motion is analyzed and staged</div>
               </div>
               <div className="grid grid-cols-3 gap-3 mt-4">
                 {[
                   { n: String(COURT_COUNT), label: "Federal Courts", sub: "All districts" },
-                  { n: "3-Pass", label: "AI Verification", sub: "Before every filing" },
-                  { n: "<1min", label: "To Prepare", sub: "AI does the work" },
+                  { n: "5-Point", label: "Readiness Check", sub: "Before staging" },
+                  { n: "0", label: "Court Passwords", sub: "Never on our servers" },
                 ].map(({ n, label, sub }) => (
                   <div key={label} className="bg-white rounded-xl border border-[#e0ddd7] p-3.5 text-center shadow-sm">
                     <div className="text-[18px] font-bold text-[#1e3a5f]">{n}</div>
@@ -255,7 +248,7 @@ export function InteractiveDemo() {
               {/* File button */}
               <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-xl p-4 flex items-center justify-between shadow-lg shadow-[#1e3a5f]/20">
                 <div>
-                  <div className="text-[13px] font-bold text-white">3 safety passes completed</div>
+                  <div className="text-[13px] font-bold text-white">Readiness checks complete</div>
                   <div className="text-[10px] text-white/50">All checks passed · Ready to stage</div>
                 </div>
                 <div className="px-5 py-2 bg-white text-[#1e3a5f] text-[12px] font-bold rounded-lg shadow-lg">
@@ -282,13 +275,7 @@ export function InteractiveDemo() {
                     <span className="font-mono text-[11px] text-[#333]">ecfiler.com/file/package</span>
                   </div>
                   {browserStep < STAGING_STEPS.length && (
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1e3a5f] opacity-50" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1e3a5f]" />
-                      </span>
-                      <span className="text-[9px] font-bold text-[#1e3a5f] uppercase tracking-wider">Live</span>
-                    </div>
+                    <span className="text-[9px] font-bold text-[#1e3a5f] uppercase tracking-wider shrink-0">Demo</span>
                   )}
                   {browserStep >= STAGING_STEPS.length && (
                     <span className="text-[9px] font-bold text-[#15803d] uppercase tracking-wider">Done</span>

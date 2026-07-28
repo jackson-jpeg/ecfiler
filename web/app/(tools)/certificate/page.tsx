@@ -32,14 +32,14 @@ export default function CertificatePage() {
       <header className="bg-white border-b border-[#e8e5e0] sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4 sm:gap-6">
-            <Link href="/file" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5">
               <div className="w-7 h-7 bg-gradient-to-br from-[#1e3a5f] to-[#0f2440] rounded-lg flex items-center justify-center text-white text-[10px] font-bold">E</div>
               <span className="text-[15px] font-semibold tracking-tight text-[#1a1a1a] hidden sm:inline">ECFiler</span>
             </Link>
             <div className="h-5 w-px bg-[#e8e5e0]" />
             <span className="text-[13px] text-[#525252] font-medium">Certificate of Service</span>
           </div>
-          <Link href="/file" className="text-[13px] text-[#1e3a5f] hover:text-[#162a47] transition font-medium">&larr; Back to Filing</Link>
+          <Link href="/tools" className="text-[13px] text-[#1e3a5f] hover:text-[#162a47] transition font-medium">All free tools</Link>
         </div>
       </header>
 

@@ -10,7 +10,7 @@ ECFiler is an open-source tool for preparing and filing documents on CM/ECF. The
 
 - **Smart Filing** — drop a PDF, AI extracts case, court, party, event type. Zero form-filling.
 - **207 federal courts** — 97 district, 94 bankruptcy, 16 appellate
-- **7 safety gates** — PDF validation, redaction scan, event code verification, completeness check, attorney CONFIRM, final submit watchdog, receipt capture
+- **7 safety gates** — PDF validation, redaction scan, event code verification, completeness check, attorney CONFIRM, typed YES at the CM/ECF confirmation screen, receipt capture
 - **Web UI + CLI + API** — three interfaces, same engine
 - **Claude AI** — document analysis, event code matching, redaction scanning, filing validation
 - **Certificate of Service** — auto-generated with PDF export

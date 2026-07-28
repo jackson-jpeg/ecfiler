@@ -1,7 +1,7 @@
 {/* LEGAL REVIEW REQUIRED before deploy — rewritten 2026-07-27 to match zero-custody architecture */}
 import type { Metadata } from "next";
 import Link from "next/link";
-import { RETENTION_DAYS } from "@/lib/facts";
+import { LEGAL_LAST_UPDATED, RETENTION_DAYS } from "@/lib/facts";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | ECFiler",
@@ -53,7 +53,7 @@ export default function PrivacyPolicy() {
         {/* Header */}
         <div className="mb-10">
           <p className="text-[12px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">
-            Last updated: March 2026
+            Last updated: {LEGAL_LAST_UPDATED}
           </p>
           <h1 className="text-[28px] sm:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-3">
             Privacy Policy

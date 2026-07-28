@@ -6,7 +6,7 @@
 
 **Tagline:** File with confidence. File with code you can read.
 
-**Elevator pitch:** ECFiler is an open-source tool that prepares, validates, and stages filings for federal court CM/ECF systems — and, from your own machine, automates the mechanical filing steps under your control. It uses AI to match your filing to the right event code, scans for redaction issues, validates your documents, and never submits without your explicit approval. Your court credentials never leave your machine. Unlike $500/month proprietary tools, ECFiler's code is fully auditable — because when your bar license is on the line, you should be able to see exactly what's happening.
+**Elevator pitch:** ECFiler is an open-source tool that prepares, validates, and stages filings for federal court CM/ECF systems — and, from your own machine, automates the mechanical filing steps under your control. It uses AI to match your filing to the right event code, scans for redaction issues, validates your documents, and never submits without your explicit approval. Your court credentials never leave your machine. Unlike proprietary subscription tools, ECFiler's code is fully auditable — because when your bar license is on the line, you should be able to see exactly what's happening.
 
 ## Voice & Tone
 
@@ -30,7 +30,7 @@
 ## Key Messages
 
 ### For solo practitioners / small firms:
-"Stop paying $500/month for filing software. ECFiler is free, open-source, and does the same job — with more transparency."
+"Commercial filing software is a paid subscription. ECFiler is free and open-source — every check it runs is code you can read."
 
 ### For large firms / IT departments:
 "Self-hosted, auditable, and extensible. ECFiler integrates into your existing workflow without vendor lock-in. Every filing is logged, every action has a screenshot."
@@ -43,18 +43,21 @@
 
 ## Differentiation
 
-| Feature | ECFiler (Free) | PacerPro ($$$) | ECFX ($$$) |
-|---------|---------------|----------------|------------|
-| Open source | ✓ | ✗ | ✗ |
-| Auditable code | ✓ | ✗ | ✗ |
-| AI event code matching | ✓ | ✗ | ✗ |
-| Redaction scanning | ✓ | ✗ | Limited |
-| Attorney confirmation required | ✓ | N/A | N/A |
-| Self-hosted option | ✓ | ✗ | ✗ |
-| All 207 federal courts | ✓ | ✓ | ✓ |
-| Local attorney-controlled filing automation | ✓ | ✗ (read-only) | ✓ |
-| Zero server credential custody | ✓ | ✓ | ? |
-| Cost | Free | ~$200-500/mo | ~$300-600/mo |
+What ECFiler can truthfully say about itself (each row traces to code —
+see docs/claims-register.md). Never publish feature or price comparisons
+against named competitors without captured, dated evidence for every cell;
+the earlier PacerPro/ECFX table was deleted for exactly that reason.
+
+| Feature | ECFiler |
+|---------|---------|
+| Open source, auditable code | ✓ (this repo) |
+| AI event code matching | ✓ |
+| Rule 5.2 redaction scanning | ✓ |
+| Attorney confirmation required before any submission | ✓ |
+| All 207 federal courts in the registry | ✓ |
+| Local attorney-controlled filing automation | ✓ (CLI) |
+| Zero server credential custody | ✓ |
+| Cost | Free (Pro tier planned) |
 
 ## Target Audiences (Priority Order)
 

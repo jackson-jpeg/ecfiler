@@ -7,6 +7,7 @@ import { streamAnalysis, stageFiling, getHistory, type FilingPreview, type Analy
 import { EventCodeSearch } from "@/components/event-code-search";
 import { CourtsModal } from "@/components/courts-modal";
 import { useToast } from "@/components/toast";
+import { COURT_COUNT } from "@/lib/facts";
 
 type Phase = "ready" | "analyzing" | "review" | "staging" | "done" | "error";
 
@@ -400,7 +401,7 @@ export default function WorkspacePage() {
                       <div className="text-[10px] text-[#8a8a8a] font-medium">Filings</div>
                     </div>
                     <div className="bg-[#f5f3ee] rounded-xl p-3 text-center">
-                      <div className="text-[22px] font-bold text-[#1e3a5f]">207</div>
+                      <div className="text-[22px] font-bold text-[#1e3a5f]">{COURT_COUNT}</div>
                       <div className="text-[10px] text-[#8a8a8a] font-medium">Courts</div>
                     </div>
                   </div>
@@ -853,7 +854,7 @@ export default function WorkspacePage() {
                   <svg className="w-4 h-4 text-[#1e3a5f]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
                   <span className="text-[11px] font-bold text-[#1e3a5f] uppercase tracking-wide">AI Safety Verification</span>
                 </div>
-                <span className="text-[10px] text-[#8a8a8a] font-medium">3-pass check</span>
+                <span className="text-[10px] text-[#8a8a8a] font-medium">5-point readiness check</span>
               </div>
 
               {/* Gate 1: Document Integrity */}
@@ -968,7 +969,7 @@ export default function WorkspacePage() {
               <div className="bg-gradient-to-r from-[#0f1f35] to-[#1e3a5f] rounded-2xl p-6 shadow-xl shadow-[#1e3a5f]/15">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-[14px] font-bold text-white">{filing.ready ? "All 3 safety checks passed" : "Missing required fields"}</div>
+                    <div className="text-[14px] font-bold text-white">{filing.ready ? "Readiness checks passed" : "Missing required fields"}</div>
                     <div className="text-[12px] text-white/50 mt-0.5">
                       {filing.ready
                         ? `${filing.court_id?.toUpperCase()} · ${filing.case_number}${exhibits.length > 0 ? ` · ${exhibits.length} attachment${exhibits.length > 1 ? "s" : ""}` : ""}${filing.filing_fee ? ` · $${filing.filing_fee} fee` : ""}`
@@ -1127,8 +1128,8 @@ export default function WorkspacePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                     </svg>
                     <div>
-                      <div className="text-[12px] font-semibold text-[#15803d]">AI verified — 3 safety passes completed</div>
-                      <div className="text-[11px] text-[#166534]">Document integrity, cross-reference, and filing readiness checks all passed.</div>
+                      <div className="text-[12px] font-semibold text-[#15803d]">AI analysis complete — readiness checks passed</div>
+                      <div className="text-[11px] text-[#166534]">PDF validity, redaction scan, case number, event code, and signature checks passed.</div>
                     </div>
                   </div>
 

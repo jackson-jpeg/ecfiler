@@ -38,11 +38,98 @@ def test_web_copy_matches_python_source(relpath):
     )
 
 
+GENERATED_FILES = ["fees.json", "redaction_patterns.json"]
+
+
+def test_facts_constants_match_data():
+    """web/lib/facts.ts court constants are pinned to the shipped data.
+
+    Every court number on the site flows from facts.ts or from the JSON
+    itself; this test is what makes those constants claims instead of
+    copywriting.
+    """
+    import re
+
+    counts = {
+        name: len(json.loads((PY_DATA / f"{name}_courts.json").read_text()))
+        for name in ("district", "bankruptcy", "appellate")
+    }
+    facts = (REPO_ROOT / "web" / "lib" / "facts.ts").read_text()
+
+    m = re.search(r"COURT_COUNT = (\d+)", facts)
+    assert m, "COURT_COUNT missing from web/lib/facts.ts"
+    assert int(m.group(1)) == sum(counts.values()), (
+        f"facts.ts COURT_COUNT={m.group(1)} but the registry data has "
+        f"{sum(counts.values())} courts"
+    )
+
+    for name, expected in counts.items():
+        m = re.search(rf"{name}: (\d+)", facts)
+        assert m, f"COURT_BREAKDOWN.{name} missing from web/lib/facts.ts"
+        assert int(m.group(1)) == expected, (
+            f"facts.ts COURT_BREAKDOWN.{name}={m.group(1)} but the registry "
+            f"data has {expected}"
+        )
+
+
 def test_no_extra_web_data_files():
     """Every JSON under web/lib/data must correspond to a Python source file."""
-    expected = {str(Path(p)) for p in COURT_FILES + EVENT_FILES}
+    expected = {str(Path(p)) for p in COURT_FILES + EVENT_FILES + GENERATED_FILES}
     actual = {
         str(f.relative_to(WEB_DATA))
         for f in WEB_DATA.rglob("*.json")
     }
     assert actual == expected
+
+
+def test_fees_json_matches_python_source():
+    """web/lib/data/fees.json is an exact export of ecfiler/filing/fees.py.
+
+    The client-side fee lookup (web/lib/fees.ts) reads this JSON; if the
+    Python schedule changes, this test forces the re-export.
+    """
+    import dataclasses
+
+    from ecfiler.filing.fees import APPELLATE_FEES, BANKRUPTCY_FEES, DISTRICT_FEES
+
+    expected = {
+        name: {k: dataclasses.asdict(v) for k, v in table.items()}
+        for name, table in [
+            ("district", DISTRICT_FEES),
+            ("bankruptcy", BANKRUPTCY_FEES),
+            ("appellate", APPELLATE_FEES),
+        ]
+    }
+    actual = json.loads((WEB_DATA / "fees.json").read_text())
+    assert actual == expected, (
+        "web/lib/data/fees.json has drifted from ecfiler/filing/fees.py — "
+        "re-export it (see the generation snippet in the file's git history)"
+    )
+
+
+def test_redaction_patterns_json_matches_python_source():
+    """web/lib/data/redaction_patterns.json mirrors ecfiler/pdf/redaction_check.py.
+
+    The client-side Rule 5.2 scan (web/lib/redaction.ts) compiles these
+    patterns; drift here means the free tool and the server scan disagree.
+    """
+    import re
+
+    from ecfiler.pdf import redaction_check as rc
+
+    def enc(p: re.Pattern) -> dict:
+        return {"source": p.pattern, "ignoreCase": bool(p.flags & re.IGNORECASE)}
+
+    expected = {
+        "ssn": [enc(p) for p in rc.SSN_PATTERNS],
+        "account": [enc(p) for p in rc.ACCOUNT_PATTERNS],
+        "dob": [enc(p) for p in rc.DOB_PATTERNS],
+        "ein": [enc(p) for p in rc.EIN_PATTERNS],
+        "ssn_context_words": rc.SSN_CONTEXT_WORDS,
+        "ein_context_words": rc.EIN_CONTEXT_WORDS,
+    }
+    actual = json.loads((WEB_DATA / "redaction_patterns.json").read_text())
+    assert actual == expected, (
+        "web/lib/data/redaction_patterns.json has drifted from "
+        "ecfiler/pdf/redaction_check.py — re-export it"
+    )

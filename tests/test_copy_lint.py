@@ -23,6 +23,17 @@ FORBIDDEN_PHRASES = [
     "live browser view",
     "automatically files your documents",
     "encrypted at rest with aes",
+    # Session 4 purge (docs/claims-register.md, "Deleted rather than fixed"):
+    # each of these was public copy with no implementing code behind it.
+    "3-pass",
+    "3 safety passes",
+    "three safety passes",
+    "stripe billing",
+    "checkout via stripe",
+    "hosted cm/ecf filing",
+    "last updated: march 2026",
+    "min saved per filing",
+    "cancel anytime",
 ]
 
 # Public-facing surfaces under lint. Python internals are covered by
@@ -195,6 +206,25 @@ def test_outreach_singular_voice() -> None:
         + "\n".join(violations)
         + f"\n(Editorial notes below {NOTES_MARKER} are exempt; quoted form "
         "labels can be allowlisted in PLURAL_ALLOWED_SUBSTRINGS.)"
+    )
+
+
+def test_demo_is_labeled_scripted() -> None:
+    """The landing-page walkthrough is an animation and must say so.
+
+    Session 2 found the demo rendering a "Connected" status chip over a
+    synthetic animation; session 4 relabeled it. The label stays, the fake
+    connection-status language stays gone.
+    """
+    demo = (REPO / "web" / "components" / "demo.tsx").read_text(encoding="utf-8")
+    assert "Scripted demo" in demo, "demo.tsx lost its 'Scripted demo' label"
+    assert "Connected" not in demo, (
+        "demo.tsx renders a connection-status chip again — it is a scripted "
+        "animation, not a live connection"
+    )
+    landing = (REPO / "web" / "app" / "page.tsx").read_text(encoding="utf-8")
+    assert "Live Demo" not in landing, (
+        "landing page calls the scripted walkthrough a 'Live Demo' again"
     )
 
 

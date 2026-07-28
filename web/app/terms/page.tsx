@@ -1,7 +1,7 @@
 {/* LEGAL REVIEW REQUIRED before deploy — rewritten 2026-07-27 to match zero-custody architecture */}
 import type { Metadata } from "next";
 import Link from "next/link";
-import { COURT_COUNT, PRO_PRICE } from "@/lib/facts";
+import { COURT_COUNT, LEGAL_LAST_UPDATED, PRO_PRICE } from "@/lib/facts";
 
 export const metadata: Metadata = {
   title: "Terms of Service | ECFiler",
@@ -14,7 +14,7 @@ const TOC = [
   { id: "nature-of-service", label: "2. Nature of the Service" },
   { id: "attorney-responsibility", label: "3. Attorney Responsibility" },
   { id: "ai-generated-content", label: "4. AI-Generated Content" },
-  { id: "ai-verification", label: "5. 3-Pass AI Verification" },
+  { id: "ai-verification", label: "5. AI Analysis & Readiness Checks" },
   { id: "pacer-credentials", label: "6. PACER Credentials" },
   { id: "cmecf-availability", label: "7. CM/ECF Availability" },
   { id: "limitation-of-liability", label: "8. Limitation of Liability" },
@@ -56,7 +56,7 @@ export default function TermsOfService() {
         {/* Header */}
         <div className="mb-10">
           <p className="text-[12px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">
-            Last updated: March 2026
+            Last updated: {LEGAL_LAST_UPDATED}
           </p>
           <h1 className="text-[28px] sm:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-3">
             Terms of Service
@@ -215,19 +215,20 @@ export default function TermsOfService() {
           {/* 5 */}
           <section id="ai-verification">
             <h2 className="text-[20px] font-bold text-[#1a1a1a] mb-3">
-              5. 3-Pass AI Verification
+              5. AI Analysis &amp; Readiness Checks
             </h2>
             <p>
-              ECFiler employs a 3-pass AI verification system that analyzes your
-              filing for potential issues before it is staged for you to
-              submit. This system checks
-              for common errors including incorrect event codes, mismatched case
-              numbers, formatting problems, and potential redaction issues. You
-              acknowledge that:
+              ECFiler analyzes your filing for potential issues before it is
+              staged for you to submit: AI document analysis, a Rule 5.2
+              redaction scan, and a five-point readiness check (PDF validity,
+              redaction scan result, case number, event code, signature block).
+              These checks target common errors including incorrect event
+              codes, mismatched case numbers, formatting problems, and
+              potential redaction issues. You acknowledge that:
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                The 3-pass verification is an <strong>assistive tool</strong>{" "}
+                The verification is an <strong>assistive tool</strong>{" "}
                 designed to catch common filing errors. It is not infallible and
                 does not guarantee that your filing is error-free or will be
                 accepted by the court.
@@ -431,12 +432,17 @@ export default function TermsOfService() {
               <li>AI document analysis</li>
               <li>AI docket text generation</li>
               <li>AI event code matching</li>
-              <li>3-pass AI verification</li>
+              <li>5-point readiness check</li>
               <li>Filing package staging and guided CM/ECF handoff</li>
               <li>Full filing history with document archival</li>
               <li>Team management</li>
               <li>Priority support</li>
             </ul>
+            <p className="mt-3">
+              The Pro tier is <strong>not yet available for purchase</strong>;
+              its feature list and price describe the planned offering, and
+              these terms apply to it when it launches.
+            </p>
             <p className="mt-3">
               We reserve the right to modify pricing, features, and tier
               structure. Material changes to paid tiers will be communicated at

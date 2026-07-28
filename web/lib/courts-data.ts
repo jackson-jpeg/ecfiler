@@ -16,6 +16,7 @@ export interface Court {
   court_id: string;
   name: string;
   court_type: string;
+  ecf_url: string;
 }
 
 export interface EventCode {
@@ -28,6 +29,7 @@ interface RawCourt {
   court_id: string;
   name: string;
   court_type: string;
+  ecf_url: string;
 }
 
 interface RawEventFile {
@@ -37,7 +39,7 @@ interface RawEventFile {
 
 const ALL_COURTS: Court[] = (
   [...districtCourts, ...bankruptcyCourts, ...appellateCourts] as RawCourt[]
-).map((c) => ({ court_id: c.court_id, name: c.name, court_type: c.court_type }));
+).map((c) => ({ court_id: c.court_id, name: c.name, court_type: c.court_type, ecf_url: c.ecf_url }));
 
 const COURT_TYPE_BY_ID = new Map(ALL_COURTS.map((c) => [c.court_id, c.court_type]));
 
