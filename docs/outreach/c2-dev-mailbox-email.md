@@ -1,8 +1,8 @@
 # C2 — Dev-mailbox email (draft, held for approval)
 
 **To:** developers@psc.uscourts.gov
-**From:** Jackson's professional email
-**Subject:** Three technical questions from a practitioner-developer (PCL API / NextGen XML / modernization interfaces)
+**From:** realjacksons@gmail.com
+**Subject:** Three technical questions from a developer (PCL API / NextGen XML / modernization interfaces)
 
 ---
 

@@ -157,9 +157,11 @@ https://www.uscourts.gov/data-news/judiciary-news/2026/06/26/judiciary-approves-
 [^3]: See, e.g., D.P.R. Notice from the Clerk 23-06 (citing the AO's July 10, 2023
 memorandum); D.C. Cir., "CM/ECF — Access to Case Information and Documents by
 Third-Party Services" (2023).
-[^4]: Public reporting on the 2025 CM/ECF/PACER incident described potential
-exposure of sealed records. [Cite chosen carefully at send time; the Judiciary's
-own March 2026 announcement references responding to "recent cyberattacks."]
+[^4]: uscourts.gov, "Cybersecurity Measures Strengthened in Light of Attacks on
+Judiciary's Case Management System," Aug. 7, 2025 (describing "escalated
+cyberattacks of a sophisticated and persistent nature" and new procedures to
+restrict access to sealed documents).
+https://www.uscourts.gov/data-news/judiciary-news/2025/08/07/cybersecurity-measures-strengthened-light-attacks-judiciarys-case-management-system
 [^5]: pacer.uscourts.gov court CM/ECF lookup feeds (data.json / data.xml).
 [^6]: PACER Developer Resources: Bankruptcy Case Upload; NextGen CM/ECF XML Case
 Opening and Docketing documentation.

@@ -1,0 +1,18 @@
+- generic [active] [ref=f19e1]:
+  - main [ref=f19e2]:
+    - generic [ref=f19e3]:
+      - heading "search.sunbiz.org" [level=1] [ref=f19e5]
+      - heading "Performing security verification" [level=2] [ref=f19e6]
+      - paragraph [ref=f19e7]: This website uses a security service to protect against malicious bots. This page is displayed while the website verifies you are not a bot.
+  - contentinfo [ref=f19e14]:
+    - generic [ref=f19e16]:
+      - generic [ref=f19e18]:
+        - text: "Ray ID:"
+        - code [ref=f19e19]: a224c54138c34ce3
+      - generic [ref=f19e20]:
+        - generic [ref=f19e21]:
+          - text: Performance and Security by
+          - link "Cloudflare" [ref=f19e22] [cursor=pointer]:
+            - /url: https://www.cloudflare.com?utm_source=challenge&utm_campaign=m
+        - link "Privacy" [ref=f19e24] [cursor=pointer]:
+          - /url: https://www.cloudflare.com/privacypolicy/
