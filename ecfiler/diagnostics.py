@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import shutil
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from ecfiler.config import CONFIG_FILE, DB_PATH, AppConfig, load_config
 from ecfiler.logging import get_logger
@@ -183,8 +184,16 @@ def _check_pdf_tools() -> CheckResult:
 
 
 def _check_ocrmypdf() -> CheckResult:
-    """Check optional OCR/PDF-A conversion."""
-    if shutil.which("ocrmypdf"):
+    """Check optional OCR/PDF-A conversion.
+
+    Looks beside the running interpreter as well as on PATH: in a virtualenv
+    the console script sits in the venv's bin, which is not necessarily on
+    PATH when ecfiler is invoked by absolute path.
+    """
+    import sys
+
+    venv_bin = Path(sys.executable).parent
+    if shutil.which("ocrmypdf") or (venv_bin / "ocrmypdf").exists():
         return CheckResult("ocrmypdf", True, "ocrmypdf available (PDF/A conversion ready)")
     return CheckResult(
         "ocrmypdf",
