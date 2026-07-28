@@ -41,6 +41,9 @@ dev = [
 [project.scripts]
 ecfiler = "ecfiler.__main__:main"
 
+[project.entry-points."keyring.backends"]
+ecfiler_macos = "ecfiler.keychain_macos"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
