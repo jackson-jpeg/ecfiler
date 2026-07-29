@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getEvents } from "@/lib/courts-data";
 
 interface Props {
   courtId: string;
@@ -17,10 +18,8 @@ export function EventCodeSearch({ courtId, onSelect, onClose }: Props) {
     if (!query || query.length < 2) { setResults([]); return; }
     setLoading(true);
     const timer = setTimeout(() => {
-      fetch(`/api/courts/${courtId || "nysd"}/events?search=${encodeURIComponent(query)}`)
-        .then(r => r.json())
-        .then((data) => { setResults(data.slice(0, 15)); setLoading(false); })
-        .catch(() => setLoading(false));
+      setResults(getEvents(courtId || "nysd", query).slice(0, 15));
+      setLoading(false);
     }, 250);
     return () => clearTimeout(timer);
   }, [query, courtId]);

@@ -35,6 +35,29 @@ logger = get_logger(__name__)
 AI_ANALYSIS_TIMEOUT = 120  # seconds
 
 
+def readiness_checks(
+    *,
+    pdf_valid: bool,
+    redaction_clean: bool,
+    case_number: str | None,
+    event_code: str | None,
+    has_signature: bool,
+) -> dict[str, bool]:
+    """The five readiness checks a filing must clear before staging.
+
+    This is the "5-point readiness check" named in the public copy
+    (web/lib/facts.ts tiers, Terms §5); tests/test_readiness_checks.py pins
+    the count and the components so the copy can't drift from the code.
+    """
+    return {
+        "pdf_valid": pdf_valid,
+        "redaction_clean": redaction_clean,
+        "case_number_found": bool(case_number),
+        "event_code_matched": bool(event_code),
+        "signature_block_found": has_signature,
+    }
+
+
 async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> AsyncGenerator[str, None]:
     """Stream document analysis progress as SSE events.
 
@@ -221,14 +244,15 @@ async def stream_analysis(file_content: bytes, filename: str, api_key: str) -> A
         yield emit_step("Verification complete", "running")
         await asyncio.sleep(0.2)
 
-        checks_passed = sum([
-            validation.valid,
-            not redaction.has_issues,
-            bool(analysis.case_number),
-            bool(event_code),
-            analysis.has_signature,
-        ])
-        checks_total = 5
+        checks = readiness_checks(
+            pdf_valid=validation.valid,
+            redaction_clean=not redaction.has_issues,
+            case_number=analysis.case_number,
+            event_code=event_code,
+            has_signature=analysis.has_signature,
+        )
+        checks_passed = sum(checks.values())
+        checks_total = len(checks)
         elapsed = time.monotonic() - t0
         verify_detail = f"{checks_passed}/{checks_total} checks passed ({elapsed:.1f}s)"
         if not ready:

@@ -280,6 +280,7 @@ async def _validate_upload(document: UploadFile) -> bytes:
 async def analyze_and_prepare_filing(
     document: UploadFile = File(..., description="PDF document to file"),
     exhibits: str | None = Form(default=None, description="JSON array of exhibits [{name,label,description,sealed}]"),
+    user_id: str = Depends(get_current_user),
 ) -> FilingPreview:
     """Upload a PDF. Get a complete filing ready for confirmation.
 
@@ -488,6 +489,7 @@ _analysis_in_progress: set[str] = set()  # Simple concurrency guard
 @app.post("/api/file/stream")
 async def analyze_filing_stream(
     document: UploadFile = File(..., description="PDF document to file"),
+    user_id: str = Depends(get_current_user),
 ) -> StreamingResponse:
     """Upload a PDF and receive real-time analysis progress via Server-Sent Events.
 
@@ -1091,6 +1093,7 @@ def submit_filing(
 async def analyze_multi_document(
     main_document: UploadFile = File(..., description="Main document PDF"),
     attachments: list[UploadFile] = File(default=[], description="Attachment PDFs"),
+    user_id: str = Depends(get_current_user),
 ) -> FilingPreview:
     """Upload multiple documents — main document + attachments.
 
@@ -1306,22 +1309,94 @@ def list_drafts_endpoint(
 
 
 @app.delete("/api/drafts/{name}")
-def delete_draft_endpoint(name: str) -> dict:
-    """Delete a saved draft."""
-    from ecfiler.filing.drafts import delete_draft
+def delete_draft_endpoint(name: str, user_id: str = Depends(get_current_user)) -> dict:
+    """Delete a saved draft owned by the authenticated user."""
+    from ecfiler.filing.drafts import delete_draft, list_drafts
 
-    if delete_draft(name):
+    owned = {
+        d["name"]
+        for d in list_drafts()
+        if d.get("user_id", "") in ("", user_id)
+    }
+    if name in owned and delete_draft(name):
         return {"deleted": True, "name": name}
     raise HTTPException(404, f"Draft '{name}' not found")
 
 
-@app.post("/api/filing/compress")
-def compress_old_filings() -> dict:
-    """Compress PDFs older than 30 days to save storage. Admin endpoint."""
-    from ecfiler.storage.history import compress_old_pdfs
+# PDF compression (storage.history.compress_old_pdfs) is deliberately not an
+# HTTP endpoint: it is maintenance, and an unauthenticated route that rewrites
+# archived filings is an attack surface. Run it from the host instead:
+#   python -c "from ecfiler.storage.history import compress_old_pdfs; compress_old_pdfs(days_old=30)"
+# (the deployment runbook schedules this as a systemd timer).
 
-    count = compress_old_pdfs(days_old=30)
-    return {"compressed": count}
+
+@app.get("/api/export")
+def export_account_data(user_id: str = Depends(get_current_user)) -> dict:
+    """Machine-readable export of everything the server holds for this user.
+
+    This is the Privacy Policy's export promise. Attestation records include
+    their payloads while those exist; after account deletion only chain
+    metadata would remain (and the account would be gone with it).
+    """
+    import json
+    from datetime import datetime, timezone
+
+    from ecfiler.storage.attestation import AttestationLog
+    from ecfiler.storage.history import FilingHistory
+
+    staged = []
+    for path in sorted(_staged_dir(user_id).glob("*.json")):
+        try:
+            staged.append(json.loads(path.read_text()))
+        except (OSError, json.JSONDecodeError):
+            continue
+
+    return {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "user_id": user_id,
+        "filing_history": FilingHistory().get_all_for_user(user_id),
+        "staged_packages": staged,
+        "attestations": AttestationLog().export_for_user(user_id),
+    }
+
+
+@app.delete("/api/account")
+def delete_account_data(user_id: str = Depends(get_current_user)) -> dict:
+    """Delete all server-side data for the authenticated user, immediately.
+
+    Removes filing history, archived documents, staged packages, and the case
+    data behind this user's attestation records. The attestation chain records
+    themselves are retained: they hold only salted hashes and metadata, prove
+    that attestations occurred, and — with their salts deleted here — cannot be
+    linked back to any case. Account removal itself (the Clerk identity) is a
+    separate step in the account portal.
+    """
+    import shutil
+
+    from ecfiler.storage.attestation import AttestationLog
+    from ecfiler.storage.history import FilingHistory, delete_user_documents
+
+    history_rows = FilingHistory().delete_for_user(user_id)
+    documents = delete_user_documents(user_id)
+
+    staged_dir = _staged_dir(user_id)
+    staged = len(list(staged_dir.glob("*.json")))
+    shutil.rmtree(staged_dir, ignore_errors=True)
+
+    attestation_payloads = AttestationLog().purge_user_payloads(user_id)
+
+    logger.info(
+        "Account data deleted for %s: %d history rows, %d documents, "
+        "%d staged packages, %d attestation payloads",
+        user_id, history_rows, documents, staged, attestation_payloads,
+    )
+    return {
+        "deleted": True,
+        "filing_history_rows": history_rows,
+        "archived_documents": documents,
+        "staged_packages": staged,
+        "attestation_payloads": attestation_payloads,
+    }
 
 
 # --- Server-side PACER credential storage: removed 2026-07 ---

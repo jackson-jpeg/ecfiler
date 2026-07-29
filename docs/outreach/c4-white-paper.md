@@ -2,23 +2,34 @@
 
 **A practitioner's perspective for the case-management modernization program**
 
-Jackson Sanger — Docketing Specialist, [FIRM NAME], Tampa, Florida
-[email] · July 2026 · 5 pages
+Jackson Sanger — Independent Developer, ECFiler Project
+realjacksons@gmail.com · github.com/jackson-jpeg/ecfiler · July 2026
 
-*Draft for Jackson's review. Written to be forwardable inside the AO: no product
-pitch, every requirement anchored to a security or accuracy benefit, sources cited.
-Bracketed items need his real details.*
+*Written to be forwardable inside the AO: no product pitch, every requirement
+anchored to a security or accuracy benefit, sources cited.*
 
 ---
 
 ## 1. Who this is from, and why
 
-I am a docketing specialist at a national law firm. My work is the layer between
-attorneys and CM/ECF: preparing filings, selecting events, tracking NEFs, and
-reconciling dockets across dozens of districts, daily and at volume. I also build
-software against the Judiciary's documented public interfaces (the PACER
-Authentication API and Case Locator API), so I see both what the systems promise and
-what integrators actually do to work around their gaps.
+I write in a personal capacity, from two vantage points. By profession I am a
+litigation docketing specialist: PACER and CM/ECF are my daily working environment,
+at the frequency and failure-mode exposure that only docketing work produces. No
+employer is named or represented in this paper, and nothing here reports on how any
+particular firm operates. Separately, as an independent open-source developer, I
+build ECFiler, a tool that prepares federal filings and helps a filer check them
+against local requirements before submission. It works against the Judiciary's
+documented public interfaces — the PACER Authentication API and the Case Locator
+API — and against CM/ECF itself through the filer's own browser session, on the
+filer's own machine, under the filer's own credentials, which the tool never
+transmits or stores on a server.
+
+I am not an attorney and not a filing agent, and ECFiler has never filed on behalf
+of a client. What I can describe precisely is, first, the mechanics of high-volume
+docketing work as practiced daily, and second, what the sanctioned interfaces do
+and do not offer to anyone trying to build compliant automation on top of them —
+and where those gaps push integrators toward practices the Judiciary has itself
+warned against.
 
 This paper describes what professional filing operations need from the interfaces of
 a modernized case-management system. It is written now because the requirements for
@@ -150,9 +161,11 @@ https://www.uscourts.gov/data-news/judiciary-news/2026/06/26/judiciary-approves-
 [^3]: See, e.g., D.P.R. Notice from the Clerk 23-06 (citing the AO's July 10, 2023
 memorandum); D.C. Cir., "CM/ECF — Access to Case Information and Documents by
 Third-Party Services" (2023).
-[^4]: Public reporting on the 2025 CM/ECF/PACER incident described potential
-exposure of sealed records. [Cite chosen carefully at send time; the Judiciary's
-own March 2026 announcement references responding to "recent cyberattacks."]
+[^4]: uscourts.gov, "Cybersecurity Measures Strengthened in Light of Attacks on
+Judiciary's Case Management System," Aug. 7, 2025 (describing "escalated
+cyberattacks of a sophisticated and persistent nature" and new procedures to
+restrict access to sealed documents).
+https://www.uscourts.gov/data-news/judiciary-news/2025/08/07/cybersecurity-measures-strengthened-light-attacks-judiciarys-case-management-system
 [^5]: pacer.uscourts.gov court CM/ECF lookup feeds (data.json / data.xml).
 [^6]: PACER Developer Resources: Bankruptcy Case Upload; NextGen CM/ECF XML Case
 Opening and Docketing documentation.

@@ -1,0 +1,54 @@
+{
+  "ssn": [
+    {
+      "source": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+      "ignoreCase": false
+    },
+    {
+      "source": "\\b\\d{3}\\s\\d{2}\\s\\d{4}\\b",
+      "ignoreCase": false
+    },
+    {
+      "source": "\\b\\d{9}\\b",
+      "ignoreCase": false
+    }
+  ],
+  "account": [
+    {
+      "source": "\\baccount\\s*#?\\s*:?\\s*\\d{6,}\\b",
+      "ignoreCase": true
+    },
+    {
+      "source": "\\bacct\\s*\\.?\\s*#?\\s*:?\\s*\\d{6,}\\b",
+      "ignoreCase": true
+    },
+    {
+      "source": "\\b\\d{4}[\\s-]\\d{4}[\\s-]\\d{4}[\\s-]\\d{4}\\b",
+      "ignoreCase": false
+    }
+  ],
+  "dob": [
+    {
+      "source": "\\b(?:date\\s+of\\s+birth|DOB|born|born\\s+on|d\\.o\\.b\\.?)\\s*:?\\s*\\d{1,2}[/\\-]\\d{1,2}[/\\-]\\d{2,4}\\b",
+      "ignoreCase": true
+    }
+  ],
+  "ein": [
+    {
+      "source": "\\b\\d{2}-\\d{7}\\b",
+      "ignoreCase": false
+    }
+  ],
+  "ssn_context_words": [
+    "ssn",
+    "social",
+    "taxpayer",
+    "tin"
+  ],
+  "ein_context_words": [
+    "ein",
+    "tax",
+    "employer",
+    "identification"
+  ]
+}

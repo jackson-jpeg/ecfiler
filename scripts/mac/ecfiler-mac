@@ -1,0 +1,23 @@
+#!/bin/bash
+# ECFiler launcher for macOS non-GUI contexts (SSH, cron, launchd).
+#
+# GUI Terminal sessions can run the venv `ecfiler` directly — the login
+# keychain is unlocked there. Over SSH every keychain starts locked, so this
+# wrapper unlocks the dedicated ecfiler keychain (see keychain-setup.sh) and
+# loads ~/.ecfiler/env.sh (ANTHROPIC_API_KEY) before exec'ing the CLI.
+set -u
+
+# Non-interactive SSH sessions get a bare PATH without homebrew, hiding
+# gs/tesseract/qpdf from the PDF/A pipeline — same SSH-context problem as
+# the keychain below, same fix: make the wrapper self-sufficient.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+KC="$HOME/Library/Keychains/ecfiler.keychain-db"
+[ -f "$HOME/.ecfiler/env.sh" ] && . "$HOME/.ecfiler/env.sh"
+if [ -f "$HOME/.ecfiler/keychain-pass" ] && [ -f "$KC" ]; then
+  security unlock-keychain -p "$(cat "$HOME/.ecfiler/keychain-pass")" "$KC" 2>/dev/null
+  # Route keyring through the security-CLI backend (ecfiler/keychain_macos.py)
+  # — the stock backend cannot read alternate keychains in SSH sessions.
+  export ECFILER_KEYCHAIN="$KC"
+fi
+exec "$HOME/ecfiler/.venv/bin/ecfiler" "$@"

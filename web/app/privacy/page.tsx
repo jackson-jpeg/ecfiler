@@ -1,7 +1,7 @@
 {/* LEGAL REVIEW REQUIRED before deploy — rewritten 2026-07-27 to match zero-custody architecture */}
 import type { Metadata } from "next";
 import Link from "next/link";
-import { RETENTION_DAYS } from "@/lib/facts";
+import { LEGAL_LAST_UPDATED, RETENTION_DAYS } from "@/lib/facts";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | ECFiler",
@@ -53,7 +53,7 @@ export default function PrivacyPolicy() {
         {/* Header */}
         <div className="mb-10">
           <p className="text-[12px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">
-            Last updated: March 2026
+            Last updated: {LEGAL_LAST_UPDATED}
           </p>
           <h1 className="text-[28px] sm:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-3">
             Privacy Policy
@@ -190,8 +190,11 @@ export default function PrivacyPolicy() {
               </li>
               <li>
                 <strong>Legacy note:</strong> an earlier version of the Service
-                stored credentials server-side. All server-stored credentials
-                from that model were permanently purged in July 2026.
+                offered server-side credential storage. That capability was
+                removed from the code in July 2026 &mdash; before any filing
+                path ever used it &mdash; and the hosting environment that held
+                the legacy store has since been decommissioned. No ECFiler
+                server stores court credentials today.
               </li>
             </ul>
           </section>
@@ -224,12 +227,13 @@ export default function PrivacyPolicy() {
                 form (see Section 4).
               </li>
               <li>
-                You may delete individual documents or your entire filing history
-                at any time from your account settings.
+                You may delete your entire filing history and all stored
+                documents at any time from your account settings (Settings
+                &rarr; Delete My Data).
               </li>
               <li>
-                If you delete your account, all associated documents are
-                permanently deleted within 30 days (see Section 11).
+                Deletion takes effect immediately when you request it (see
+                Section 11).
               </li>
             </ul>
           </section>
@@ -338,9 +342,10 @@ export default function PrivacyPolicy() {
                 2 Type II standards.
               </li>
               <li>
-                <strong>Railway</strong> &mdash; hosts the backend API server,
-                database, and document storage. Railway infrastructure is
-                provisioned in U.S.-based data centers.
+                <strong>Self-hosted backend</strong> &mdash; the backend API
+                server, database, and document storage run on infrastructure
+                we operate directly (a dedicated virtual private server), not
+                on a third-party application platform.
               </li>
             </ul>
             <p className="mt-3">
@@ -372,9 +377,9 @@ export default function PrivacyPolicy() {
                   account data as described in Section 5.
                 </li>
                 <li>
-                  <strong>Vercel and Railway</strong> &mdash; as infrastructure
-                  providers, these companies process data on our behalf under
-                  data processing agreements.
+                  <strong>Vercel and our hosting provider</strong> &mdash; as
+                  infrastructure providers, these companies process data on our
+                  behalf under their standard data processing terms.
                 </li>
                 <li>
                   <strong>Legal compliance</strong> &mdash; we may disclose
@@ -478,8 +483,8 @@ export default function PrivacyPolicy() {
               11. Account & Data Deletion
             </h2>
             <p>
-              You may delete your ECFiler account at any time from your account
-              settings page. Upon account deletion:
+              You may delete your ECFiler data at any time from your account
+              settings page (Settings &rarr; Delete My Data). Upon deletion:
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
@@ -487,13 +492,28 @@ export default function PrivacyPolicy() {
                 them (see Section 2).
               </li>
               <li>
-                Your filing history, uploaded documents, and all associated
-                metadata are queued for permanent deletion and will be purged
-                within 30 calendar days.
+                Your filing history, uploaded documents, staged filing packages,
+                and all associated case data are permanently deleted immediately
+                &mdash; not queued.
               </li>
               <li>
-                Your Clerk authentication account is deleted, removing your email
-                and login data from our authentication provider.
+                <strong>Attestation integrity records are the one narrow
+                exception.</strong> ECFiler keeps an append-only, hash-chained
+                log proving that each staged filing was attested by a named
+                person at a specific time. When you delete your data, the case
+                data behind your attestation records (and the cryptographic salt
+                that could link the remaining hashes to it) is deleted with
+                everything else. What remains is the attestation record itself:
+                the attestor name you typed, the attestation language you saw,
+                timestamps, an internal account identifier, and content-free
+                hashes. These records cannot be linked back to any case or
+                document and exist solely so the integrity of the log can be
+                proven; they are retained indefinitely.
+              </li>
+              <li>
+                Your login account (including your email) is managed by our
+                authentication provider and can be deleted from the account
+                menu (Manage account &rarr; Delete account).
               </li>
               <li>
                 Anonymous, aggregated analytics data (which cannot be linked back

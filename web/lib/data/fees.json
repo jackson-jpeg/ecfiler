@@ -1,0 +1,182 @@
+{
+  "appellate": {
+    "amicus": {
+      "amount": 0,
+      "description": "Amicus brief (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "appeal": {
+      "amount": 505.0,
+      "description": "Docketing fee for appeal",
+      "notes": "",
+      "waivable": true
+    },
+    "brief": {
+      "amount": 0,
+      "description": "Brief (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "motion": {
+      "amount": 0,
+      "description": "Standard motion (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "petition_permission": {
+      "amount": 505.0,
+      "description": "Petition for permission to appeal",
+      "notes": "",
+      "waivable": true
+    },
+    "petition_rehearing": {
+      "amount": 0,
+      "description": "Petition for rehearing (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "petition_review": {
+      "amount": 505.0,
+      "description": "Petition for review from agency",
+      "notes": "",
+      "waivable": true
+    }
+  },
+  "bankruptcy": {
+    "adversary": {
+      "amount": 350.0,
+      "description": "Adversary proceeding",
+      "notes": "",
+      "waivable": true
+    },
+    "appeal": {
+      "amount": 298.0,
+      "description": "Appeal to district court or BAP",
+      "notes": "",
+      "waivable": true
+    },
+    "chapter11": {
+      "amount": 1738.0,
+      "description": "Chapter 11 petition",
+      "notes": "Individuals: $1,738. Corps: same",
+      "waivable": true
+    },
+    "chapter11_sub5": {
+      "amount": 1738.0,
+      "description": "Chapter 11 Subchapter V (small business)",
+      "notes": "",
+      "waivable": true
+    },
+    "chapter12": {
+      "amount": 278.0,
+      "description": "Chapter 12 petition",
+      "notes": "",
+      "waivable": true
+    },
+    "chapter13": {
+      "amount": 313.0,
+      "description": "Chapter 13 petition",
+      "notes": "",
+      "waivable": true
+    },
+    "chapter7": {
+      "amount": 338.0,
+      "description": "Chapter 7 petition",
+      "notes": "Can be paid in installments",
+      "waivable": true
+    },
+    "motion": {
+      "amount": 0,
+      "description": "Standard motion (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "motion_reopen": {
+      "amount": 260.0,
+      "description": "Motion to reopen bankruptcy case",
+      "notes": "",
+      "waivable": true
+    },
+    "proof_of_claim": {
+      "amount": 0,
+      "description": "Proof of claim (no fee)",
+      "notes": "",
+      "waivable": true
+    }
+  },
+  "district": {
+    "answer": {
+      "amount": 0,
+      "description": "Answer (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "appeal": {
+      "amount": 605.0,
+      "description": "Notice of appeal",
+      "notes": "$505 appeal fee + $100 district court fee",
+      "waivable": true
+    },
+    "brief": {
+      "amount": 0,
+      "description": "Brief or memorandum (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "complaint": {
+      "amount": 405.0,
+      "description": "Civil action filing fee",
+      "notes": "Includes $350 filing fee + $55 admin fee",
+      "waivable": true
+    },
+    "misc_action": {
+      "amount": 52.0,
+      "description": "Miscellaneous case/action",
+      "notes": "",
+      "waivable": true
+    },
+    "motion": {
+      "amount": 0,
+      "description": "Standard motion (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "motion_reopen": {
+      "amount": 405.0,
+      "description": "Motion to reopen",
+      "notes": "",
+      "waivable": true
+    },
+    "notice": {
+      "amount": 0,
+      "description": "Notice (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "removal": {
+      "amount": 405.0,
+      "description": "Notice of removal filing fee",
+      "notes": "",
+      "waivable": true
+    },
+    "reply": {
+      "amount": 0,
+      "description": "Reply (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "response": {
+      "amount": 0,
+      "description": "Response/opposition (no fee)",
+      "notes": "",
+      "waivable": true
+    },
+    "stipulation": {
+      "amount": 0,
+      "description": "Stipulation (no fee)",
+      "notes": "",
+      "waivable": true
+    }
+  }
+}

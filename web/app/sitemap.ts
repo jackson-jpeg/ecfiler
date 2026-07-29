@@ -18,11 +18,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/privacy`, lastModified, changeFrequency: "monthly", priority: 0.3 },
     { url: `${base}/terms`, lastModified, changeFrequency: "monthly", priority: 0.3 },
 
-    // App pages (require auth but still indexable for SEO)
-    { url: `${base}/file`, lastModified, changeFrequency: "weekly", priority: 0.9 },
+    // Free tools — public, no account
+    { url: `${base}/tools`, lastModified, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/courts`, lastModified, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/events`, lastModified, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/fees`, lastModified, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/redaction`, lastModified, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/validate`, lastModified, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/certificate`, lastModified, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${base}/courts`, lastModified, changeFrequency: "monthly", priority: 0.7 },
+
+    // App pages (require auth)
+    { url: `${base}/file`, lastModified, changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/history`, lastModified, changeFrequency: "weekly", priority: 0.5 },
     { url: `${base}/drafts`, lastModified, changeFrequency: "weekly", priority: 0.4 },
     { url: `${base}/settings`, lastModified, changeFrequency: "monthly", priority: 0.4 },

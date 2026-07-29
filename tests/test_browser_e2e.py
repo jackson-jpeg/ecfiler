@@ -226,3 +226,171 @@ with BrowserSession(headless=True, slow_mo=0) as browser:
         assert result["ok"], result.get("error")
         assert result["result"]["docket_number"] == "58"
         assert result["result"]["has_text"]
+
+
+@pytest.fixture(scope="module")
+def api_server(tmp_path_factory):
+    """The hosted staging API, as a real HTTP server in dev-auth mode."""
+    data_dir = tmp_path_factory.mktemp("api-data")
+    import os
+
+    env = dict(os.environ)
+    env["ECFILER_DEV_AUTH"] = "1"
+    env["ECFILER_DATA_DIR"] = str(data_dir)
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "ecfiler.api.app:app",
+         "--host", "127.0.0.1", "--port", "18924", "--log-level", "error"],
+        cwd=str(Path(__file__).parent.parent),
+        env=env,
+    )
+    time.sleep(2)
+    yield "http://127.0.0.1:18924", data_dir
+    proc.terminate()
+    proc.wait(timeout=5)
+
+
+class TestStagedToNefRoundTrip:
+    """The full staging→CLI→NEF path, end to end, minus a real court.
+
+    This is the QA-day sequence with the mock CM/ECF standing in for the QA
+    PACER environment: stage on the hosted API (with attestation), pull the
+    package down with the real `ecfiler stage-pull` CLI, drive the browser
+    through the full filing flow to a NEF, and record the submission
+    attestation with the NEF text — then prove both chains verify.
+    """
+
+    def test_stage_pull_file_nef_attest(
+        self, api_server, mock_server: str, sample_pdf: Path, tmp_path: Path
+    ) -> None:
+        import os
+        import sqlite3
+
+        import httpx
+
+        from ecfiler.storage.attestation import AttestationLog
+
+        api_url, api_data_dir = api_server
+        filer_dir = tmp_path / "filer-machine"
+        filer_dir.mkdir()
+
+        # 1. Stage on the hosted API, attested.
+        resp = httpx.post(
+            f"{api_url}/api/filing/stage",
+            headers={"X-User-Id": "qa-dryrun"},
+            json={
+                "court_id": "nysd",
+                "case_number": "1:24-cv-01234",
+                "event_code": "12",
+                "event_description": "Motion to Dismiss",
+                "filing_party_name": "Smith",
+                "filing_party_role": "plaintiff",
+                "attestation": {
+                    "attested": True,
+                    "attestor_name": "Jane Doe, Esq.",
+                    "attestation_text": "I reviewed this package and take responsibility.",
+                },
+            },
+            timeout=15,
+        )
+        assert resp.status_code == 200, resp.text
+        stage_code = resp.json()["stage_code"]
+
+        # The staged attestation exists server-side and verifies.
+        server_log = AttestationLog(db_path=api_data_dir / "history.db")
+        ok, problems = server_log.verify_chain()
+        assert ok, problems
+
+        # 2. Pull it down with the real CLI, as the filing machine would.
+        env = dict(os.environ)
+        env["ECFILER_DATA_DIR"] = str(filer_dir)
+        env["ECFILER_SERVER"] = api_url
+        env["ECFILER_DEV_USER"] = "qa-dryrun"
+        pull = subprocess.run(
+            [sys.executable, "-m", "ecfiler", "stage-pull", stage_code],
+            capture_output=True, text=True, timeout=30, env=env,
+            cwd=str(Path(__file__).parent.parent),
+        )
+        assert pull.returncode == 0, pull.stderr + pull.stdout
+        drafts = list((filer_dir / "drafts").glob("staged_*.json"))
+        assert len(drafts) == 1, "stage-pull did not save a draft"
+        draft = json.loads(drafts[0].read_text())
+        assert draft["filing"]["case_number"] == "1:24-cv-01234"
+
+        # 3. File it against the mock court, capture the NEF, attest — the
+        #    exact calls FilingWorkflow._step_submit_filing makes.
+        result = _run_browser_script(f"""
+import os
+os.environ["ECFILER_DATA_DIR"] = r"{filer_dir}"
+from ecfiler.browser.session import BrowserSession
+from ecfiler.courts.base import BaseCourt, CourtProfile
+from ecfiler.storage.attestation import AttestationLog
+
+with BrowserSession(headless=True, slow_mo=0) as browser:
+    page = browser.page
+    page.goto("{mock_server}/cgi-bin/filing.pl?type=motion")
+    page.wait_for_load_state("networkidle")
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+    page.fill("input[name='case_num']", "1:24-cv-01234")
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+    page.query_selector_all("input[type='checkbox'][name='event']")[0].check()
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+    page.query_selector_all("input[type='checkbox'][name='party']")[1].check()
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+    page.query_selector("input[type='file'][name='document']").set_input_files(r"{sample_pdf}")
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+    page.click("input[value='Next']")
+    page.wait_for_load_state("networkidle")
+
+    court = BaseCourt(CourtProfile(court_id="test", name="Test", court_type="district", ecf_url="{mock_server}"))
+    receipt_info = court.get_receipt_info(page)
+    receipt_path = browser.save_receipt("1:24-cv-01234", receipt_info.get("docket_number") or "unknown")
+
+    log = AttestationLog()
+    rec = log.record(
+        kind="submitted",
+        attestor_name="Jane Doe, Esq.",
+        attestation_text="Typed CONFIRM at attorney review and YES at the CM/ECF final confirmation screen.",
+        payload={{"court_id": "test", "case_number": "1:24-cv-01234", "event_code": "12"}},
+        nef_text=receipt_info.get("page_text", ""),
+        trace_path="trace_dryrun",
+    )
+    with open(receipt_path, "a") as rf:
+        rf.write(f"\\n<!-- ECFiler attestation chain head: {{log.chain_head()}} -->\\n")
+
+    ok, problems = log.verify_chain()
+    result = {{
+        "docket_number": receipt_info.get("docket_number", ""),
+        "nef_captured": "Notice of Electronic Filing" in receipt_info.get("page_text", ""),
+        "chain_ok": ok,
+        "problems": problems,
+        "receipt_path": str(receipt_path),
+        "record_hash": rec.record_hash,
+    }}
+        """, timeout=60)
+        assert result["ok"], result.get("error")
+        r = result["result"]
+        assert r["docket_number"] == "58"
+        assert r["nef_captured"], "NEF text was not captured into the attestation"
+        assert r["chain_ok"], r["problems"]
+
+        # 4. The receipt the filer keeps carries the chain-head anchor, and
+        #    the stored NEF text round-trips through the payload store.
+        receipt_text = Path(r["receipt_path"]).read_text()
+        assert "ECFiler attestation chain head:" in receipt_text
+        assert r["record_hash"] in receipt_text
+
+        with sqlite3.connect(filer_dir / "history.db") as conn:
+            nef_text = conn.execute(
+                "SELECT nef_text FROM attestation_payloads ORDER BY attestation_id DESC LIMIT 1"
+            ).fetchone()[0]
+        assert "Notice of Electronic Filing" in nef_text
+        assert "Docket #58" in nef_text

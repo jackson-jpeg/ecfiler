@@ -1,0 +1,22 @@
+[Unit]
+Description=ECFiler API (FastAPI, staging + AI analysis)
+Documentation=https://github.com/jackson-jpeg/ecfiler
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ecfiler
+Group=ecfiler
+EnvironmentFile=/etc/ecfiler/api.env
+WorkingDirectory=/opt/ecfiler
+ExecStart=/opt/ecfiler/.venv/bin/uvicorn ecfiler.api.app:app --host 127.0.0.1 --port 8001
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+ReadWritePaths=/var/lib/ecfiler
+
+[Install]
+WantedBy=multi-user.target

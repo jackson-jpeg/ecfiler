@@ -65,6 +65,12 @@ EIN_PATTERNS = [
     re.compile(r"\b\d{2}-\d{7}\b"),  # EIN format: 12-3456789
 ]
 
+# Context words that qualify ambiguous digit runs. Exported to
+# web/lib/data/redaction_patterns.json for the client-side scan
+# (parity: tests/test_web_data_parity.py).
+SSN_CONTEXT_WORDS = ["ssn", "social", "taxpayer", "tin"]
+EIN_CONTEXT_WORDS = ["ein", "tax", "employer", "identification"]
+
 
 def regex_scan(text: str) -> list[RedactionIssue]:
     """Fast regex scan for obvious personal identifier patterns."""
@@ -77,7 +83,7 @@ def regex_scan(text: str) -> list[RedactionIssue]:
             if len(matched) == 9 and not matched.count("-"):
                 context_start = max(0, match.start() - 50)
                 context = text[context_start : match.start()].lower()
-                if not any(w in context for w in ["ssn", "social", "taxpayer", "tin"]):
+                if not any(w in context for w in SSN_CONTEXT_WORDS):
                     continue
 
             issues.append(
@@ -118,7 +124,7 @@ def regex_scan(text: str) -> list[RedactionIssue]:
         for match in pattern.finditer(text):
             context_start = max(0, match.start() - 80)
             context = text[context_start : match.start()].lower()
-            if any(w in context for w in ["ein", "tax", "employer", "identification"]):
+            if any(w in context for w in EIN_CONTEXT_WORDS):
                 issues.append(
                     RedactionIssue(
                         issue_type="ssn",

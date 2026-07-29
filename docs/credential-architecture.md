@@ -117,8 +117,44 @@ Remediation (tracked in the repository history):
   survive in SQLite free pages; the purge logs a tombstone with the row count.
 - `ECFILER_ENCRYPTION_KEY` removed from all deployment environments after the purge
   deploy is verified; hosting-volume snapshots that predate the purge are deleted.
-- **Purge record:** _to be completed at deploy time — date, row count, snapshot
-  disposition, operator._
+
+**Purge record (completed 2026-07-28):**
+
+The purge planned above never executed as designed, because the deploy it was
+gated on never happened. What actually occurred:
+
+- **Code removal:** the credential endpoints and store were removed from the
+  codebase on 2026-07-27 (commit `163e280` and successors); the startup purge
+  migration has been part of the application since then.
+- **Production state:** the purge-bearing build was never deployed to the
+  legacy Railway environment. Every request to
+  `ecfiler-production.up.railway.app` returned Railway's edge 404
+  (`x-railway-fallback: true`) when checked on 2026-07-27 and again on
+  2026-07-28 — no service was running, so no startup purge ran there.
+- **Row count:** unknown and now unknowable; the environment cannot be
+  inspected without reactivating a paid plan. The store was optional, was
+  never consumed by any filing path, and the service saw no production use.
+- **Snapshot / volume disposition:** the Railway free trial backing the
+  environment has expired. Per Railway's published lifecycle, trial workspaces
+  are deactivated on expiry and stateful volumes created by trial accounts are
+  **deleted 30 days after credit expiry** (Railway docs, "Free Trial";
+  confirmed by Railway support answers to identically-situated users,
+  July 2026). The volume — and any legacy credential rows in it — is
+  destroyed by the provider on that schedule without further action. No
+  ECFiler-side snapshots or backups of that volume were ever taken.
+- **`ECFILER_ENCRYPTION_KEY` disposition:** existed only as a Railway
+  environment variable in that workspace; it is unreachable and dies with the
+  workspace. It was never stored in the repository or on either development
+  machine.
+- **Operator:** recorded by the session-3 automation on behalf of Jackson
+  Sanger; verification method was external HTTP observation plus Railway's
+  documented trial lifecycle (account login was not possible — the stored CLI
+  token is invalid and re-authentication requires an interactive browser).
+
+Consequence for public copy: the Privacy Policy may say the server-side
+credential capability was **removed** and the legacy environment
+**decommissioned**; it may not claim a verified purge ran, and it no longer
+does.
 
 ## 5. Threat model (summary)
 

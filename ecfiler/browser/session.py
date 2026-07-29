@@ -47,9 +47,26 @@ class BrowserSession:
     DEFAULT_TIMEOUT = 30_000  # 30 seconds for page operations
     NAVIGATION_TIMEOUT = 60_000  # 60 seconds for page navigation
 
-    def __init__(self, headless: bool = True, slow_mo: int = 100) -> None:
+    def __init__(
+        self,
+        headless: bool = True,
+        slow_mo: int = 100,
+        user_data_dir: Path | str | None = None,
+    ) -> None:
+        """
+        Args:
+            headless: Run without a visible window. Must be False for the
+                interactive PACER CSO login (MFA needs a human at a screen).
+            slow_mo: Millisecond delay between operations.
+            user_data_dir: Chromium profile directory. When set, the browser
+                launches as a persistent context so the PACER CSO session
+                cookie survives across runs — filing after the first login no
+                longer requires re-entering an MFA code. See
+                docs/filing-topology.md.
+        """
         self.headless = headless
         self.slow_mo = slow_mo
+        self.user_data_dir = Path(user_data_dir) if user_data_dir else None
         self._pw: Playwright | None = None
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
@@ -63,7 +80,11 @@ class BrowserSession:
 
     def start(self) -> Page:
         """Launch browser and create a new page."""
-        logger.info("Starting browser session (headless=%s)", self.headless)
+        logger.info(
+            "Starting browser session (headless=%s, persistent=%s)",
+            self.headless,
+            self.user_data_dir is not None,
+        )
         self._pw = sync_playwright().start()
         # --no-sandbox needed in containers / root environments
         import os
@@ -71,27 +92,44 @@ class BrowserSession:
         if os.getuid() == 0 or os.environ.get("PLAYWRIGHT_NO_SANDBOX"):
             args.append("--no-sandbox")
 
-        self._browser = self._pw.chromium.launch(
-            headless=self.headless,
-            slow_mo=self.slow_mo,
-            timeout=30_000,
-            args=args,
-        )
         from ecfiler.useragent import USER_AGENT
 
-        self._context = self._browser.new_context(
-            viewport={"width": 1280, "height": 900},
+        common = {
+            "viewport": {"width": 1280, "height": 900},
             # ECFiler identifies itself honestly to the courts — never a
             # spoofed browser string.
-            user_agent=USER_AGENT,
-        )
+            "user_agent": USER_AGENT,
+        }
+
+        if self.user_data_dir is not None:
+            # Persistent context: profile on disk, no separate Browser object.
+            self.user_data_dir.mkdir(parents=True, exist_ok=True)
+            self.user_data_dir.chmod(0o700)
+            self._context = self._pw.chromium.launch_persistent_context(
+                str(self.user_data_dir),
+                headless=self.headless,
+                slow_mo=self.slow_mo,
+                timeout=30_000,
+                args=args,
+                **common,
+            )
+        else:
+            self._browser = self._pw.chromium.launch(
+                headless=self.headless,
+                slow_mo=self.slow_mo,
+                timeout=30_000,
+                args=args,
+            )
+            self._context = self._browser.new_context(**common)
+
         # Set default timeouts for all operations in this context
         self._context.set_default_timeout(self.DEFAULT_TIMEOUT)
         self._context.set_default_navigation_timeout(self.NAVIGATION_TIMEOUT)
         # NOTE: audit tracing is NOT started here. Call begin_audit_trace()
         # AFTER authentication completes, so credential-entry DOM snapshots
         # never exist on disk.
-        self._page = self._context.new_page()
+        pages = self._context.pages
+        self._page = pages[0] if pages else self._context.new_page()
         return self._page
 
     def begin_audit_trace(self, label: str) -> None:
@@ -328,6 +366,8 @@ class BrowserSession:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{timestamp}_{case_id}_{docket_number}.html"
+        # Never lose a receipt to a missing directory on a fresh machine.
+        RECEIPTS_DIR.mkdir(parents=True, exist_ok=True)
         path = RECEIPTS_DIR / filename
         path.write_text(self.get_page_html())
         return path

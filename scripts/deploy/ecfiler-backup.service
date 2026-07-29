@@ -1,0 +1,6 @@
+[Unit]
+Description=Nightly ECFiler data backup (VPS → MacBook)
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ecfiler/scripts/deploy/ecfiler-backup.sh

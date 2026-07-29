@@ -7,15 +7,30 @@
  * (ecfiler/storage/history.py).
  */
 
-/** Total courts in the ECFiler registry. */
+/**
+ * Total courts in the ECFiler registry.
+ *
+ * Pinned to the shipped data (lib/data/*.json) by
+ * tests/test_web_data_parity.py::test_facts_constants_match_data — if the
+ * registry changes, that test forces this constant to move with it.
+ */
 export const COURT_COUNT = 207;
 
-/** Registry breakdown: 97 district + 94 bankruptcy + 16 appellate = 207. */
+/**
+ * Registry breakdown: 97 district-type + 94 bankruptcy + 16 appellate = 207.
+ * "District-type" includes the four territorial courts and three national
+ * courts (JPML, Court of International Trade, Court of Federal Claims);
+ * "appellate" is 13 courts of appeals + 3 bankruptcy appellate panels.
+ * Same parity test as COURT_COUNT.
+ */
 export const COURT_BREAKDOWN = {
   district: 97,
   bankruptcy: 94,
   appellate: 16,
 } as const;
+
+/** "Last updated" line shown on the Privacy Policy and Terms of Service. */
+export const LEGAL_LAST_UPDATED = "July 2026";
 
 /** Days uploaded public documents are kept in original form before compressed archival. */
 export const RETENTION_DAYS = 30;
@@ -51,7 +66,7 @@ export const TIERS = {
       "AI document analysis",
       "AI docket text generation",
       "AI event code matching",
-      "3-pass AI safety verification",
+      "5-point readiness check",
       "Filing package staging",
       "Guided CM/ECF handoff",
       "Filing history & PDF archive",

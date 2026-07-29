@@ -86,6 +86,30 @@ class TestLegacyCredentialPurge:
         assert purge_stored_pacer_credentials(tmp_path / "absent.db") == 0
 
 
+class TestPacerSessionCredentialHygiene:
+    """The interactive-login module is allowlisted above; prove it earns that."""
+
+    def _source(self) -> str:
+        return (
+            Path(__file__).resolve().parent.parent / "ecfiler" / "pacer_session.py"
+        ).read_text(encoding="utf-8")
+
+    def test_pacer_session_never_reads_a_password(self) -> None:
+        src = self._source()
+        for forbidden in ("keyring", "get_password", "PacerAuth"):
+            assert forbidden not in src, (
+                f"pacer_session.py must not reach for credentials, found {forbidden!r}. "
+                "The human types the password and the MFA code in the browser."
+            )
+
+    def test_pacer_session_never_fills_a_form_field(self) -> None:
+        src = self._source()
+        for forbidden in (".fill(", ".type(", "loginForm:password"):
+            assert forbidden not in src, (
+                f"pacer_session.py must not drive the login form, found {forbidden!r}."
+            )
+
+
 class TestNoServerCredentialReads:
     def test_only_local_cli_modules_touch_pacer_password(self) -> None:
         """Source scan: no server/web module may read a PACER password.
@@ -106,6 +130,12 @@ class TestNoServerCredentialReads:
             "workflow.py",
             "diagnostics.py",
             "config.py",  # comment documenting that passwords are keyring-only
+            # Interactive CSO login. Contains no password handling at all: the
+            # word appears in prose stating that the human types the password
+            # and the MFA code, and in the "Forgot password" string used to
+            # recognise a login page. Guarded positively by
+            # test_pacer_session_never_reads_a_password below.
+            "pacer_session.py",
             # Render "********" placeholders; slated for removal in the
             # prepare/stage repositioning:
             "browser_demo.py",

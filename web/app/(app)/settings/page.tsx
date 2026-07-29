@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { deleteAccountData, exportAccountData, type AccountDeletionResult } from "@/lib/api";
+import { COURT_COUNT, PRO_PRICE, TIERS } from "@/lib/facts";
 
 // Simple email-like validation
 function isEmailLike(v: string) {
@@ -29,6 +31,45 @@ export default function SettingsPage() {
   // Danger zone state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<AccountDeletionResult | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError("");
+    try {
+      const data = await exportAccountData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ecfiler-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("Export failed. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const result = await deleteAccountData();
+      setDeleteResult(result);
+      setDeleteConfirmOpen(false);
+      setDeleteConfirmText("");
+    } catch {
+      setDeleteError("Deletion failed. Please try again or contact support.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Load saved settings from localStorage
   useEffect(() => {
@@ -64,11 +105,11 @@ export default function SettingsPage() {
   const features = [
     { feature: "PDF validation & redaction scanning", needsPacer: false },
     { feature: "Certificate of service generation", needsPacer: false },
-    { feature: "Court & event code search (207 courts)", needsPacer: false },
+    { feature: `Court & event code search (${COURT_COUNT} courts)`, needsPacer: false },
     { feature: "Filing fee lookup", needsPacer: false },
     { feature: "AI document analysis & event code matching", needsPacer: true },
     { feature: "AI docket text generation", needsPacer: true },
-    { feature: "3-pass AI safety verification", needsPacer: true },
+    { feature: "5-point readiness check", needsPacer: true },
     { feature: "Filing package staging & guided CM/ECF handoff", needsPacer: true },
     { feature: "Local CLI filing (credentials in your OS keyring)", needsPacer: true },
   ];
@@ -208,8 +249,8 @@ export default function SettingsPage() {
                   Filing runs locally through the ECFiler CLI, which keeps your PACER password in
                   your operating system&apos;s keyring — run <code className="font-mono text-[11px] bg-[#f0eee9] px-1 py-0.5 rounded">ecfiler setup</code> on
                   your machine. The web app prepares and validates filings without ever needing
-                  your court credentials. Server-side credential storage was removed and all
-                  previously stored credentials were permanently deleted in July 2026.
+                  your court credentials. Server-side credential storage was removed from
+                  ECFiler in July 2026 — no ECFiler server stores court credentials.
                 </p>
               </div>
             </div>
@@ -274,13 +315,14 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <div className="text-[14px] font-semibold text-[#1a1a1a]">Free Plan</div>
-                  <div className="text-[13px] text-[#8a8a8a]">All features, self-hosted filing</div>
+                  <div className="text-[13px] text-[#8a8a8a]">Free tools and the filing workspace</div>
                 </div>
               </div>
               <span className="text-[11px] px-3 py-1.5 bg-[#f0eee9] text-[#525252] rounded-full font-bold uppercase tracking-wide">Current</span>
             </div>
 
-            {/* Pro upgrade card */}
+            {/* Pro preview card — Pro is not purchasable yet; the waitlist on the
+                landing page is the only signup surface. */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e3a5f] via-[#24476f] to-[#2d5a8e] p-5 mb-5">
               {/* Subtle pattern overlay */}
               <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
@@ -288,10 +330,10 @@ export default function SettingsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-[15px] font-bold text-white">ECFiler Pro</span>
-                    <span className="text-[10px] px-2 py-0.5 bg-white/15 text-white/90 rounded-full font-semibold backdrop-blur-sm">Recommended</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-white/15 text-white/90 rounded-full font-semibold backdrop-blur-sm">Coming Soon</span>
                   </div>
                   <ul className="space-y-1 mt-3">
-                    {["Hosted CM/ECF filing", "Team management", "Priority support", "Filing analytics"].map((item) => (
+                    {TIERS.pro.features.slice(1, 5).map((item) => (
                       <li key={item} className="flex items-center gap-2 text-[13px] text-white/80">
                         <svg className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                         {item}
@@ -300,16 +342,16 @@ export default function SettingsPage() {
                   </ul>
                 </div>
                 <div className="text-right flex-shrink-0 ml-4">
-                  <div className="text-3xl font-bold text-white">$99</div>
-                  <div className="text-[12px] text-white/60 font-medium">per attorney / month</div>
+                  <div className="text-3xl font-bold text-white">${PRO_PRICE}</div>
+                  <div className="text-[12px] text-white/60 font-medium">per attorney / month, planned</div>
                 </div>
               </div>
             </div>
 
-            <button className="w-full sm:w-auto px-6 py-2.5 bg-[#1e3a5f] text-white text-sm font-semibold rounded-xl hover:bg-[#162a47] active:scale-[0.98] transition-all shadow-sm hover:shadow-md">
-              Upgrade to Pro
-            </button>
-            <p className="text-[12px] text-[#999] mt-2.5">Secure checkout via Stripe. Cancel anytime, no lock-in.</p>
+            <Link href="/#pricing" className="inline-block w-full sm:w-auto px-6 py-2.5 bg-[#1e3a5f] text-white text-sm font-semibold rounded-xl hover:bg-[#162a47] active:scale-[0.98] transition-all shadow-sm hover:shadow-md text-center">
+              Join the Pro waitlist
+            </Link>
+            <p className="text-[12px] text-[#999] mt-2.5">Pro is not available yet. Billing details will be announced at launch.</p>
           </div>
         </section>
 
@@ -441,6 +483,30 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* ── Your Data ──────────────────────────────────────────── */}
+        <section>
+          <div className="mb-3">
+            <h2 className="text-[11px] font-bold uppercase tracking-widest text-[#8a8a8a]">Your Data</h2>
+            <p className="text-[13px] text-[#999] mt-0.5">Everything ECFiler holds for your account, in a machine-readable file.</p>
+          </div>
+          <div className="bg-white border border-[#e8e5e0] rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <div className="text-[14px] font-semibold text-[#1a1a1a]">Export My Data</div>
+                <p className="text-[13px] text-[#8a8a8a] mt-0.5">Download your filing history, staged packages, and attestation records as JSON.</p>
+              </div>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="flex-shrink-0 px-5 py-2.5 border border-[#e8e5e0] text-[#1e3a5f] text-sm font-semibold rounded-xl hover:bg-[#f0f4fa] active:scale-[0.98] disabled:opacity-50 transition-all"
+              >
+                {exporting ? "Preparing..." : "Download Export"}
+              </button>
+            </div>
+            {exportError && <p className="text-[12px] text-[#dc2626] mt-3">{exportError}</p>}
+          </div>
+        </section>
+
         {/* ── Danger Zone ────────────────────────────────────────── */}
         <section>
           <div className="mb-3">
@@ -448,10 +514,24 @@ export default function SettingsPage() {
             <p className="text-[13px] text-[#999] mt-0.5">Irreversible actions. Please be certain.</p>
           </div>
           <div className="bg-white border border-[#fecaca] rounded-2xl p-6 shadow-sm">
+            {deleteResult && (
+              <div className="mb-5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl p-4">
+                <p className="text-[13px] text-[#15803d] font-semibold">Your data has been deleted.</p>
+                <p className="text-[12px] text-[#166534] mt-1">
+                  Removed: {deleteResult.filing_history_rows} filing-history record(s),{" "}
+                  {deleteResult.archived_documents} archived document(s),{" "}
+                  {deleteResult.staged_packages} staged package(s), and the case data behind{" "}
+                  {deleteResult.attestation_payloads} attestation record(s). Attestation records
+                  themselves are retained as content-free integrity hashes. To remove your login,
+                  use the account menu (Manage account &rarr; Delete account).
+                </p>
+              </div>
+            )}
+            {deleteError && <p className="text-[12px] text-[#dc2626] mb-4">{deleteError}</p>}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <div className="text-[14px] font-semibold text-[#1a1a1a]">Delete Account</div>
-                <p className="text-[13px] text-[#8a8a8a] mt-0.5">Permanently remove your account and filing history. This cannot be undone.</p>
+                <div className="text-[14px] font-semibold text-[#1a1a1a]">Delete My Data</div>
+                <p className="text-[13px] text-[#8a8a8a] mt-0.5">Permanently remove your filing history, documents, and staged packages from ECFiler&apos;s servers. This cannot be undone.</p>
               </div>
               <button
                 onClick={() => {
@@ -460,7 +540,7 @@ export default function SettingsPage() {
                 }}
                 className="flex-shrink-0 px-5 py-2.5 border border-[#fecaca] text-[#dc2626] text-sm font-semibold rounded-xl hover:bg-[#fef2f2] active:scale-[0.98] transition-all"
               >
-                Delete Account
+                Delete My Data
               </button>
             </div>
 
@@ -481,15 +561,11 @@ export default function SettingsPage() {
                   />
                   <div className="flex gap-2.5 mt-3">
                     <button
-                      disabled={deleteConfirmText !== "DELETE"}
-                      onClick={() => {
-                        // Account deletion would go here
-                        setDeleteConfirmOpen(false);
-                        setDeleteConfirmText("");
-                      }}
+                      disabled={deleteConfirmText !== "DELETE" || deleting}
+                      onClick={handleDelete}
                       className="px-5 py-2.5 bg-[#dc2626] text-white text-sm font-semibold rounded-xl hover:bg-[#b91c1c] active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
-                      Permanently Delete
+                      {deleting ? "Deleting..." : "Permanently Delete"}
                     </button>
                     <button
                       onClick={() => {

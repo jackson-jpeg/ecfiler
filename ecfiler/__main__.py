@@ -655,12 +655,77 @@ def audit_verify() -> None:
         raise click.Abort()
 
 
+@main.group("session")
+def session_group() -> None:
+    """Manage the persistent PACER browser session (see docs/filing-topology.md)."""
+
+
+@session_group.command("login")
+@click.option("--qa", is_flag=True, help="Use the PACER QA environment instead of production")
+@click.option("--timeout", default=600, show_default=True, help="Seconds to wait for login")
+def session_login(qa: bool, timeout: int) -> None:
+    """Open a headed browser for a one-time interactive PACER login.
+
+    You type the password and the MFA code; ECFiler never sees either. The
+    resulting session is persisted so later filing runs are unattended.
+    """
+    from rich.console import Console
+
+    from ecfiler.pacer_session import PROFILE_DIR, establish_session
+
+    console = Console()
+    console.print("\n[bold]PACER interactive login[/bold]")
+    console.print(f"  Profile: [dim]{PROFILE_DIR}[/dim]")
+    console.print("  A browser window will open. Sign in and complete MFA there.\n")
+
+    if establish_session(use_qa=qa, timeout_seconds=timeout):
+        console.print("  [green]✓[/green] Session established and persisted.")
+    else:
+        console.print("  [red]✗[/red] No authenticated session detected before timeout.")
+        raise click.Abort()
+
+
+@session_group.command("status")
+@click.option("--qa", is_flag=True, help="Use the PACER QA environment instead of production")
+@click.option("--probe/--no-probe", default=True, help="Actually test the session against PACER")
+def session_status(qa: bool, probe: bool) -> None:
+    """Report whether the persisted session is live, and its measured lifetime."""
+    from rich.console import Console
+
+    from ecfiler.pacer_session import PROFILE_DIR, PacerSessionStore, probe_session
+
+    console = Console()
+    store = PacerSessionStore()
+
+    if not PROFILE_DIR.exists():
+        console.print("  [yellow]No persisted session.[/yellow] Run: ecfiler session login")
+        return
+
+    if probe:
+        live = probe_session(use_qa=qa)
+        console.print(
+            f"  Session: [green]live[/green]" if live else "  Session: [red]expired[/red]"
+        )
+
+    stats = store.observed_lifetime()
+    if not stats["known"]:
+        console.print("  Measured lifetime: [dim]unknown — no observations yet[/dim]")
+        return
+    longest = stats["longest_alive_seconds"]
+    shortest = stats["shortest_expired_seconds"]
+    console.print(f"  Observations: {stats['observations']}")
+    if longest:
+        console.print(f"  Longest still-valid age: {longest / 3600:.1f}h")
+    if shortest:
+        console.print(f"  Shortest expired age:    {shortest / 3600:.1f}h")
+
+
 @main.command("stage-pull")
 @click.argument("stage_code")
 @click.option(
     "--server",
     envvar="ECFILER_SERVER",
-    default="https://ecfiler-production.up.railway.app",
+    default="https://api.ecfiler.com",
     help="ECFiler server that staged the package (env: ECFILER_SERVER)",
 )
 @click.option(
@@ -675,6 +740,8 @@ def stage_pull(stage_code: str, server: str, token: str) -> None:
     The hosted app prepares and validates; filing happens here, on your
     machine, with your credentials. This command bridges the two.
     """
+    import os
+
     import httpx
     from rich.console import Console
 
@@ -685,6 +752,11 @@ def stage_pull(stage_code: str, server: str, token: str) -> None:
     headers = {"User-Agent": USER_AGENT}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    # QA/dry-run affordance: a server running with ECFILER_DEV_AUTH=1 accepts
+    # an X-User-Id header instead of a Clerk token. Ignored by production.
+    dev_user = os.environ.get("ECFILER_DEV_USER", "")
+    if dev_user:
+        headers["X-User-Id"] = dev_user
 
     url = f"{server.rstrip('/')}/api/filing/stage/{stage_code}"
     try:
