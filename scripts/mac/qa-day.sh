@@ -109,7 +109,10 @@ export ECFILER_PACER_USERNAME="$QA_USER"
 export ECFILER_HEADED=1
 
 echo "== Pulling staged package $STAGE =="
-"$ECFILER_MAC" stage-pull "$STAGE" || exit 1
+PULL_ARGS=("$STAGE")
+[ -n "${QA_SERVER:-}" ] && PULL_ARGS+=(--server "$QA_SERVER")
+[ -n "${QA_DEV_USER:-}" ] && PULL_ARGS+=(--dev-user "$QA_DEV_USER")
+"$ECFILER_MAC" stage-pull "${PULL_ARGS[@]}" || exit 1
 
 echo "== Handing off to the attended filing workflow (CONFIRM + YES are yours) =="
 echo "   Target: $TARGET (QA) as $QA_USER, headed browser"

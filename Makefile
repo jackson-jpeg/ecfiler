@@ -13,11 +13,13 @@
 MODE ?= dry
 STAGE ?=
 TARGET ?=
+SERVER ?=
+DEVUSER ?=
 
 .PHONY: qa-day test web-verify
 
 qa-day:
-	QA_STAGE=$(STAGE) QA_TARGET=$(TARGET) bash scripts/mac/qa-day.sh $(MODE)
+	QA_STAGE=$(STAGE) QA_TARGET=$(TARGET) QA_SERVER=$(SERVER) QA_DEV_USER=$(DEVUSER) bash scripts/mac/qa-day.sh $(MODE)
 
 test:
 	.venv/bin/python -m pytest tests/ -q --ignore=tests/test_browser_e2e.py
