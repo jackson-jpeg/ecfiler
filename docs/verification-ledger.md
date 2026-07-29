@@ -99,6 +99,21 @@ ghostscript tesseract` → installed; re-check with homebrew on PATH →
 wrapper now exports the homebrew PATH so non-interactive SSH runs see the
 tools. VERIFIED (current state measured; key rows remain).
 
+### L13 — 2026-07-29 — PR #1 merged; git-integration production deploy
+`[VPS] gh api -X PUT repos/jackson-jpeg/ecfiler/pulls/1/merge -f
+merge_method=merge` → `merged: true`, master = `3e004f63`. Vercel git
+integration built Production for that SHA: GitHub deployment `5650666265`,
+state `success` — no CLI, no hand step. VERIFIED.
+
+### L14 — 2026-07-29 — production smoke, 18/18 PASS from outside
+`[MAC] cd ~/ecfiler && bash scripts/verify-production.sh` → exit 0,
+**18 PASS / 0 FAIL**: production serves master HEAD (`3e004f63a933` via the
+ecfiler-commit meta tag); all eight free-tool routes answer 200 with no
+auth bounce; /federal-courts court numbers sum to 207 matching
+`web/lib/data/*.json`; zero purged claims on any served page; walkthrough
+labeled scripted; aspirational Pro claims carry the Coming Soon label.
+This closes L01's 13-FAIL baseline. VERIFIED.
+
 ---
 
 ## Retro-audit — sessions 2–4 verification claims
