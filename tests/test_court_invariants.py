@@ -231,3 +231,31 @@ class TestStagingRefusesCrossEnvironment:
         )
         assert resp.status_code == 422
         assert "environment" in resp.text
+
+
+class TestCourtsCommand:
+    """`ecfiler courts` shows a real directory, not a synthesized one."""
+
+    def _run(self, *args):
+        from click.testing import CliRunner
+
+        from ecfiler.__main__ import main
+
+        return CliRunner().invoke(main, ["courts", *args])
+
+    def test_qa_flag_lists_the_qa_court(self) -> None:
+        result = self._run("--qa")
+        assert result.exit_code == 0
+        assert "azttdc" in result.output
+        assert "QA environment" in result.output
+
+    def test_production_listing_excludes_it(self) -> None:
+        result = self._run("--search", "azttdc")
+        assert "No courts found" in result.output
+
+    def test_ecf_url_comes_from_the_registry_not_a_guess(self) -> None:
+        """azttdc's host is ecf.tc1d.aztc… — the old code printed
+        ecf.<court_id>.uscourts.gov, which for QA courts does not exist."""
+        result = self._run("--qa")
+        assert "tc1d" in result.output
+        assert "ecf.azttdc" not in result.output

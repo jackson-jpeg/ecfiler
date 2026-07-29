@@ -133,6 +133,7 @@ class CourtRegistry:
                 "court_id": court_id,
                 "name": data.get("name", court_id),
                 "type": ct,
+                "ecf_url": data.get("ecf_url", ""),
             })
         return courts
 
@@ -159,6 +160,7 @@ class CourtRegistry:
                     "court_id": court_id,
                     "name": name,
                     "type": data.get("court_type", "district"),
+                    "ecf_url": data.get("ecf_url", ""),
                 })
         # Sort: exact ID match first, then by name
         results.sort(key=lambda c: (0 if c["court_id"].lower() == query_lower else 1, c["name"]))

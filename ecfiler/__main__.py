@@ -67,7 +67,12 @@ def setup(ctx: click.Context) -> None:
 @main.command("courts")
 @click.option("--type", "-t", "court_type", type=click.Choice(["district", "bankruptcy", "appellate"]))
 @click.option("--search", "-s", "query", type=str, help="Search by name or ID")
-def list_courts(court_type: str | None, query: str | None) -> None:
+@click.option(
+    "--qa",
+    is_flag=True,
+    help="List the PACER QA/training courts instead of the production ones",
+)
+def list_courts(court_type: str | None, query: str | None, qa: bool) -> None:
     """List available federal courts."""
     from rich.console import Console
     from rich.table import Table
@@ -75,7 +80,12 @@ def list_courts(court_type: str | None, query: str | None) -> None:
     from ecfiler.courts.registry import CourtRegistry
 
     console = Console()
-    registry = CourtRegistry()
+    registry = CourtRegistry(environment="qa" if qa else None)
+    if registry.environment == "qa":
+        console.print(
+            "[yellow]PACER QA environment[/yellow] — training courts only; "
+            "production courts are not in this directory."
+        )
 
     if query:
         courts = registry.search(query)
@@ -95,9 +105,10 @@ def list_courts(court_type: str | None, query: str | None) -> None:
     table.add_column("ECF URL", style="dim")
 
     for court in courts:
-        court_id = court["court_id"]
-        ecf_url = f"ecf.{court_id}.uscourts.gov"
-        table.add_row(court_id, court["name"], court["type"], ecf_url)
+        # The registry's own URL, not a guess from the court id — QA courts
+        # (and a handful of production ones) do not follow the convention.
+        host = court.get("ecf_url", "").replace("https://", "").rstrip("/")
+        table.add_row(court["court_id"], court["name"], court["type"], host)
 
     console.print(table)
 
