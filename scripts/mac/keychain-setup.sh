@@ -56,9 +56,12 @@ security delete-generic-password -a "$USERNAME" -s ecfiler-pacer "$KC" >/dev/nul
 security add-generic-password -a "$USERNAME" -s ecfiler-pacer -w "$PW" -A "$KC"
 unset PW
 
-# Verify the read path ecfiler actually uses.
-"$HOME/ecfiler/.venv/bin/python" - "$USERNAME" <<'PY'
+# Verify the read path ecfiler actually uses. Over SSH the stock keyring
+# backend can't read alternate keychains (-25308), so verify through the
+# same security-CLI backend ecfiler-mac routes to (ECFILER_KEYCHAIN).
+ECFILER_KEYCHAIN="$KC" "$HOME/ecfiler/.venv/bin/python" - "$USERNAME" <<'PY'
 import sys, keyring
+from ecfiler import keychain_macos  # registers the security-CLI backend
 ok = bool(keyring.get_password("ecfiler-pacer", sys.argv[1]))
 print("keyring backend:", type(keyring.get_keyring()).__name__)
 print("credential readable:", ok)

@@ -685,6 +685,45 @@ def session_login(qa: bool, timeout: int) -> None:
         raise click.Abort()
 
 
+@session_group.command("auth-test")
+@click.option("--qa", is_flag=True, help="Authenticate against the PACER QA environment")
+@click.option("--username", "username", default="", help="Keychain account (defaults to config)")
+def session_auth_test(qa: bool, username: str) -> None:
+    """Non-interactive credential check against the PACER cso-auth API.
+
+    Reads the password from the OS keychain (service ecfiler-pacer), calls
+    the auth service, and reports success or failure. Never prints the
+    password or the token.
+    """
+    from rich.console import Console
+
+    from ecfiler.config import load_config
+    from ecfiler.pacer_auth import PacerAuth, PacerAuthError
+
+    console = Console()
+    if not username:
+        try:
+            username = load_config().pacer.username
+        except Exception:
+            username = ""
+    if not username:
+        console.print("  [red]No username: pass --username or set pacer.username in config.[/red]")
+        raise click.Abort()
+
+    env = "QA" if qa else "PRODUCTION"
+    console.print(f"  Authenticating [bold]{username}[/bold] against PACER {env}...")
+    auth = PacerAuth(username, use_qa=qa)
+    try:
+        token = auth.authenticate()
+    except PacerAuthError as e:
+        console.print(f"  [red]✗ Authentication failed:[/red] {e}")
+        raise click.Abort()
+    console.print(
+        f"  [green]✓[/green] Authenticated. Token received "
+        f"(length {len(token.token)}, not shown)."
+    )
+
+
 @session_group.command("status")
 @click.option("--qa", is_flag=True, help="Use the PACER QA environment instead of production")
 @click.option("--probe/--no-probe", default=True, help="Actually test the session against PACER")

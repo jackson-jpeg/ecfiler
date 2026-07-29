@@ -818,20 +818,40 @@ class FilingWorkflow:
             raise RuntimeError("No filing to submit")
 
         from ecfiler.browser.session import BrowserSession
+        from ecfiler.config import filing_environment
         from ecfiler.courts.registry import CourtRegistry
 
         console.print("\n  [bold]Submitting filing...[/bold]")
 
+        env = filing_environment()
         registry = CourtRegistry()
         court = registry.get(self.filing.court_id)
+        if env.ecf_url_override:
+            # Point every derived URL (login, filing, domain) at the target.
+            court.profile.ecf_url = env.ecf_url_override
+            console.print(
+                f"  [yellow]Target override:[/yellow] {env.ecf_url_override}"
+                + (" [dim](QA environment)[/dim]" if env.use_qa else "")
+            )
+        username = env.username_override or self.config.pacer.username
 
-        with BrowserSession(headless=True) as browser:
+        # In QA mode reuse the human-seeded persistent profile so the
+        # MFA-established session backs up the token path.
+        profile_dir = None
+        if env.use_qa:
+            from ecfiler.pacer_session import PROFILE_DIR
+
+            profile_dir = PROFILE_DIR
+
+        with BrowserSession(
+            headless=not env.headed, user_data_dir=profile_dir
+        ) as browser:
             # Authenticate
             console.print("  [dim]Authenticating with PACER...[/dim]")
             try:
                 from ecfiler.pacer_auth import PacerAuth
 
-                auth = PacerAuth(self.config.pacer.username)
+                auth = PacerAuth(username, use_qa=env.use_qa)
                 token = auth.get_token()
 
                 # Use token-based login (bypasses MFA, confirmed working)
@@ -846,7 +866,7 @@ class FilingWorkflow:
                 from ecfiler.pacer_auth import PacerAuth as PacerAuthFallback
 
                 try:
-                    fallback_auth = PacerAuthFallback(self.config.pacer.username)
+                    fallback_auth = PacerAuthFallback(username, use_qa=env.use_qa)
                     password = fallback_auth.get_password()
                 except Exception:
                     raise RuntimeError(
@@ -855,7 +875,7 @@ class FilingWorkflow:
                     )
                 if not browser.login_via_form(
                     court.profile.login_url,
-                    self.config.pacer.username,
+                    username,
                     password,
                 ):
                     raise RuntimeError("PACER login failed")

@@ -20,7 +20,9 @@
 set -u
 
 MODE="${1:-dry}"
-STAGE="${2:-}"
+STAGE="${2:-${QA_STAGE:-}}"
+TARGET="${QA_TARGET:-}"
+QA_USER="${QA_USER:-ecfilercom}"
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 ECFILER_MAC="$REPO/scripts/mac/ecfiler-mac"
 
@@ -52,7 +54,8 @@ KC="$HOME/Library/Keychains/ecfiler.keychain-db"
 check "ecfiler keychain exists" test -f "$KC"
 check "keychain password file present" test -f "$HOME/.ecfiler/keychain-pass"
 check "keychain unlocks" security unlock-keychain -p "$(cat "$HOME/.ecfiler/keychain-pass" 2>/dev/null)" "$KC"
-check "PACER credential stored" security find-generic-password -s ecfiler-pacer "$KC"
+check "QA credential stored ($QA_USER)" security find-generic-password -a "$QA_USER" -s ecfiler-pacer "$KC"
+check "QA credential authenticates (cso-auth)" "$ECFILER_MAC" session auth-test --qa --username "$QA_USER"
 
 check "Chromium profile exists" test -d "$HOME/.ecfiler/pacer-profile"
 if "$ECFILER_MAC" session status --qa 2>/dev/null | grep -qi "live"; then
@@ -88,14 +91,28 @@ echo
 echo "Preflight green."
 if [ -z "$STAGE" ]; then
   echo "No STAGE code given. Stage a filing at www.ecfiler.com/file, then:"
-  echo "  [MAC] make qa-day MODE=live STAGE=<code>"
+  echo "  [MAC] make qa-day MODE=live STAGE=<code> TARGET=<qa-ecf-base-url>"
   exit 0
 fi
+if [ -z "$TARGET" ]; then
+  echo "No TARGET given. A live QA run must name its training-court URL"
+  echo "(docs/nef-roundtrip-runbook.md records the established target):"
+  echo "  [MAC] make qa-day MODE=live STAGE=$STAGE TARGET=<qa-ecf-base-url>"
+  exit 1
+fi
+
+# The filing workflow reads these; ECFILER_PACER_QA without ECFILER_ECF_URL
+# refuses to run (ecfiler/config.py::filing_environment).
+export ECFILER_PACER_QA=1
+export ECFILER_ECF_URL="$TARGET"
+export ECFILER_PACER_USERNAME="$QA_USER"
+export ECFILER_HEADED=1
 
 echo "== Pulling staged package $STAGE =="
 "$ECFILER_MAC" stage-pull "$STAGE" || exit 1
 
 echo "== Handing off to the attended filing workflow (CONFIRM + YES are yours) =="
+echo "   Target: $TARGET (QA) as $QA_USER, headed browser"
 "$ECFILER_MAC" || exit 1
 
 echo "== Proof =="

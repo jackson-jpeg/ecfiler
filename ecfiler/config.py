@@ -28,6 +28,53 @@ class PacerConfig:
         return bool(self.username)
 
 
+@dataclass(frozen=True)
+class FilingEnvironment:
+    """Which PACER universe and browser posture a filing run targets.
+
+    Resolved from environment variables so `make qa-day MODE=live` can point
+    one attended run at the QA/training environment without touching config:
+
+      ECFILER_PACER_QA=1        authenticate against qa-pacer (cso-auth QA)
+      ECFILER_ECF_URL=...       CM/ECF base URL to file against (required in
+                                QA mode — a QA run must never point at a
+                                production court by registry default)
+      ECFILER_PACER_USERNAME=x  keychain account to use (QA account differs
+                                from the production one; same service name)
+      ECFILER_HEADED=1          headed browser for attended runs
+    """
+
+    use_qa: bool = False
+    ecf_url_override: str = ""
+    username_override: str = ""
+    headed: bool = False
+
+
+def filing_environment() -> FilingEnvironment:
+    """Read the filing-environment overrides. Illegal combinations raise."""
+    use_qa = os.environ.get("ECFILER_PACER_QA", "") == "1"
+    override = os.environ.get("ECFILER_ECF_URL", "").strip().rstrip("/")
+    if use_qa and not override:
+        raise ConfigError(
+            "ECFILER_PACER_QA=1 requires ECFILER_ECF_URL: a QA run must name "
+            "its training-court URL explicitly — refusing to fall back to a "
+            "production ecf_url from the registry."
+        )
+    if override and not override.startswith("https://") and not override.startswith(
+        "http://localhost"
+    ) and not override.startswith("http://127.0.0.1"):
+        raise ConfigError(
+            f"ECFILER_ECF_URL must be https:// (or localhost for the mock "
+            f"court), got: {override}"
+        )
+    return FilingEnvironment(
+        use_qa=use_qa,
+        ecf_url_override=override,
+        username_override=os.environ.get("ECFILER_PACER_USERNAME", "").strip(),
+        headed=os.environ.get("ECFILER_HEADED", "") == "1",
+    )
+
+
 @dataclass
 class AttorneyConfig:
     name: str = ""
