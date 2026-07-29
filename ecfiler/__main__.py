@@ -867,9 +867,44 @@ def stage_pull(stage_code: str, server: str, token: str, dev_user: str) -> None:
         raise click.Abort()
 
     package = resp.json()
-    name = f"staged_{package.get('case_number', stage_code)}"
-    path = save_draft(name, package, overwrite=True)
+
+    # The draft is the package's canonical Filing record, validated through
+    # the same model the interactive workflow resumes from — a contract
+    # mismatch fails the pull loudly instead of writing an unparseable draft.
+    from pydantic import ValidationError
+
+    from ecfiler.filing.models import Filing
+
+    filing_data = package.get("filing")
+    if not isinstance(filing_data, dict):
+        console.print(
+            "[red]The server's package has no canonical filing record — the "
+            "server predates the current package format. Re-stage the filing "
+            "on an up-to-date server.[/red]"
+        )
+        raise click.Abort()
+    try:
+        filing = Filing.model_validate(filing_data)
+    except ValidationError as e:
+        console.print(
+            f"[red]Staged package does not parse as a Filing — refusing to "
+            f"save a draft the workflow cannot resume:[/red]\n{e}"
+        )
+        raise click.Abort()
+
+    name = f"staged_{filing.case.case_number or stage_code}"
+    path = save_draft(name, filing.model_dump(mode="json"), overwrite=True)
+    staged = filing.staged
     console.print(f"[green]✓[/green] Staged package saved as draft: [bold]{path}[/bold]")
+    console.print(
+        f"  Court: [bold]{filing.court_id}[/bold]"
+        + (
+            f" ({staged.environment}) — {staged.ecf_url}"
+            if staged
+            else ""
+        )
+    )
+    console.print(f"  Case:  {filing.case.case_number}   Event: {filing.event.description}")
     console.print("  Review it, then file with the interactive workflow: [bold]ecfiler[/bold]")
 
 

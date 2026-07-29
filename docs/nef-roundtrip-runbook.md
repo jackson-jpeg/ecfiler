@@ -79,10 +79,25 @@ QA account:
   `https://ecf.tc1d.aztc.uscourts.gov` — District CM/ECF v10.8.4, login
   federated with `qa-login.uscourts.gov` (verified from the Mac — ledger L15).
 
-- Stage with `court_id=azd` (standard district selectors); the live run
-  overrides every URL with `TARGET=https://ecf.tc1d.aztc.uscourts.gov`.
-  The filing case number must exist in that court — after login, look one
-  up via the court's Query menu before staging.
+- **Stage with `court_id=azttdc`.** The QA court is a first-class registry
+  entry (`ecfiler/courts/data/qa_courts.json`) loaded only when
+  `ECFILER_PACER_QA=1`. Both the staging API and the CLI must run with that
+  variable set, or staging answers 422 and the CLI cannot resolve the court.
+
+  This replaces the previous instruction to "stage with `court_id=azd` and
+  override the URL at submit time." That is how session 6's run produced a
+  draft naming the real District of Arizona (ledger L16/L17). `ECFILER_ECF_URL`
+  is now a confirmation of the target, not a retargeting mechanism: if it
+  disagrees with the resolved court's own URL, the run aborts before the
+  browser opens (`ecfiler/filing/invariants.py`). A staged package carries
+  the court it was staged for, and nothing downstream may change it.
+
+- The filing case number must exist in that court. Find one without leaving
+  the terminal:
+
+  ```
+  [MAC] ~/ecfiler/scripts/mac/ecfiler-mac session find-cases --qa --court azttdc --party <name>
+  ```
 
 ## QA day — one command
 
@@ -95,26 +110,49 @@ and the allow-rules paste above.
 [MAC] ~/ecfiler/scripts/mac/ecfiler-mac session login --qa
 [MAC] cd ~/ecfiler && make qa-day MODE=live
 
-# Stage a filing at www.ecfiler.com → /file → note the stage code, then:
-[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=<code> TARGET=https://ecf.tc1d.aztc.uscourts.gov
+# Stage a filing for court_id=azttdc (see below), then:
+[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=<code> \
+        TARGET=https://ecf.tc1d.aztc.uscourts.gov \
+        SERVER=http://100.126.58.33:8901 DEVUSER=qa-day
 ```
+
+At the workflow's menu choose **[2] Resume Draft** — the staged package is
+the draft. `[1] New Filing` builds a fresh filing from scratch and discards
+the attested package. In QA mode the court list holds the QA courts only;
+production courts are not merely hidden, they are absent from the registry.
 
 Hosted staging needs the api.ecfiler.com DNS row (HUMAN-QUEUE #1). Until it
-runs, stage against a local API instead:
+runs, stage against a QA-mode API instead. `ECFILER_PACER_QA=1` is what puts
+the QA court in the registry — without it the stage call answers 422:
 
 ```
-[MAC] cd ~/ecfiler && ECFILER_DEV_AUTH=1 .venv/bin/python -m uvicorn ecfiler.api.app:app --port 8001 &
-[MAC] # stage via the API (attestation required), note the stage_code it returns
-[MAC] ECFILER_SERVER=http://127.0.0.1:8001 ECFILER_DEV_USER=qa-day ~/ecfiler/scripts/mac/ecfiler-mac stage-pull <code>
+[VPS] cd ~/ecfiler && ECFILER_DEV_AUTH=1 ECFILER_PACER_QA=1 \
+        ECFILER_DATA_DIR=/root/.ecfiler-qa-staging \
+        .venv/bin/python -m uvicorn ecfiler.api.app:app --host 100.126.58.33 --port 8901 &
+[VPS] # POST /api/filing/stage with court_id=azttdc and the attestation;
+[VPS] # note the stage_code it returns
+[MAC] ~/ecfiler/scripts/mac/ecfiler-mac stage-pull <code> \
+        --server http://100.126.58.33:8901 --dev-user qa-day
 ```
 
-`make qa-day MODE=live` (scripts/mac/qa-day.sh) gates on six preconditions —
-macOS + venv, PACER credential readable from `ecfiler.keychain-db`, headed
-Chromium profile with a live persisted `--qa` session, the sandbox
-allow-rules above, receipts dir writable, attestation chain verifying — and
-refuses to start if any is red. With a `STAGE` code it pulls the package,
-hands off to the attended workflow (the CONFIRM and YES gates stay human),
-then prints `audit verify` plus the receipt and trace listings.
+The Tailscale address is the VPS (`100.126.58.33`), reachable from the Mac —
+`CLAUDE.md`'s `100.101.181.105` is stale.
+
+`make qa-day MODE=live` (scripts/mac/qa-day.sh) gates on twelve
+preconditions — macOS, repo venv, `ecfiler.keychain-db` exists / its
+password file exists / it unlocks, the QA credential is stored, the QA
+credential authenticates against cso-auth, the Chromium profile exists, the
+persisted `--qa` session is live, the sandbox allow-rules are present, the
+receipts dir is writable, and the attestation chain verifies — and refuses
+to start if any is red. With a `STAGE` code it pulls the package, checks the
+pulled draft names the target court (below), hands off to the attended
+workflow (the CONFIRM and YES gates stay human), then prints `audit verify`
+plus the receipt and trace listings.
+
+After the pull, the script re-reads the draft and refuses to continue unless
+its staged provenance names the same court and the same ECF URL as `TARGET`,
+in the QA environment. That gate exists because session 6's run pulled a
+draft naming `azd` and nothing noticed (L16).
 
 The dry run (no preconditions, runs anywhere including the VPS):
 

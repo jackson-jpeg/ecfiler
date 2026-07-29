@@ -132,7 +132,7 @@ class FilingWorkflow:
 
     def _step_select_court(self) -> tuple[str, str]:
         """Step 1: Select the court."""
-        from ecfiler.courts.registry import CourtRegistry
+        from ecfiler.courts.registry import CourtNotFoundError, CourtRegistry
 
         registry = CourtRegistry()
 
@@ -145,12 +145,18 @@ class FilingWorkflow:
                 )
                 if not Confirm.ask("  Use this court?", default=True):
                     default = ""
-            except (KeyError, ValueError) as e:
+            except (KeyError, ValueError, CourtNotFoundError) as e:
                 console.print(f"  [yellow]Default court '{default}' not found: {e}[/yellow]")
                 default = ""
 
         if not default:
-            console.print(f"\n  [dim]{registry.count} courts available[/dim]")
+            env_note = (
+                " [yellow](PACER QA environment — production courts are not "
+                "listed)[/yellow]"
+                if registry.environment == "qa"
+                else ""
+            )
+            console.print(f"\n  [dim]{registry.count} courts available[/dim]{env_note}")
             query = Prompt.ask("  Search courts (name or ID)")
             results = registry.search(query)
             if not results:
@@ -826,11 +832,23 @@ class FilingWorkflow:
         env = filing_environment()
         registry = CourtRegistry()
         court = registry.get(self.filing.court_id)
+
+        # Hard invariant: the court we are about to file in must be exactly
+        # the court that was selected/staged — same ID, same environment,
+        # same ECF URL. ECFILER_ECF_URL is a confirmation of the target, not
+        # a retargeting mechanism; any mismatch aborts before the browser
+        # ever launches.
+        from ecfiler.filing.invariants import enforce_court_invariants
+
+        enforce_court_invariants(self.filing, court, env)
+
         if env.ecf_url_override:
-            # Point every derived URL (login, filing, domain) at the target.
+            # Passed the invariant: either byte-equal to the court's own URL
+            # or a localhost mock court. Applying it is a no-op for real
+            # courts and points derived URLs at the mock for test runs.
             court.profile.ecf_url = env.ecf_url_override
             console.print(
-                f"  [yellow]Target override:[/yellow] {env.ecf_url_override}"
+                f"  [yellow]Target confirmed:[/yellow] {env.ecf_url_override}"
                 + (" [dim](QA environment)[/dim]" if env.use_qa else "")
             )
         username = env.username_override or self.config.pacer.username

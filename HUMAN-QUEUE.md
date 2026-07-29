@@ -11,12 +11,15 @@ rows (DNS, certbot, API key) into one command and turned the reboot row into
 PR #1 merged to master, production deploys from every master push via the
 Vercel git integration (ledger L13), and the outside-in smoke passed 18/18
 (ledger L14) — deploying the site is now `git push`, not a queue item.
+Session 6 closed the QA-account row (it exists and authenticates) and the
+allow-rules paste row (pasted, scoped); both were replaced by what came
+after them — re-running the filing, and taking the SSH rules back out.
 
 | # | What | Why blocked | Time |
 |---|---|---|---|
 | 1 | [DNS records, then one activation command](#1) | Sandbox (DNS write blocked) | 3 min |
-| 2 | [Paste the sandbox allow-rules block](#2) | Sandbox | 1 min |
-| 3 | [Register the QA PACER account](#3) | Identity + CAPTCHA | 60 s |
+| 2 | [Remove the scoped SSH allow-rules after QA day](#2) | Your laptop, your call | 1 min |
+| 3 | [Re-run the attended QA filing](#3) | CONFIRM + YES are yours | 10 min |
 | 4 | [Rotate the PACER password](#4) | Credential | 90 s |
 | 5 | [Put `ANTHROPIC_API_KEY` on the Mac](#5) | Credential + sandbox | 60 s |
 | 6 | [Subscribe to GovDelivery](#6) | CAPTCHA | 30 s |
@@ -50,35 +53,52 @@ Until this runs, the site's `/api/*` calls answer 502 — the waitlist widget,
 client-side and already works. The verification half of the script was
 proven against a local API instance — all six checks pass (ledger L10).
 
-## 2. Paste the sandbox allow-rules block {#2}
+## 2. Remove the four scoped SSH allow-rules when QA day is over {#2}
 
-Queue row 1 of sessions 2–3, now reduced to a paste: the exact JSON block
-lives in `docs/nef-roundtrip-runbook.md` ("Sandbox allow-rules — paste this
-first"). Merge it into `.claude/settings.json`. Without it, the live QA run
-stalls at `session login` again — and `make qa-day MODE=live` now checks for
-it and refuses to start, so the failure is at least loud and immediate.
+**This replaces the old "paste the allow-rules" row — the rules are in
+place.** You allowed them for an attended run and asked for a row to take
+them back out. Four prefixes, in two files:
 
-## 3. Register the QA PACER account {#3}
+```json
+"Bash(ssh macbook-tunnel /Users/jackson/ecfiler/scripts/mac/ecfiler-mac:*)"
+"Bash(ssh macbook-tunnel git -C /Users/jackson/ecfiler:*)"
+"Bash(ssh macbook-tunnel ls:*)"
+"Bash(ssh macbook /Users/jackson/ecfiler/scripts/mac/ecfiler-mac:*)"
+```
 
-**Still the gating item for proving ECFiler actually files.** The whole
-staged→pull→file→NEF→attestation path round-trips against the mock CM/ECF
-(`make qa-day` runs it in one command — ledger L09), and QA
-day itself is now `make qa-day MODE=live STAGE=<code>` behind a six-point
-preflight. Only this account is missing.
+- `[VPS]` `/root/.claude/settings.json` — the global file on this machine, so
+  I can edit it myself when you say the word.
+- repo `.claude/settings.json` — committed; removing it is a normal commit.
 
-<https://qa-pacer.psc.uscourts.gov/pscof/registration.jsf>
+They are deliberately not `Bash(ssh macbook:*)`, which would be arbitrary
+command execution on your laptop. `make qa-day MODE=live` checks that *some*
+`Bash(ssh macbook` rule exists and refuses to start otherwise, so pulling
+them ends VPS-driven QA runs until they go back — which is the point.
 
-Every field is pre-answered in `docs/outreach/c1-answer-sheet.md` — copy,
-paste, solve the reCAPTCHA, submit. **Skip the credit-card section**; set
-User Type to **Individual**. Blocked because it is an account registration
-under your identity with terms assent, behind reCAPTCHA.
+## 3. Re-run the attended QA filing {#3}
 
-Once it activates overnight:
+**The account is done** — registered, activated, stored in
+`ecfiler.keychain-db`, authenticating against QA cso-auth, with a live
+browser session you seeded by hand. That row is closed. What is left is the
+run itself, which is attended because the CONFIRM and YES gates are yours.
+
+The first attempt (2026-07-29, ledger L16) passed all twelve preflight gates
+and then stopped at two real bugs — a staged package the CLI could not parse
+(R-013) and a draft naming the wrong court (R-012). Both are fixed, pinned by
+tests, and the runbook that produced the second one is rewritten. Nothing
+was filed; the chain on the filing machine is still empty.
+
+The re-run command is at the top of `docs/nef-roundtrip-runbook.md` and in
+the session report. When it finishes, the proof list is: NEF text and docket
+number in the receipt, a `kind="submitted"` attestation carrying that NEF
+text, both chains verifying, and the chain head anchored in the saved
+receipt.
+
+**Rotate the QA credential when you're done with it** (your own plan — it
+was shared in chat, so treat it as exposed):
 
 ```
-[MAC] printf '%s' 'QA-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh 'QA-USERNAME'
-[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session login --qa
-[MAC] cd ~/ecfiler && make qa-day MODE=live
+[MAC] printf '%s' 'NEW-QA-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh 'ecfilercom'
 ```
 
 ## 4. Rotate the PACER password {#4}

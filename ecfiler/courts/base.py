@@ -98,6 +98,9 @@ class CourtProfile:
     name: str
     court_type: str  # district, bankruptcy, appellate
     ecf_url: str
+    # "production" for the real federal courts; "qa" for PACER QA-realm test
+    # courts (qa_courts.json). The registry never serves both at once.
+    environment: str = "production"
     selectors: CourtSelectors = field(default_factory=CourtSelectors)
     quirks: list[str] = field(default_factory=list)
     event_codes: list[dict[str, str]] = field(default_factory=list)
@@ -644,6 +647,7 @@ class BaseCourt:
             name=data["name"],
             court_type=data.get("court_type", "district"),
             ecf_url=data["ecf_url"],
+            environment=data.get("environment", "production"),
             selectors=selectors,
             quirks=data.get("quirks", []),
             event_codes=data.get("event_codes", []),

@@ -217,6 +217,21 @@ class ExhibitPackageModel(BaseModel):
     has_sealed_exhibits: bool = False
 
 
+class StagedProvenance(BaseModel):
+    """Where a staged filing came from — pinned at staging, enforced at submit.
+
+    The court named here is the court the attorney attested to. It is compared
+    byte-for-byte against the court the workflow is about to file in
+    (ecfiler.filing.invariants) and any mismatch aborts the run.
+    """
+
+    stage_code: str
+    staged_at: str
+    court_id: str
+    ecf_url: str  # the court's ECF base URL at staging time
+    environment: str = "production"  # "production" | "qa"
+
+
 class Filing(BaseModel):
     """Complete filing record."""
 
@@ -237,6 +252,10 @@ class Filing(BaseModel):
     # Attorney's explicit attestation that sealing-related language in the event
     # or docket text notwithstanding, this filing is intentionally public.
     confirmed_public: bool = False
+    # Set when this filing was staged on the hosted API; None for filings
+    # assembled interactively. When set, the submit step refuses to file in
+    # any court other than the one staged (ecfiler/filing/invariants.py).
+    staged: StagedProvenance | None = None
 
     @property
     def main_document(self) -> Document | None:
