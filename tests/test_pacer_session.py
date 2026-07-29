@@ -83,3 +83,22 @@ def test_browser_session_accepts_user_data_dir(tmp_path):
 
     assert BrowserSession().user_data_dir is None
     assert BrowserSession(user_data_dir=tmp_path / "p").user_data_dir == tmp_path / "p"
+
+
+class TestQaHostnames:
+    """The QA CSO lives at qa-login.uscourts.gov.
+
+    The original constants pointed at qa-pacer.login.uscourts.gov, which does
+    not resolve (NXDOMAIN, measured 2026-07-29) — auth-test failed with a DNS
+    error on QA day. Pin the working hosts so they can't regress.
+    """
+
+    def test_qa_auth_url_host(self) -> None:
+        from ecfiler.pacer_auth import PACER_QA_AUTH_URL
+
+        assert PACER_QA_AUTH_URL.startswith("https://qa-login.uscourts.gov/")
+
+    def test_qa_cso_login_url_host(self) -> None:
+        from ecfiler.pacer_session import PACER_QA_CSO_LOGIN_URL
+
+        assert PACER_QA_CSO_LOGIN_URL.startswith("https://qa-login.uscourts.gov/")
