@@ -95,3 +95,27 @@ The March 15, 2022 presentation to the Authority ("Request for Access to Conform
 - Error-code catalog for the resiliency test cases (application references "provided error test cases").
 
 Support contact for the program: support@myflcourtaccess.com, 850-577-4609.
+
+## 10. ECF 4.01 message-layer skeleton (built 2026-07-29 — gap item #4)
+
+`ecfiler/courts/florida/ecf401.py` (tests: `tests/test_ecf401.py`). Every
+design decision traces to a captured source; everything Florida-proprietary
+is isolated behind one placeholder namespace and priced as rework.
+
+| Decision in code | Primary source |
+|---|---|
+| Message set: ReviewFiling request (CoreFilingMessage), MessageReceipt at submission, FilingReviewComplete on review | TPV Application (verbatim, §1 above): "must use the ECF 4.01 Specification and Portal extensions"; services named in §2 above (Batch Interface, FilingReviewCompleteResult, NotifyFilingReviewComplete) |
+| Namespaces keep the `-4.0` suffix (ECF 4.01 is an errata release of 4.0); NIEM 2.0 for core/justice content | OASIS Electronic Court Filing Version 4.01 (public), https://www.oasis-open.org/standards/ ; FL Technology Standards v4.0 §7 ("XML schemas are the only normative representations of the messages") |
+| Florida-specific placement (county code, filing code) isolated in `FL_EXTENSION_NS`, a placeholder URI | §9 above — Florida's XSDs and the "Third Party Vendor and ECF Specification" are released only after application approval; nothing outside that constant may hard-code a Florida wire detail |
+| Existing Case only; new-case construction unrepresentable (raises) | Recommended certification scope, `docs/fl-certification-gap-analysis.md` §5 |
+| Fee-bearing submissions raise | Same scope decision (§5 point 5); machine-to-machine fee settlement undocumented (§7 above) |
+| Case identity carried as the 20-character UCN via `parse_ucn` (strict) | AOSC order / Tech Memo captured in `ecfiler/courts/florida/ucn.py` |
+| 50 MB submission cap enforced at request construction | Technology Standards §2.1.2 (§4 above, verbatim) |
+| Filename rules enforced on every attachment | Technology Standards §2.1.6 via `document_rules.validate_filename` |
+| Review statuses map onto the `SubmissionStatus` lifecycle; unknown statuses raise rather than guess | Test Case Checklist TS001–TS006 status vocabulary; Application "statuses are returned as submissions are processed" |
+
+**Expected rework when the gated XSDs arrive** (gap analysis §6 item #5):
+element placement/ordering, the real extension namespace URI, attachment
+encoding details (inline base64 vs reference), SOAP envelope + WSDL
+bindings, and the authoritative status vocabulary. The invariants (illegal
+states raise; UCN, size, filename enforcement) carry over unchanged.

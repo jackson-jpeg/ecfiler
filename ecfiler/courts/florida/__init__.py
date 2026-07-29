@@ -1,11 +1,14 @@
 """Florida Courts E-Filing Portal domain model.
 
-Pre-approval work only. The wire protocol (ECF 4.01 plus Florida's proprietary
-Portal extensions) is not modelled here because its XSDs are released only after
-the Third Party Vendor application is approved — see
-`docs/fl-certification-gap-analysis.md`. What lives here is what the public
-program documents fully determine: the Uniform Case Number, and the submission
-lifecycle the TS001–TS009 test scenarios exercise.
+Pre-approval work only. What lives here is what the public program documents
+fully determine: the Uniform Case Number, the submission lifecycle the
+TS001–TS009 test scenarios exercise, the Technology Standards §2 document
+rules, and — in `ecf401.py` — a ReviewFiling construction / response-parsing
+skeleton against the public OASIS ECF 4.01 spec. Florida's proprietary
+Portal-extension XSDs are released only after the Third Party Vendor
+application is approved, so everything Florida-wire-specific in ecf401 is
+isolated behind one placeholder namespace and priced as rework — see
+`docs/fl-certification-gap-analysis.md` §6.
 """
 
 from ecfiler.courts.florida.document_rules import (
