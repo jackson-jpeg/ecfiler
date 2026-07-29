@@ -199,6 +199,25 @@ export interface StagedPackage {
   filing_party: string;
   fee_text: string;
   fee_status: string;
+  /**
+   * The canonical filing record — what the desktop CLI resumes from
+   * (ecfiler/filing/models.py::Filing). The flat fields above are display
+   * projections of it; this is the contract. `staged` pins the court the
+   * package was staged for, and the CLI refuses to file in any other.
+   */
+  filing: {
+    court_id: string;
+    case: { case_number: string };
+    event: { code: string; description: string };
+    staged: {
+      stage_code: string;
+      staged_at: string;
+      court_id: string;
+      ecf_url: string;
+      environment: "production" | "qa";
+    } | null;
+    [key: string]: unknown;
+  };
   exhibits: { label: string; description: string }[];
   checklist: { text: string; required: boolean }[];
   instructions: string[];
