@@ -724,6 +724,58 @@ def session_auth_test(qa: bool, username: str) -> None:
     )
 
 
+@session_group.command("find-cases")
+@click.option("--qa", is_flag=True, help="Search the QA Case Locator")
+@click.option("--username", default="", help="Keychain account (defaults to config)")
+@click.option("--court", "court_id", default="", help="Court ID filter (PCL court id)")
+@click.option("--party", default="smith", show_default=True, help="Party last name to search")
+@click.option("--case-number", "case_number", default="", help="Search by case number instead")
+def session_find_cases(qa: bool, username: str, court_id: str, party: str, case_number: str) -> None:
+    """Search the PACER Case Locator for filing-target candidates.
+
+    QA day needs a case that exists in the target test court; this finds one
+    without a browser. Credentials come from the OS keychain.
+    """
+    from rich.console import Console
+
+    from ecfiler.config import load_config
+    from ecfiler.pacer_auth import PacerAuth, PacerAuthError
+    from ecfiler.pacer_search import PacerSearch, PacerSearchError
+
+    console = Console()
+    if not username:
+        try:
+            username = load_config().pacer.username
+        except Exception:
+            username = ""
+    if not username:
+        console.print("  [red]No username: pass --username.[/red]")
+        raise click.Abort()
+
+    auth = PacerAuth(username, use_qa=qa)
+    try:
+        token = auth.get_token()
+    except PacerAuthError as e:
+        console.print(f"  [red]Auth failed:[/red] {e}")
+        raise click.Abort()
+
+    search = PacerSearch(token, use_qa=qa)
+    try:
+        if case_number:
+            results = search.search_by_case_number(case_number, court_id or None)
+        else:
+            results = search.search_by_party(party, court_id or None)
+    except PacerSearchError as e:
+        console.print(f"  [red]Search failed:[/red] {e}")
+        raise click.Abort()
+
+    if not results:
+        console.print("  [yellow]No cases found.[/yellow]")
+        return
+    for r in results[:20]:
+        console.print(f"  [bold]{r.court_id}[/bold] {r.case_number}  {r.display}")
+
+
 @session_group.command("status")
 @click.option("--qa", is_flag=True, help="Use the PACER QA environment instead of production")
 @click.option("--probe/--no-probe", default=True, help="Actually test the session against PACER")
@@ -773,7 +825,13 @@ def session_status(qa: bool, probe: bool) -> None:
     default="",
     help="Your ECFiler web session token, for authenticating the pull",
 )
-def stage_pull(stage_code: str, server: str, token: str) -> None:
+@click.option(
+    "--dev-user",
+    envvar="ECFILER_DEV_USER",
+    default="",
+    help="Dev-mode user id for a server running ECFILER_DEV_AUTH=1 (QA dry runs)",
+)
+def stage_pull(stage_code: str, server: str, token: str, dev_user: str) -> None:
     """Pull a filing package staged on ecfiler.com into a local draft.
 
     The hosted app prepares and validates; filing happens here, on your
@@ -793,7 +851,7 @@ def stage_pull(stage_code: str, server: str, token: str) -> None:
         headers["Authorization"] = f"Bearer {token}"
     # QA/dry-run affordance: a server running with ECFILER_DEV_AUTH=1 accepts
     # an X-User-Id header instead of a Clerk token. Ignored by production.
-    dev_user = os.environ.get("ECFILER_DEV_USER", "")
+    dev_user = dev_user or os.environ.get("ECFILER_DEV_USER", "")
     if dev_user:
         headers["X-User-Id"] = dev_user
 
