@@ -38,30 +38,56 @@ Attestation-record shape for a real NEF (confirmed by the dry run):
 session."), and the observation store (JSONL append, lifetime accounting) is
 covered by `tests/test_pacer_session.py`.
 
-## QA day — the exact sequence
+## Sandbox allow-rules — paste this first (queue row 1)
 
-Prerequisite: HUMAN-QUEUE item 3 (register the QA account, activates
-overnight) and the sandbox-permission row (see queue row 1 — two of these
-commands were sandbox-blocked in session 2 and will block again without it).
+Two Mac commands were sandbox-blocked in session 2 and will block again the
+moment the live run starts (launching the headed browser at the PACER login
+page over the tunnel; writing the Mac key file). The fix is one paste.
+Merge this block into `.claude/settings.json` at the repo root (or
+`/root/.claude/settings.json` to apply globally) — if the file already has a
+`permissions.allow` array, append the two strings to it:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh macbook-tunnel:*)",
+      "Bash(ssh macbook:*)"
+    ]
+  }
+}
+```
+
+`make qa-day MODE=live` checks for this and refuses to start without it.
+
+## QA day — one command
+
+Prerequisite: HUMAN-QUEUE's QA-account row (register, activates overnight)
+and the allow-rules paste above.
 
 ```
-# One-time, after the QA account activates (from HUMAN-QUEUE item 3):
-[mac] printf '%s' 'QA-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh 'QA-USERNAME'
-[mac] ~/ecfiler/scripts/mac/ecfiler-mac session login --qa        # headed browser, human solves login
-[mac] ~/ecfiler/scripts/mac/ecfiler-mac session status --qa       # expect: live, 1 observation
+# One-time, after the QA account activates:
+[MAC] printf '%s' 'QA-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh 'QA-USERNAME'
+[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session login --qa
+[MAC] cd ~/ecfiler && make qa-day MODE=live
 
-# Stage on the hosted app (or use an already-staged package):
-#   www.ecfiler.com → /file → stage → note the stage code
+# Stage a filing at www.ecfiler.com → /file → note the stage code, then:
+[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=<code>
+```
 
-# Pull and file:
-[mac] ~/ecfiler/scripts/mac/ecfiler-mac stage-pull <STAGE-CODE>   # token from the web session
-[mac] ~/ecfiler/scripts/mac/ecfiler-mac                            # interactive workflow, QA court,
-                                                                   # CONFIRM + YES gates, NEF captured
+`make qa-day MODE=live` (scripts/mac/qa-day.sh) gates on six preconditions —
+macOS + venv, PACER credential readable from `ecfiler.keychain-db`, headed
+Chromium profile with a live persisted `--qa` session, the sandbox
+allow-rules above, receipts dir writable, attestation chain verifying — and
+refuses to start if any is red. With a `STAGE` code it pulls the package,
+hands off to the attended workflow (the CONFIRM and YES gates stay human),
+then prints `audit verify` plus the receipt and trace listings.
 
-# Prove it:
-[mac] ~/ecfiler/scripts/mac/ecfiler-mac audit verify               # chain ok, includes the NEF record
-[mac] ls ~/.ecfiler/receipts/                                      # receipt with chain-head anchor
-[mac] ls ~/.ecfiler/traces/                                        # trace zip for the repo record
+The dry run (no preconditions, runs anywhere including the VPS):
+
+```
+[VPS] cd ~/ecfiler && make qa-day
+[MAC] cd ~/ecfiler && make qa-day
 ```
 
 Then: copy the receipt, `audit verify` output, and the trace into

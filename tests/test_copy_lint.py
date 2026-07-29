@@ -209,6 +209,39 @@ def test_outreach_singular_voice() -> None:
     )
 
 
+RUNBOOK_DOCS = ["docs/nef-roundtrip-runbook.md", "HUMAN-QUEUE.md"]
+
+# A runbook command line must say which machine runs it. Allowed line starts
+# inside a code fence: a [VPS]/[MAC] label, a comment, indentation
+# (continuation or example output), or nothing.
+RUNBOOK_LINE_RE = re.compile(r"^(\[(vps|mac)\]|#|\s|$)", re.IGNORECASE)
+
+
+def test_runbook_commands_are_machine_labeled() -> None:
+    """An unlabeled runbook line is a defect: every command names its machine."""
+    violations: list[str] = []
+    for relpath in RUNBOOK_DOCS:
+        path = REPO / relpath
+        if not path.is_file():
+            continue
+        in_fence = False
+        fence_lang = ""
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith("```"):
+                in_fence = not in_fence
+                fence_lang = stripped[3:].strip().lower() if in_fence else ""
+                continue
+            if not in_fence or fence_lang in {"json", "yaml", "text"}:
+                continue
+            if not RUNBOOK_LINE_RE.match(line):
+                violations.append(f"{relpath}:{lineno}: {stripped[:70]}")
+    assert violations == [], (
+        "Unlabeled runbook command lines (prefix with [VPS] or [MAC]):\n"
+        + "\n".join(violations)
+    )
+
+
 def test_demo_is_labeled_scripted() -> None:
     """The landing-page walkthrough is an animation and must say so.
 
