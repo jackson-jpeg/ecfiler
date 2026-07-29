@@ -11,21 +11,44 @@ rows (DNS, certbot, API key) into one command and turned the reboot row into
 
 | # | What | Why blocked | Time |
 |---|---|---|---|
-| 1 | [DNS records, then one activation command](#1) | Sandbox (DNS write blocked) | 3 min |
-| 2 | [Paste the sandbox allow-rules block](#2) | Sandbox | 1 min |
-| 3 | [Register the QA PACER account](#3) | Identity + CAPTCHA | 60 s |
-| 4 | [Rotate the PACER password](#4) | Credential | 90 s |
-| 5 | [Put `ANTHROPIC_API_KEY` on the Mac](#5) | Credential + sandbox | 60 s |
-| 6 | [Subscribe to GovDelivery](#6) | CAPTCHA | 30 s |
-| 7 | [Send the two outreach messages](#7) | Identity | 4 min |
-| 8 | [Decide the entity question](#8) | Identity/legal | 5 min read |
-| 9 | [Form the LLC + file the FL application](#9) | Money + signature | $625 |
-| 10 | [Counsel review of Terms/Privacy](#10) | Lawyer | two questions |
-| 11 | [Reboot the VPS](#11) | Kills live sessions incl. mine | 2 min |
+| 1 | [Deploy the truth-audited site to production](#0) | Sandbox (`vercel` over SSH blocked) | 90 s |
+| 2 | [DNS records, then one activation command](#1) | Sandbox (DNS write blocked) | 3 min |
+| 3 | [Paste the sandbox allow-rules block](#2) | Sandbox | 1 min |
+| 4 | [Register the QA PACER account](#3) | Identity + CAPTCHA | 60 s |
+| 5 | [Rotate the PACER password](#4) | Credential | 90 s |
+| 6 | [Put `ANTHROPIC_API_KEY` on the Mac](#5) | Credential + sandbox | 60 s |
+| 7 | [Subscribe to GovDelivery](#6) | CAPTCHA | 30 s |
+| 8 | [Send the two outreach messages](#7) | Identity | 4 min |
+| 9 | [Decide the entity question](#8) | Identity/legal | 5 min read |
+| 10 | [Form the LLC + file the FL application](#9) | Money + signature | $625 |
+| 11 | [Counsel review of Terms/Privacy](#10) | Lawyer | two questions |
+| 12 | [Reboot the VPS](#11) | Kills live sessions incl. mine | 2 min |
 
 ---
 
-## 1. DNS records, then one activation command {#1}
+## 1. Deploy the truth-audited site to production {#0}
+
+**www.ecfiler.com is still serving the old build** — measured 2026-07-29:
+the homepage says "3-Pass" and "Live Demo", `/courts` bounces anonymous
+visitors to `/sign-in`, and `/tools` 404s. Every fix is on the branch,
+Vercel's build of the exact commit already succeeded (the Preview
+deployment is green — it's just behind Vercel SSO, so it can't stand in
+for production), and a deploy-ready clone is staged on the Mac at
+`~/ecfiler-s4-deploy`. The sandbox now blocks all `vercel` CLI use over
+SSH, so the deploy is yours:
+
+```
+[MAC] cd ~/ecfiler-s4-deploy && vercel link --yes --project ecfiler && vercel --prod
+```
+
+Then confirm as an outsider (no login): `/courts` search works, `/tools`
+lists six tools, the homepage says "Scripted demo" instead of "Live".
+The repo check is `[MAC] cd ~/ecfiler-s4-deploy && bash scripts/deploy/verify-web-anon.sh`
+pointed at a local build, or just click around in a private window.
+
+---
+
+## 2. DNS records, then one activation command {#1}
 
 The API is live and healthy on the VPS; only the name is missing. Add the
 records (the sandbox blocked this write twice), then the new script does
@@ -47,7 +70,7 @@ Until this runs, the site's `/api/*` calls answer 502 — the waitlist widget,
 client-side and already works. The verification half of the script was
 proven this session against a local API instance (all six checks pass).
 
-## 2. Paste the sandbox allow-rules block {#2}
+## 3. Paste the sandbox allow-rules block {#2}
 
 Queue row 1 of sessions 2–3, now reduced to a paste: the exact JSON block
 lives in `docs/nef-roundtrip-runbook.md` ("Sandbox allow-rules — paste this
@@ -55,7 +78,7 @@ first"). Merge it into `.claude/settings.json`. Without it, the live QA run
 stalls at `session login` again — and `make qa-day MODE=live` now checks for
 it and refuses to start, so the failure is at least loud and immediate.
 
-## 3. Register the QA PACER account {#3}
+## 4. Register the QA PACER account {#3}
 
 **Still the gating item for proving ECFiler actually files.** The whole
 staged→pull→file→NEF→attestation path round-trips against the mock CM/ECF
@@ -78,7 +101,7 @@ Once it activates overnight:
 [MAC] cd ~/ecfiler && make qa-day MODE=live
 ```
 
-## 4. Rotate the PACER password {#4}
+## 5. Rotate the PACER password {#4}
 
 The production PACER password was exposed in a prior session transcript.
 Treat it as compromised (R-002).
@@ -91,7 +114,7 @@ shell history):
 [MAC] printf '%s' 'NEW-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh jmsanger
 ```
 
-## 5. Put `ANTHROPIC_API_KEY` on the Mac {#5}
+## 6. Put `ANTHROPIC_API_KEY` on the Mac {#5}
 
 `ecfiler check` on the Mac is 10/12; the two failures clear with one file:
 
@@ -101,14 +124,14 @@ shell history):
 [MAC] ~/ecfiler/scripts/mac/ecfiler-mac check
 ```
 
-## 6. Subscribe to GovDelivery {#6}
+## 7. Subscribe to GovDelivery {#6}
 
 <https://public.govdelivery.com/accounts/USFEDCOURTS/subscriber/new?topic_id=USFEDCOURTS_1821>
 
 Email `realjacksons@gmail.com`, solve the MTCaptcha, submit, click the
 confirmation link. Blocked only by the CAPTCHA.
 
-## 7. Send the two outreach messages {#7}
+## 8. Send the two outreach messages {#7}
 
 **C2 — AO developer mailbox.** The Gmail draft in your account
 (`developers@psc.uscourts.gov`) is final — verified against the repo text in
@@ -125,18 +148,18 @@ profession in personal capacity, employer never named or implied, singular
 voice, no ECFiler-in-use claims. Skim `tests/test_copy_lint.py`'s header
 before sending if you want the reasoning.
 
-## 8. Decide the entity question {#8}
+## 9. Decide the entity question {#8}
 
 `docs/fl/entity-recommendation.md` — the recommendation is **ECFiler LLC, a
 single-member Florida LLC, formed now**, defended against Delaware and
-against waiting. Read it and say yes or overrule it. Everything in item 9
+against waiting. Read it and say yes or overrule it. Everything in item 10
 waits on the name.
 
 Sunbiz sits behind Cloudflare bot protection and refused both machines, so
 the name-availability check is yours:
 <https://search.sunbiz.org/Inquiry/CorporationSearch/ByName>.
 
-## 9. Form the LLC and file the Florida application {#9}
+## 10. Form the LLC and file the Florida application {#9}
 
 Money and your signature. Roughly **$625** total. The packet is
 signature-ready: the filled PDF reproduces from
@@ -155,7 +178,7 @@ of them are entity name, signatures, dates, phone, or street address.
   (PDF/A enforcement), and #4 (ECF 4.01 message layer, this session) are
   built and tested; the next build items need the post-approval XSDs.
 
-## 10. Counsel review of Terms and Privacy {#10}
+## 11. Counsel review of Terms and Privacy {#10}
 
 `docs/legal/counsel-review-brief.md`. Q1 (UPL) and Q2 (liability stack)
 remain the genuine lawyer questions; Q3/Q4 collapsed to "here is what we
@@ -165,7 +188,7 @@ deploy` banner. Session 4 note for counsel: Terms §5 no longer claims a
 the real AI analysis + five-point readiness check; §10 states expressly
 that Pro is not yet purchasable.
 
-## 11. Reboot the VPS {#11}
+## 12. Reboot the VPS {#11}
 
 Now genuinely one step: `ecfiler-post-reboot.service` is installed and
 enabled, so the boot runs the check itself and writes a timestamped result.
@@ -201,5 +224,5 @@ Full detail in the PR. **Suite: 605 passed, 0 failed** (was 546).
   **self-documenting reboot** — rows 1, 2, 3, 11 above got shorter.
 
 **Still not done, plainly: no filing has round-tripped to an NEF on a real
-court system.** Item 3 (QA account) remains the only thing between the dry
+court system.** Item 4 (QA account) remains the only thing between the dry
 run and the real one.
