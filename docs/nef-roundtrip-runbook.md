@@ -1,10 +1,10 @@
 # NEF round-trip runbook
 
 *Written 2026-07-28. The QA PACER account (HUMAN-QUEUE item 3) is the only
-missing piece. Everything below the fold is proven against the mock CM/ECF;
+missing piece. Everything below the fold is proven against the mock CM/ECF (ledger L09);
 activation day is execution, not building.*
 
-## What is already proven (the dry run)
+## What is already proven (the dry run — ledger L09)
 
 `tests/test_browser_e2e.py::TestStagedToNefRoundTrip` runs the entire path
 end to end with the mock CM/ECF standing in for the QA environment, and it

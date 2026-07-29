@@ -38,6 +38,13 @@ export default function RootLayout({
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
             rel="stylesheet"
           />
+          {/* Which commit is this deployment serving? Baked at build time;
+              scripts/verify-production.sh asserts it equals master HEAD.
+              Vercel injects VERCEL_GIT_COMMIT_SHA on git-integration builds. */}
+          <meta
+            name="ecfiler-commit"
+            content={process.env.VERCEL_GIT_COMMIT_SHA ?? "dev"}
+          />
         </head>
         <body className="bg-[#fafaf8] text-[#1a1a1a]">
           {children}

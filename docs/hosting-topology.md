@@ -22,7 +22,7 @@ plus `BEGIN IMMEDIATE` write serialization, with a test suite that proves it
 
 - **Neon (proposed)** solves half the problem — it is Postgres, not an
   application host — and forces a port of the attestation guarantee to a
-  different mechanism. Its free tier (verified 2026-07: 100 CU-hours/month and
+  different mechanism. Its free tier (checked 2026-07: 100 CU-hours/month and
   0.5 GB per project, no card) adds a hard storage cap, a short
   point-in-time-recovery window on the free plan, scale-to-zero cold starts,
   and a network dependency between the API and its own data. Its one real
@@ -92,13 +92,23 @@ mechanism (sqlite3 `.backup` of a live, mid-write chain) was restore-tested
 on 2026-07-28: restored chain verifies, row counts match.
 **After any reboot:** `bash /opt/ecfiler/scripts/deploy/post-reboot-check.sh`
 
-## Verified / remaining
+## Verified (ledger-backed) / remaining
 
-Verified 2026-07-28: service healthy on localhost; auth fail-closed;
-crash-restart proven (SIGKILL → auto-restart in <5 s); units enabled and
-`systemd-analyze verify` clean; first backup ran local + offsite; restore
-test passed; production frontend deployed and confirmed from an external
-browser (zero references to the dead Railway host; Clerk login works).
+Evidence discipline: every claim below cites a row in
+`docs/verification-ledger.md`; anything without a row is STAGED.
+
+Verified: service healthy on the session-4 code (ledger L08); auth
+fail-closed with live 401s (L10); crash-restart re-proven 2026-07-29 —
+SIGKILL → new PID in ≤5 s (L02); units enabled and `systemd-analyze
+verify` clean (L03); one manual backup exists on both ends (L04).
+
+Downgraded in the 2026-07-29 retro-audit (ledger, "Retro-audit" table):
+**nightly** backups are STAGED (the timer has never fired); the restore
+test is STAGED (no artifact, not re-run); and session 3's "production
+frontend deployed and confirmed externally" was UNPROVEN and false as
+measured — production served `master@714c2d7` until the session-5 merge
+(L01). Production state is now checked by `scripts/verify-production.sh`,
+which asserts the served commit equals master HEAD.
 
 Remaining, each a HUMAN-QUEUE row:
 
@@ -110,10 +120,11 @@ Remaining, each a HUMAN-QUEUE row:
    sandbox's permission layer, twice — it is 90 seconds by hand.
 2. **`ANTHROPIC_API_KEY`** into `/etc/ecfiler/api.env` (the sandbox also
    blocks credential copying, correctly). Until then `/api/file*` answers 503.
-3. **Reboot verification**: everything short of the reboot is proven, but the
-   session runs *on this VPS* — rebooting it kills the operator mid-job and
-   every other live Claude session on the box. Reboot when convenient and run
-   `post-reboot-check.sh`.
+3. **Reboot verification**: everything short of the reboot is evidenced
+   (ledger L02/L03/L11), but the session runs *on this VPS* — rebooting it
+   kills the operator mid-job. Reboot when convenient;
+   `ecfiler-post-reboot.service` writes the proof to
+   `/var/log/ecfiler/post-reboot-latest.result` on its own.
 
 ## Rejected alternatives, one line each
 
@@ -129,5 +140,5 @@ Remaining, each a HUMAN-QUEUE row:
   pikepdf/qpdf catch, and a validity claim that can false-pass is worse than
   a network dependency. The *rest* of the free tools did move client-side.
 - **Fee/NOS/checklist/redaction as client-side ports too**: nothing in the
-  web UI calls those endpoints today (verified by grep — no consumer);
+  web UI calls those endpoints today (grep shows no consumer);
   porting them would be dead code. They stay API-side until a UI exists.

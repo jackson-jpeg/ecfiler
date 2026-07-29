@@ -68,7 +68,7 @@ activate without AI endpoints; they answer 503 until a key lands.)
 Until this runs, the site's `/api/*` calls answer 502 — the waitlist widget,
 `/validate`, and signed-in backend features. Every other free tool is
 client-side and already works. The verification half of the script was
-proven this session against a local API instance (all six checks pass).
+proven against a local API instance — all six checks pass (ledger L10).
 
 ## 3. Paste the sandbox allow-rules block {#2}
 
@@ -82,7 +82,7 @@ it and refuses to start, so the failure is at least loud and immediate.
 
 **Still the gating item for proving ECFiler actually files.** The whole
 staged→pull→file→NEF→attestation path round-trips against the mock CM/ECF
-(`make qa-day` runs it in one command — proven again this session), and QA
+(`make qa-day` runs it in one command — ledger L09), and QA
 day itself is now `make qa-day MODE=live STAGE=<code>` behind a six-point
 preflight. Only this account is missing.
 
@@ -134,8 +134,7 @@ confirmation link. Blocked only by the CAPTCHA.
 ## 8. Send the two outreach messages {#7}
 
 **C2 — AO developer mailbox.** The Gmail draft in your account
-(`developers@psc.uscourts.gov`) is final — verified against the repo text in
-session 3, untouched since. Read it and hit send, ideally after item 6 so
+(`developers@psc.uscourts.gov`) is final — it matches the repo text (checked in session 3), untouched since. Read it and hit send, ideally after item 6 so
 "I'm subscribed to the developer updates list" is true.
 
 **C5 — M.D. Fla. clerk.** Web form, not email:
@@ -163,7 +162,7 @@ the name-availability check is yours:
 
 Money and your signature. Roughly **$625** total. The packet is
 signature-ready: the filled PDF reproduces from
-`scripts/fill_fl_tpv_application.py` (re-verified this session), and
+`scripts/fill_fl_tpv_application.py` (fill script re-run this session), and
 `docs/fl/application-packet-checklist.md` lists every remaining blank — all
 of them are entity name, signatures, dates, phone, or street address.
 
@@ -211,7 +210,7 @@ Full detail in the PR. **Suite: 605 passed, 0 failed** (was 546).
 - **The marketing site stopped lying.** Free tools actually public (the
   (app) auth gate was redirecting /courts to /sign-in), plus new public
   /tools, /events, /fees, /redaction pages — the last two are client-side
-  ports with data-parity tests. Verified as an anonymous outsider with
+  ports with data-parity tests. Checked as an anonymous outsider with
   Playwright; that check now runs in CI.
 - **Claims deleted rather than softened**: 3-pass verification, Stripe
   billing, hosted CM/ECF filing, timing stats, sealed-filing-in-one-click,
