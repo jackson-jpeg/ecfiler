@@ -114,6 +114,27 @@ auth bounce; /federal-courts court numbers sum to 207 matching
 labeled scripted; aspirational Pro claims carry the Coming Soon label.
 This closes L01's 13-FAIL baseline. VERIFIED.
 
+### L15 — 2026-07-29 — QA PACER account live; filing target established; dry run green on the filing machine
+`[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session auth-test --qa --username
+ecfilercom` → `✓ Authenticated. Token received (length 128, not shown)` —
+after fixing two bugs the first real call exposed: the QA CSO constants
+pointed at `qa-pacer.login.uscourts.gov` (NXDOMAIN; the real host is
+`qa-login.uscourts.gov`, pinned by test), and a function-local `import
+time` crashed `authenticate()`'s success path (regression-tested).
+Target discovery: `[VPS/MAC]` `ecf-train.<court>.uscourts.gov` hosts
+resolve but refuse TCP from both machines; the QA realm's roster at
+`qa-pacer.uscourts.gov/file-case/court-cmecf-lookup` lists its own test
+courts; `*.aocms.uscourts.gov` ones are firewalled from here;
+**`https://ecf.tc1d.aztc.uscourts.gov` (Az Test District Court, AZTTDC)
+answers 200 from the Mac**, serves District CM/ECF v10.8.4, and its login
+page names `qa-login.uscourts.gov` — same realm the account authenticates
+against. Recorded in docs/nef-roundtrip-runbook.md.
+`[MAC] make qa-day` (dry, mock court, on the filing machine) → `1 passed`.
+`[MAC] make qa-day MODE=live` → 9 PASS / 3 FAIL — the three reds are the
+two human steps (headed `session login --qa` seeds the Chromium profile
+and live session) plus the sandbox allow-rules paste. VERIFIED for
+everything above; the live NEF round trip itself remains STAGED.
+
 ---
 
 ## Retro-audit — sessions 2–4 verification claims

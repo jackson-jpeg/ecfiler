@@ -60,6 +60,30 @@ Merge this block into `.claude/settings.json` at the repo root (or
 
 `make qa-day MODE=live` checks for this and refuses to start without it.
 
+## The QA target (established 2026-07-29 — ledger L15)
+
+The runbook previously assumed a generic "QA court". Measured with the live
+QA account:
+
+- The account lives in the **PACER QA realm**: CSO at
+  `qa-login.uscourts.gov` (the `qa-pacer.login` host in older notes does not
+  resolve). `session auth-test --qa` confirms the credential end to end.
+- Per-court training databases (`ecf-train.<court>.uscourts.gov`) resolve in
+  DNS but **refuse connections** from both machines — they are not the
+  target.
+- The QA realm publishes its own court roster at
+  `qa-pacer.uscourts.gov/file-case/court-cmecf-lookup`. Its `*.aocms.uscourts.gov`
+  test courts are firewalled from here. The reachable district target is:
+
+  **Az Test District Court (roster code AZTTDC)**
+  `https://ecf.tc1d.aztc.uscourts.gov` — District CM/ECF v10.8.4, login
+  federated with `qa-login.uscourts.gov` (verified from the Mac — ledger L15).
+
+- Stage with `court_id=azd` (standard district selectors); the live run
+  overrides every URL with `TARGET=https://ecf.tc1d.aztc.uscourts.gov`.
+  The filing case number must exist in that court — after login, look one
+  up via the court's Query menu before staging.
+
 ## QA day — one command
 
 Prerequisite: HUMAN-QUEUE's QA-account row (register, activates overnight)
@@ -72,7 +96,16 @@ and the allow-rules paste above.
 [MAC] cd ~/ecfiler && make qa-day MODE=live
 
 # Stage a filing at www.ecfiler.com → /file → note the stage code, then:
-[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=<code>
+[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=<code> TARGET=https://ecf.tc1d.aztc.uscourts.gov
+```
+
+Hosted staging needs the api.ecfiler.com DNS row (HUMAN-QUEUE #1). Until it
+runs, stage against a local API instead:
+
+```
+[MAC] cd ~/ecfiler && ECFILER_DEV_AUTH=1 .venv/bin/python -m uvicorn ecfiler.api.app:app --port 8001 &
+[MAC] # stage via the API (attestation required), note the stage_code it returns
+[MAC] ECFILER_SERVER=http://127.0.0.1:8001 ECFILER_DEV_USER=qa-day ~/ecfiler/scripts/mac/ecfiler-mac stage-pull <code>
 ```
 
 `make qa-day MODE=live` (scripts/mac/qa-day.sh) gates on six preconditions —
