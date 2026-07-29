@@ -1,0 +1,25 @@
+# ECFiler post-reboot verification. Installed at
+# /etc/systemd/system/ecfiler-post-reboot.service; runs once per boot and
+# writes a timestamped result to /var/log/ecfiler/post-reboot-<ts>.result
+# (symlinked as post-reboot-latest.result). The human reboots; the proof
+# writes itself.
+#
+# Install:
+#   [VPS] cp scripts/deploy/ecfiler-post-reboot.service /etc/systemd/system/
+#   [VPS] systemctl daemon-reload && systemctl enable ecfiler-post-reboot.service
+
+[Unit]
+Description=ECFiler post-reboot verification (timestamped result file)
+Wants=network-online.target
+After=network-online.target nginx.service ecfiler-api.service
+
+[Service]
+Type=oneshot
+# Give the API and nginx a settling window before judging the boot.
+ExecStartPre=/bin/sleep 20
+ExecStart=/bin/bash /opt/ecfiler/scripts/deploy/post-reboot-check.sh --record
+# The result file records failure; don't mark the boot degraded for it.
+SuccessExitStatus=0 1
+
+[Install]
+WantedBy=multi-user.target

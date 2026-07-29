@@ -2,7 +2,29 @@
 # Run after a VPS reboot to verify everything came back. Exit 0 = all good.
 # (Reboot survival is configured — units enabled, WantedBy=multi-user.target,
 # crash-restart proven — but only an actual reboot proves the boot path.)
+#
+# --record: write the output to a timestamped result file under
+# /var/log/ecfiler/ (plus a post-reboot-latest.result symlink) instead of
+# only stdout. ecfiler-post-reboot.service runs this at every boot, so the
+# human's reboot self-documents — check the file, not your memory.
 set -u
+
+if [ "${1:-}" = "--record" ]; then
+  mkdir -p /var/log/ecfiler
+  ts=$(date +%Y%m%dT%H%M%S)
+  out="/var/log/ecfiler/post-reboot-$ts.result"
+  # Re-run ourselves without the flag, teeing into the result file.
+  "$0" > "$out" 2>&1
+  status=$?
+  {
+    echo
+    echo "exit=$status"
+    echo "recorded=$ts"
+  } >> "$out"
+  ln -sf "$out" /var/log/ecfiler/post-reboot-latest.result
+  cat "$out"
+  exit "$status"
+fi
 
 fail=0
 check() {

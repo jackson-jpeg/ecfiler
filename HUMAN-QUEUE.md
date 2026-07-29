@@ -1,261 +1,205 @@
 # Human queue
 
-Everything here failed one of the five blocking tests: money, identity/signature,
+Everything here failed one of the blocking tests: money, identity/signature,
 a credential that exists nowhere on either machine, an irreversible action on
-production data, or a lawyer's judgment — plus, this session, a sixth in
-practice: the sandbox's permission layer, which blocked a handful of specific
-actions (each noted inline). Nothing is here because it was tedious.
+production data, a lawyer's judgment, or the sandbox's permission layer.
+Nothing is here because it was tedious.
 
-Ordered by what unblocks the most downstream work.
+Ordered by what unblocks the most downstream work. Session 4 collapsed three
+rows (DNS, certbot, API key) into one command and turned the reboot row into
+"just reboot" — the proof now writes itself.
 
 | # | What | Why blocked | Time |
 |---|---|---|---|
-| 1 | [Sandbox permissions for the Mac filing path](#1) | Sandbox | 2 min |
-| 2 | [DNS for api.ecfiler.com + certbot](#2) | Sandbox (DNS write blocked) | 90 s |
-| 3 | [`ANTHROPIC_API_KEY` into the VPS API env](#3) | Sandbox (credential copy blocked) | 60 s |
+| 1 | [DNS records, then one activation command](#1) | Sandbox (DNS write blocked) | 3 min |
+| 2 | [Paste the sandbox allow-rules block](#2) | Sandbox | 1 min |
+| 3 | [Register the QA PACER account](#3) | Identity + CAPTCHA | 60 s |
 | 4 | [Rotate the PACER password](#4) | Credential | 90 s |
-| 5 | [Register the QA PACER account](#5) | Identity + CAPTCHA | 60 s |
+| 5 | [Put `ANTHROPIC_API_KEY` on the Mac](#5) | Credential + sandbox | 60 s |
 | 6 | [Subscribe to GovDelivery](#6) | CAPTCHA | 30 s |
 | 7 | [Send the two outreach messages](#7) | Identity | 4 min |
-| 8 | [Put `ANTHROPIC_API_KEY` on the Mac](#8) | Credential + sandbox | 60 s |
-| 9 | [Decide the entity question](#9) | Identity/legal | 5 min read |
-| 10 | [Form the LLC + file the FL application](#10) | Money + signature | $625 |
-| 11 | [Counsel review of Terms/Privacy](#11) | Lawyer | shrunk — see below |
-| 12 | [Reboot the VPS, verify boot path](#12) | Kills live sessions incl. mine | 3 min |
+| 8 | [Decide the entity question](#8) | Identity/legal | 5 min read |
+| 9 | [Form the LLC + file the FL application](#9) | Money + signature | $625 |
+| 10 | [Counsel review of Terms/Privacy](#10) | Lawyer | two questions |
+| 11 | [Reboot the VPS](#11) | Kills live sessions incl. mine | 2 min |
 
 ---
 
-## 1. Sandbox permissions for the Mac filing path {#1}
+## 1. DNS records, then one activation command {#1}
 
-Two Mac commands were sandbox-blocked in session 2 and will block again the
-moment the QA round-trip starts: launching the headed browser at the PACER login
-page over the tunnel, and writing the key file in item 8. Add to
-`/root/.claude/settings.json` (or the project's `.claude/settings.json`):
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(ssh macbook-tunnel:*)",
-      "Bash(ssh macbook:*)"
-    ]
-  }
-}
-```
-
-Scoped tighter, if you prefer the minimum:
-
-```json
-      "Bash(ssh macbook-tunnel ~/ecfiler/scripts/mac/ecfiler-mac:*)",
-      "Bash(ssh macbook bash ~/ecfiler/scripts/mac/keychain-setup.sh:*)"
-```
-
-Without this, the NEF round-trip (item 5's payoff) stalls at `session login`
-again. Everything downstream of it is built and dry-run-proven —
-`docs/nef-roundtrip-runbook.md`.
-
-## 2. DNS for api.ecfiler.com + certbot {#2}
-
-The API is live and healthy on the VPS (`ecfiler-api.service`, nginx vhost
-staged), and www.ecfiler.com is deployed and pointing at it — but
-`api.ecfiler.com` does not resolve yet. The sandbox blocked the DNS write
-twice, so:
+The API is live and healthy on the VPS; only the name is missing. Add the
+records (the sandbox blocked this write twice), then the new script does
+everything else — waits for propagation, runs certbot, drops the key,
+restarts, and verifies from outside with a pass/fail table:
 
 ```
-[mac] vercel dns add ecfiler.com api A 187.77.218.14
-[mac] vercel dns add ecfiler.com api AAAA 2a02:4780:4:1c0b::1
-[vps] certbot --nginx -d api.ecfiler.com
+[MAC] vercel dns add ecfiler.com api A 187.77.218.14
+[MAC] vercel dns add ecfiler.com api AAAA 2a02:4780:4:1c0b::1
+[VPS] ANTHROPIC_API_KEY=sk-ant-... bash /opt/ecfiler/scripts/deploy/activate-api.sh
 ```
 
-(Vercel CLI on the Mac is already authenticated as jackson-jpeg.) Until this
-runs, the site's `/api/*` calls answer 502 — the waitlist widget and signed-in
-backend features; the free tools and marketing pages work regardless, because
-they no longer touch the API at all. This is the last step of R-005/R-009.
+(A dedicated key from console.anthropic.com beats reusing the sanger-monitor
+key — separate billing visibility — but either works. Omit the variable to
+activate without AI endpoints; they answer 503 until a key lands.)
 
-## 3. `ANTHROPIC_API_KEY` into the VPS API env {#3}
+Until this runs, the site's `/api/*` calls answer 502 — the waitlist widget,
+`/validate`, and signed-in backend features. Every other free tool is
+client-side and already works. The verification half of the script was
+proven this session against a local API instance (all six checks pass).
 
-The API runs without it; `/api/file*` (AI analysis) answers 503 until it lands.
-The sandbox blocked copying the existing key between env files (reasonably), so:
+## 2. Paste the sandbox allow-rules block {#2}
 
-```
-[vps] echo 'ANTHROPIC_API_KEY=sk-ant-...' >> /etc/ecfiler/api.env
-[vps] systemctl restart ecfiler-api
-[vps] curl -s http://127.0.0.1:8001/api/health   # "has_api_key": true
-```
+Queue row 1 of sessions 2–3, now reduced to a paste: the exact JSON block
+lives in `docs/nef-roundtrip-runbook.md` ("Sandbox allow-rules — paste this
+first"). Merge it into `.claude/settings.json`. Without it, the live QA run
+stalls at `session login` again — and `make qa-day MODE=live` now checks for
+it and refuses to start, so the failure is at least loud and immediate.
 
-A dedicated key (console.anthropic.com) beats reusing the sanger-monitor key —
-separate billing visibility — but either works.
+## 3. Register the QA PACER account {#3}
 
-## 4. Rotate the PACER password {#4}
-
-The production PACER password was exposed in a prior session transcript. Treat it
-as compromised. Everything touching production PACER inherits this.
-
-<https://pacer.uscourts.gov/my-account-billing/manage-my-account-login> → Settings
-→ Change Password. Then update it on the Mac (piped, never in shell history):
-
-```
-[mac] printf '%s' 'NEW-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh jmsanger
-```
-
-Logged as R-002.
-
-## 5. Register the QA PACER account {#5}
-
-**Still the gating item for proving ECFiler actually files** — but the gap has
-narrowed to exactly this account: the entire staging→pull→file→NEF→attestation
-path now round-trips against the mock CM/ECF in the test suite
-(`tests/test_browser_e2e.py::TestStagedToNefRoundTrip`), and
-`docs/nef-roundtrip-runbook.md` holds the exact QA-day command sequence.
-Activation day is execution, not building.
+**Still the gating item for proving ECFiler actually files.** The whole
+staged→pull→file→NEF→attestation path round-trips against the mock CM/ECF
+(`make qa-day` runs it in one command — proven again this session), and QA
+day itself is now `make qa-day MODE=live STAGE=<code>` behind a six-point
+preflight. Only this account is missing.
 
 <https://qa-pacer.psc.uscourts.gov/pscof/registration.jsf>
 
-Every field is pre-answered in `docs/outreach/c1-answer-sheet.md` — copy, paste,
-solve the reCAPTCHA, submit. **Skip the credit-card section**; set User Type to
-**Individual**. Blocked because it is an account registration under your
-identity with terms assent, and reCAPTCHA-gated (anti-bot controls on federal
-systems are a hard stop).
+Every field is pre-answered in `docs/outreach/c1-answer-sheet.md` — copy,
+paste, solve the reCAPTCHA, submit. **Skip the credit-card section**; set
+User Type to **Individual**. Blocked because it is an account registration
+under your identity with terms assent, behind reCAPTCHA.
 
 Once it activates overnight:
 
 ```
-[mac] printf '%s' 'QA-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh 'QA-USERNAME'
-[mac] ~/ecfiler/scripts/mac/ecfiler-mac session login --qa
+[MAC] printf '%s' 'QA-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh 'QA-USERNAME'
+[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session login --qa
+[MAC] cd ~/ecfiler && make qa-day MODE=live
+```
+
+## 4. Rotate the PACER password {#4}
+
+The production PACER password was exposed in a prior session transcript.
+Treat it as compromised (R-002).
+
+<https://pacer.uscourts.gov/my-account-billing/manage-my-account-login> →
+Settings → Change Password. Then update it on the Mac (piped, never in
+shell history):
+
+```
+[MAC] printf '%s' 'NEW-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh jmsanger
+```
+
+## 5. Put `ANTHROPIC_API_KEY` on the Mac {#5}
+
+`ecfiler check` on the Mac is 10/12; the two failures clear with one file:
+
+```
+[MAC] printf 'export ANTHROPIC_API_KEY=%s\n' 'sk-ant-...' > ~/.ecfiler/env.sh
+[MAC] chmod 600 ~/.ecfiler/env.sh
+[MAC] ~/ecfiler/scripts/mac/ecfiler-mac check
 ```
 
 ## 6. Subscribe to GovDelivery {#6}
 
 <https://public.govdelivery.com/accounts/USFEDCOURTS/subscriber/new?topic_id=USFEDCOURTS_1821>
 
-Email `realjacksons@gmail.com`, solve the MTCaptcha, submit, then click the
+Email `realjacksons@gmail.com`, solve the MTCaptcha, submit, click the
 confirmation link. Blocked only by the CAPTCHA.
 
 ## 7. Send the two outreach messages {#7}
 
 **C2 — AO developer mailbox.** The Gmail draft in your account
-(`developers@psc.uscourts.gov`) is final and unchanged this session — verified
-against the repo text. Read it and hit send, ideally after item 6 so "I'm
-subscribed to the developer updates list" is true.
+(`developers@psc.uscourts.gov`) is final — verified against the repo text in
+session 3, untouched since. Read it and hit send, ideally after item 6 so
+"I'm subscribed to the developer updates list" is true.
 
 **C5 — M.D. Fla. clerk.** Web form, not email:
-<https://www.flmd.uscourts.gov/webforms/contact-cmecf> — paste-ready answers in
-`docs/outreach/c5-submission-sheet.md`. Needs your phone number, which is
+<https://www.flmd.uscourts.gov/webforms/contact-cmecf> — paste-ready answers
+in `docs/outreach/c5-submission-sheet.md`. Needs your phone number, which is
 nowhere in the repo.
 
-> **Read before sending — the identity framing changed again, deliberately.**
-> Session 1 borrowed a firm practice that ECFiler doesn't have; session 2
-> over-corrected by erasing your profession entirely. Session 3 settled it: the
-> letters now claim what is true — you are a litigation docketing specialist in
-> Tampa, writing in personal capacity — and never name or allude to your
-> employer, never use "we", and never claim ECFiler is in use anywhere. C5 and
-> the C3/C4 documents changed; C2 did not. The lint
-> (`tests/test_copy_lint.py`) now enforces those three rules rather than
-> banning the (true) job title. Worth a skim: it changes how C5 reads.
+The identity rules are settled and lint-enforced (session 3): true
+profession in personal capacity, employer never named or implied, singular
+voice, no ECFiler-in-use claims. Skim `tests/test_copy_lint.py`'s header
+before sending if you want the reasoning.
 
-## 8. Put `ANTHROPIC_API_KEY` on the Mac {#8}
-
-`ecfiler check` on the Mac is **10/12**; the two failures clear with one file.
-The sandbox blocked writing it remotely, so:
-
-```
-[mac] printf 'export ANTHROPIC_API_KEY=%s\n' 'sk-ant-...' > ~/.ecfiler/env.sh
-[mac] chmod 600 ~/.ecfiler/env.sh
-[mac] ~/ecfiler/scripts/mac/ecfiler-mac check     # expect 12/12
-```
-
-## 9. Decide the entity question {#9}
+## 8. Decide the entity question {#8}
 
 `docs/fl/entity-recommendation.md` — the recommendation is **ECFiler LLC, a
-single-member Florida LLC, formed now**, defended against Delaware and against
-waiting. Read it and say yes or overrule it. Everything in item 10 waits on the
-name.
+single-member Florida LLC, formed now**, defended against Delaware and
+against waiting. Read it and say yes or overrule it. Everything in item 9
+waits on the name.
 
-Sunbiz sits behind Cloudflare bot protection and refused both machines, so the
-name-availability check is yours:
+Sunbiz sits behind Cloudflare bot protection and refused both machines, so
+the name-availability check is yours:
 <https://search.sunbiz.org/Inquiry/CorporationSearch/ByName>.
 
-## 10. Form the LLC and file the Florida application {#10}
+## 9. Form the LLC and file the Florida application {#9}
 
-Money and your signature. Roughly **$625** total.
+Money and your signature. Roughly **$625** total. The packet is
+signature-ready: the filled PDF reproduces from
+`scripts/fill_fl_tpv_application.py` (re-verified this session), and
+`docs/fl/application-packet-checklist.md` lists every remaining blank — all
+of them are entity name, signatures, dates, phone, or street address.
 
-- **LLC** (~$125): <https://efile.sunbiz.org/llc_file.html>. Registered agent =
-  yourself, principal address = your Tampa address.
-- **Application** ($500): `docs/fl/Third_Party_Vendor_Application_FILLED.pdf` is
-  filled except entity name, both signature blocks, dates, phone, and street
-  address. `docs/fl/application-packet-checklist.md` lists every blank. Confirm
-  the check payee with the Authority (support@myflcourtaccess.com /
-  850-577-4609) before writing it.
+- **LLC** (~$125): <https://efile.sunbiz.org/llc_file.html>. Registered
+  agent = yourself, principal address = your Tampa address.
+- **Application** ($500): confirm the check payee with the Authority
+  (support@myflcourtaccess.com / 850-577-4609) before writing it.
 - **References**: three request emails in
-  `docs/fl/drafts/reference-request-emails.md` — **the third changed this
-  session**: the Railway reference died with the trial, and the truthful
-  replacement is Hostinger (the VPS that actually hosts the backend now). Note
-  the account-name caveat in that file. Send these *before* mailing, so the
-  references are warned.
-- The cover letter was rewritten to singular voice with truthful status claims
-  (`docs/fl/drafts/cover-letter.md`) — re-read before printing.
+  `docs/fl/drafts/reference-request-emails.md` (third is Hostinger — note
+  the account-name caveat in that file). Send these *before* mailing.
+- Engineering is ahead of the paperwork: gap items #2 (domain model), #3
+  (PDF/A enforcement), and #4 (ECF 4.01 message layer, this session) are
+  built and tested; the next build items need the post-approval XSDs.
 
-## 11. Counsel review of Terms and Privacy {#11}
+## 10. Counsel review of Terms and Privacy {#10}
 
-`docs/legal/counsel-review-brief.md`. **This shrank: two of the four questions
-collapsed into "here is what we did" this session.** Q3 (deletion vs.
-append-only attestation) is resolved in engineering — hash-don't-store, tested;
-counsel now only confirms the §11 disclosure language. Q4 (facts published
-ahead of reality) is resolved — the purge record is complete, the policy claims
-only what is true, and the deletion/export endpoints exist. Q1 (UPL) and Q2
-(liability stack) remain the genuine lawyer questions. Both pages still carry
-the `LEGAL REVIEW REQUIRED before deploy` banner.
+`docs/legal/counsel-review-brief.md`. Q1 (UPL) and Q2 (liability stack)
+remain the genuine lawyer questions; Q3/Q4 collapsed to "here is what we
+did" in session 3. Both pages still carry the `LEGAL REVIEW REQUIRED before
+deploy` banner. Session 4 note for counsel: Terms §5 no longer claims a
+"3-pass" verification system (nothing implemented it) — it now describes
+the real AI analysis + five-point readiness check; §10 states expressly
+that Pro is not yet purchasable.
 
-## 12. Reboot the VPS, run the boot check {#12}
+## 11. Reboot the VPS {#11}
 
-Reboot survival is configured and everything short of the reboot is proven
-(units enabled, crash-restart verified). The reboot itself would kill every
-live Claude session on the box — including the one doing the work — so it is
-yours, whenever convenient:
+Now genuinely one step: `ecfiler-post-reboot.service` is installed and
+enabled, so the boot runs the check itself and writes a timestamped result.
 
 ```
-[vps] reboot
-# ...after it returns:
-[vps] bash /opt/ecfiler/scripts/deploy/post-reboot-check.sh   # expect all "ok"
+[VPS] reboot
+# ...after it returns, read the proof:
+[VPS] cat /var/log/ecfiler/post-reboot-latest.result
 ```
+
+The reboot kills every live Claude session on the box — including the one
+doing the work — so it is yours, whenever convenient.
 
 ---
 
-## No longer needed
+## Done in session 4 (check the work)
 
-- **`railway login`** (old item 2): the purpose died with the trial. The API
-  now lives on the VPS at $0/month (`docs/hosting-topology.md`); Railway
-  destroys trial volumes 30 days after credit expiry, which disposes of the
-  legacy environment, its env vars, and any pre-purge data without any action —
-  recorded in `docs/credential-architecture.md` §4.
+Full detail in the PR. **Suite: 605 passed, 0 failed** (was 546).
 
-## Not blocked — done this session (session 3), so you can check the work
-
-Full detail in the PR. **Suite: 541 passed, 0 failed** (was 481).
-
-- **www.ecfiler.com works for a visitor again** — free tools (court directory,
-  event codes, certificate generator) moved fully client-side and the site was
-  redeployed; verified from an external browser. Item 2 above lights up the
-  rest.
-- **Hosting decided, deployed, documented**: API on the VPS (systemd, nginx,
-  fail-closed auth, hardened unit), SQLite stays (attestation triggers ported
-  unchanged), nightly offsite backups to the Mac with a passed restore test,
-  Neon and paid options rejected with reasons — `docs/hosting-topology.md`.
-- **Attestation store restructured (hash-don't-store)** + `DELETE /api/account`
-  + `GET /api/export`, settings page wired, Privacy Policy now tells the truth,
-  purge record completed honestly, counsel brief halved.
-- **API surface closed**: auth on the AI endpoints (they were anonymous and
-  spend money), drafts deletion scoped, the unauthenticated compress endpoint
-  removed.
-- **NEF round-trip dry-run proven end to end against the mock court**, runbook
-  written; two real bugs fixed on the way (receipts dir creation; stage-pull
-  QA auth).
-- **Identity rewrite** per the settled rules, lint enforcing them, C4 PDF given
-  a committed build path + parity test.
-- **Florida gap item #3**: PDF/A enforcement pipeline (prohibited-element
-  scan/scrub, 50 MB per-submission cap, filename rules), 28 tests from
-  primary sources.
+- **The marketing site stopped lying.** Free tools actually public (the
+  (app) auth gate was redirecting /courts to /sign-in), plus new public
+  /tools, /events, /fees, /redaction pages — the last two are client-side
+  ports with data-parity tests. Verified as an anonymous outsider with
+  Playwright; that check now runs in CI.
+- **Claims deleted rather than softened**: 3-pass verification, Stripe
+  billing, hosted CM/ECF filing, timing stats, sealed-filing-in-one-click,
+  competitor pricing. `docs/claims-register.md` maps every surviving claim
+  to code + test, and `tests/test_claims_register.py` enforces it.
+- **Every court number derives from the registry data**; the 207
+  decomposes explicitly (90+4 districts, 94 bankruptcy, 13 courts of
+  appeals, 3 BAPs, 3 national courts).
+- **activate-api.sh**, **make qa-day**, **ECF 4.01 message layer**,
+  **self-documenting reboot** — rows 1, 2, 3, 11 above got shorter.
 
 **Still not done, plainly: no filing has round-tripped to an NEF on a real
-court system.** Item 5 (QA account) remains the only thing between the dry run
-and the real one.
+court system.** Item 3 (QA account) remains the only thing between the dry
+run and the real one.
