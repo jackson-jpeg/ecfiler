@@ -214,6 +214,42 @@ the court and case that were staged are the ones in the receipt.
 tests/test_browser_e2e.py::TestStagedToNefRoundTrip -q` → **1 passed**.
 VERIFIED.
 
+### L19 — 2026-07-29 — the fixed seam re-staged and pulled clean onto the filing machine
+Restaged against the QA court with the fixed code, on a QA-mode staging API:
+`[VPS] ECFILER_DEV_AUTH=1 ECFILER_PACER_QA=1
+ECFILER_DATA_DIR=/root/.ecfiler-qa-staging .venv/bin/python -m uvicorn
+ecfiler.api.app:app --host 100.126.58.33 --port 8901` (health 200), then
+`[VPS] curl -X POST …/api/filing/stage -H 'X-User-Id: qa-day' -d
+'{"court_id":"azttdc",…}'` → `stage_code: 56DB64etAjX`, `court: azttdc Az
+Test District Court (PACER QA)`, `filing.court_id: azttdc`, provenance
+`{court_id: azttdc, ecf_url: https://ecf.tc1d.aztc.uscourts.gov,
+environment: qa}`.
+
+Pulled with the real CLI on the Mac:
+`[MAC] /Users/jackson/ecfiler/scripts/mac/ecfiler-mac stage-pull 56DB64etAjX
+--server http://100.126.58.33:8901 --dev-user qa-day` → `✓ Staged package
+saved as draft: /Users/jackson/.ecfiler/drafts/staged_0_07-cv-00170.json` /
+`Court: azttdc (qa) — https://ecf.tc1d.aztc.uscourts.gov` / `Case:
+0:07-cv-00170   Event: Motion for Extension of Time`. The draft is visible
+to the product: `[MAC] … ecfiler-mac drafts` lists it as `azttdc
+0:07-cv-00170 Motion for Extension of Time`. In production mode the QA court
+stays invisible: `[MAC] … ecfiler-mac courts --search tc1d` → `No courts
+found`.
+
+The new qa-day provenance gate was exercised in both directions with its own
+script extracted from `scripts/mac/qa-day.sh`: a draft naming `azd` →
+`FAIL  staged ECF URL https://ecf.azd.uscourts.gov != TARGET
+https://ecf.tc1d.aztc.uscourts.gov; staged environment is 'production', not
+'qa' — refusing to file.` (exit 1); the real draft → `PASS  → azttdc @
+https://ecf.tc1d.aztc.uscourts.gov (qa)` (exit 0).
+
+CI on PR #3 (`session6-qa-day`, head `7446ecf`): `test (3.11)` pass,
+`test (3.12)` pass, `web` pass, Vercel preview pass. VERIFIED.
+
+**Still STAGED:** the live NEF round trip. Everything up to the browser is
+now proven on the real machines with the real account; the filing itself has
+not been attempted since the fix.
+
 ---
 
 ## Retro-audit — sessions 2–4 verification claims

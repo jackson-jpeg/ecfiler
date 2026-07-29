@@ -1,8 +1,27 @@
 # NEF round-trip runbook
 
-*Written 2026-07-28. The QA PACER account (HUMAN-QUEUE item 3) is the only
-missing piece. Everything below the fold is proven against the mock CM/ECF (ledger L09);
-activation day is execution, not building.*
+*Written 2026-07-28, rewritten 2026-07-29 after the first attended run.
+The QA account is live; every step up to the browser is proven (ledger L15,
+L19) on the real machines. The filing itself has not happened — the
+first attempt stopped at two bugs in the hosted→local seam (L16, L17), both
+since fixed. What follows is the re-run.*
+
+## The re-run, one command
+
+The package is staged and its pull is pre-verified (ledger L19) on the filing
+machine. At the workflow menu choose **[2] Resume Draft**; the document is
+`/Users/jackson/ecfiler/docs/qa-roundtrip/sample-motion.pdf`:
+
+```
+[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=56DB64etAjX \
+        TARGET=https://ecf.tc1d.aztc.uscourts.gov \
+        SERVER=http://100.126.58.33:8901 DEVUSER=qa-day
+```
+
+`CONFIRM` at attorney review and `YES` at the CM/ECF confirmation screen are
+human by design. If the staging API is not answering (it does not survive a
+VPS reboot), restart it with the command in "Hosted staging" below and
+re-stage — stage codes are per-package, not permanent.
 
 ## What is already proven (the dry run — ledger L09)
 
