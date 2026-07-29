@@ -102,3 +102,29 @@ class TestQaHostnames:
         from ecfiler.pacer_session import PACER_QA_CSO_LOGIN_URL
 
         assert PACER_QA_CSO_LOGIN_URL.startswith("https://qa-login.uscourts.gov/")
+
+
+class TestAuthSuccessPath:
+    """The first real QA authentication crashed with UnboundLocalError:
+    a function-local `import time` in the retry branch shadowed the module
+    import for the whole function. Exercise the success path for real."""
+
+    def test_authenticate_success_returns_token(self, monkeypatch) -> None:
+        import httpx
+
+        from ecfiler.pacer_auth import PacerAuth
+
+        auth = PacerAuth("tester", use_qa=True)
+        monkeypatch.setattr(auth, "get_password", lambda: "pw")
+
+        def fake_post(url, **kwargs):
+            request = httpx.Request("POST", url)
+            return httpx.Response(
+                200, json={"nextGenCSO": "tok-123", "loginResult": "0"},
+                request=request,
+            )
+
+        monkeypatch.setattr(auth._client, "post", fake_post)
+        token = auth.authenticate()
+        assert token.token == "tok-123"
+        assert not token.is_expired

@@ -101,7 +101,10 @@ class PacerAuth:
             except httpx.RequestError as e:
                 last_error = e
                 if attempt <= retries:
-                    import time
+                    # NOTE: no local `import time` here — a function-local
+                    # import shadows the module import for the WHOLE function
+                    # and made the success path crash with UnboundLocalError
+                    # on the first real authentication (2026-07-29).
                     time.sleep(2 * attempt)
                     continue
                 raise PacerAuthError(
