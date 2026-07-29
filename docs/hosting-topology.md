@@ -107,8 +107,10 @@ Downgraded in the 2026-07-29 retro-audit (ledger, "Retro-audit" table):
 test is STAGED (no artifact, not re-run); and session 3's "production
 frontend deployed and confirmed externally" was UNPROVEN and false as
 measured — production served `master@714c2d7` until the session-5 merge
-(L01). Production state is now checked by `scripts/verify-production.sh`,
-which asserts the served commit equals master HEAD.
+(L01). As of 2026-07-29 production serves master HEAD and passed the
+outside-in smoke 18/18 (ledger L14); production deploys automatically from
+every master push (Vercel git integration, ledger L13), and
+`scripts/verify-production.sh` is the standing check.
 
 Remaining, each a HUMAN-QUEUE row:
 
