@@ -41,7 +41,11 @@ console = Console()
 
 # Verification stages, and the exact words that waive one.
 AI_VALIDATION = "ai_validation"
-STAGE_LABELS = {AI_VALIDATION: "AI validation"}
+REDACTION_SCAN = "redaction_scan"
+STAGE_LABELS = {
+    AI_VALIDATION: "AI validation",
+    REDACTION_SCAN: "Redaction scan",
+}
 WAIVER_PHRASE = "FILE UNVERIFIED"
 
 
@@ -394,17 +398,32 @@ class FilingWorkflow:
         return documents
 
     def _run_redaction_check(self, documents: list[Document]) -> None:
-        """Run redaction scanning on documents."""
+        """Run redaction scanning on documents.
+
+        Reports what the scan actually was. Without a Claude client this is a
+        pattern scan, which is a real check but a narrower one — saying "no
+        redaction issues" for it claims more than was done.
+        """
         from ecfiler.pdf.redaction_check import scan_document
         from ecfiler.pdf.validator import extract_text
 
         console.print("\n  [dim]Scanning for redaction issues...[/dim]")
 
+        claude = self._get_claude_safe()
+        pattern_only = claude is None
+        if pattern_only:
+            console.print(
+                "  [yellow]⚠ AI redaction review unavailable — pattern scan "
+                "only.[/yellow]"
+            )
+        found_issues = False
+
         for doc in documents:
             try:
                 text = extract_text(doc.file_path)
-                report = scan_document(text, claude_client=self._get_claude_safe())
+                report = scan_document(text, claude_client=claude)
                 if report.has_issues:
+                    found_issues = True
                     console.print(
                         f"  [yellow]⚠ {doc.filename}: "
                         f"{len(report.issues)} potential redaction issue(s)[/yellow]"
@@ -415,17 +434,31 @@ class FilingWorkflow:
                             f"{issue.text[:50]} — {issue.suggestion}"
                         )
                 else:
-                    console.print(
-                        f"  [green]✓[/green] {doc.filename}: No redaction issues"
+                    scope = (
+                        "no pattern matches"
+                        if pattern_only
+                        else "no redaction issues"
                     )
-            except FileNotFoundError:
-                console.print(
-                    f"  [red]File not found: {doc.file_path}[/red]"
-                )
+                    console.print(f"  [green]✓[/green] {doc.filename}: {scope}")
             except Exception as e:
-                console.print(
-                    f"  [dim]Could not scan {doc.filename} for redaction ({type(e).__name__})[/dim]"
+                # A document that could not be scanned has not been checked.
+                self._verification_did_not_run(
+                    REDACTION_SCAN, e, subject=doc.filename
                 )
+                return
+
+        scope_note = "pattern-only: AI review unavailable" if pattern_only else ""
+        if found_issues:
+            detail = "potential redaction issues flagged"
+            if scope_note:
+                detail = f"{detail} ({scope_note})"
+            self._record_verification(
+                REDACTION_SCAN, VerificationStatus.ISSUES_FOUND, detail=detail
+            )
+        else:
+            self._record_verification(
+                REDACTION_SCAN, VerificationStatus.PASSED, detail=scope_note
+            )
 
     def _step_response_context(self, event: EventCode) -> tuple[bool, RelatedEntry | None]:
         """Step 3b: Determine if filing is a response to an existing docket entry.
@@ -811,7 +844,9 @@ class FilingWorkflow:
             f"typed {WAIVER_PHRASE} to proceed."
         )
 
-    def _verification_did_not_run(self, stage: str, exc: Exception) -> None:
+    def _verification_did_not_run(
+        self, stage: str, exc: Exception, subject: str = ""
+    ) -> None:
         """Stop, unless the attorney explicitly waives the missing check.
 
         A verification stage that cannot run used to print one dim line and
@@ -823,6 +858,8 @@ class FilingWorkflow:
 
         label = STAGE_LABELS.get(stage, stage)
         reason = str(exc).strip() or type(exc).__name__
+        if subject:
+            reason = f"{subject}: {reason}"
         if isinstance(exc, ConfigError):
             fix = (
                 "This is a configuration state, not a court problem: set "
@@ -929,7 +966,12 @@ class FilingWorkflow:
         # an attestation is only honest if they saw this.
         for record in self.filing.verification:
             if record.status == VerificationStatus.PASSED:
-                table.add_row(STAGE_LABELS.get(record.stage, record.stage), "[green]✓ passed[/green]")
+                # A narrower check than usual still says what it was.
+                note = f" [yellow]({record.detail})[/yellow]" if record.detail else ""
+                table.add_row(
+                    STAGE_LABELS.get(record.stage, record.stage),
+                    f"[green]✓ passed[/green]{note}",
+                )
             elif record.status == VerificationStatus.ISSUES_FOUND:
                 table.add_row(
                     f"[yellow]{STAGE_LABELS.get(record.stage, record.stage)}[/yellow]",

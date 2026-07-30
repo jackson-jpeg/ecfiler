@@ -232,6 +232,83 @@ class TestStagesThatDidRun:
         assert len(workflow.filing.verification) == 1
 
 
+class TestTheRedactionScanSaysWhatItWas:
+    """"No redaction issues" claimed more than a pattern scan had done."""
+
+    def _scan(self, monkeypatch, has_issues: bool = False):
+        class Report:
+            pass
+
+        Report.has_issues = has_issues
+        Report.issues = []
+
+        monkeypatch.setattr(
+            "ecfiler.pdf.redaction_check.scan_document",
+            lambda text, claude_client=None: Report(),
+        )
+        monkeypatch.setattr(
+            "ecfiler.pdf.validator.extract_text", lambda *a, **k: "text"
+        )
+
+    def _output(self, workflow, monkeypatch) -> str:
+        import io
+
+        from rich.console import Console
+
+        buffer = io.StringIO()
+        monkeypatch.setattr(
+            "ecfiler.filing.workflow.console", Console(file=buffer, width=200)
+        )
+        workflow._run_redaction_check(workflow.filing.documents)
+        return buffer.getvalue()
+
+    def test_pattern_only_scan_says_so(self, workflow, monkeypatch) -> None:
+        self._scan(monkeypatch)
+        monkeypatch.setattr(FilingWorkflow, "_get_claude_safe", lambda self: None)
+        text = self._output(workflow, monkeypatch)
+        assert "pattern scan only" in text
+        assert "no pattern matches" in text
+        assert "No redaction issues" not in text
+        record = workflow.filing.verification[0]
+        assert record.status == VerificationStatus.PASSED
+        assert "pattern-only" in record.detail
+
+    def test_a_full_scan_claims_the_full_thing(self, workflow, monkeypatch) -> None:
+        self._scan(monkeypatch)
+        monkeypatch.setattr(
+            FilingWorkflow, "_get_claude_safe", lambda self: object()
+        )
+        text = self._output(workflow, monkeypatch)
+        assert "no redaction issues" in text.lower()
+        assert "pattern scan only" not in text
+        assert workflow.filing.verification[0].detail == ""
+
+    def test_an_unscannable_document_stops_the_run(
+        self, workflow, monkeypatch
+    ) -> None:
+        """It used to print one dim line and file the document anyway."""
+        monkeypatch.setattr(
+            "ecfiler.pdf.validator.extract_text",
+            lambda *a, **k: (_ for _ in ()).throw(OSError("cannot read PDF")),
+        )
+        monkeypatch.setattr(FilingWorkflow, "_get_claude_safe", lambda self: None)
+        _answer(monkeypatch, "")
+        with pytest.raises(KeyboardInterrupt):
+            workflow._run_redaction_check(workflow.filing.documents)
+
+    def test_the_waiver_names_the_document(self, workflow, monkeypatch) -> None:
+        monkeypatch.setattr(
+            "ecfiler.pdf.validator.extract_text",
+            lambda *a, **k: (_ for _ in ()).throw(OSError("cannot read PDF")),
+        )
+        monkeypatch.setattr(FilingWorkflow, "_get_claude_safe", lambda self: None)
+        _answer(monkeypatch, WAIVER_PHRASE)
+        workflow._run_redaction_check(workflow.filing.documents)
+        record = workflow.filing.verification[0]
+        assert "motion.pdf" in record.detail
+        assert record.waived_by == "Jackson Sanger"
+
+
 class TestTheReviewPanelShowsIt:
     """The attestation is only honest if the attorney saw this at CONFIRM."""
 

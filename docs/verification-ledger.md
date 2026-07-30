@@ -325,11 +325,16 @@ approval rather than on code.
    submission attestation — payload `verification[]` plus a plain-English
    clause in the attestation text. A validator that *ran and objected* is
    recorded distinctly (`issues_found`) and still routed to the attorney
-   review gate rather than blocking. `[VPS] .venv/bin/python -m pytest
-   tests/test_verification_gate.py -q` → **17 passed**.
+   review gate rather than blocking. The same audit found the redaction scan
+   doing a quieter version of it: without an API key it silently degrades to
+   a pattern scan and still printed "No redaction issues", and a document it
+   could not read at all printed one dim line and was filed anyway. It now
+   names the scan it actually performed, and an unreadable document goes
+   through the same waiver gate. `[VPS] .venv/bin/python -m pytest
+   tests/test_verification_gate.py -q` → **21 passed**.
 
-Full suite `[VPS] .venv/bin/python -m pytest tests/ -q` → **681 passed, 8
-skipped** (was 641 before this session's 40 new tests). VERIFIED.
+Full suite `[VPS] .venv/bin/python -m pytest tests/ -q` → **685 passed, 8
+skipped** (was 641 before this session's 44 new tests). VERIFIED.
 
 ---
 
