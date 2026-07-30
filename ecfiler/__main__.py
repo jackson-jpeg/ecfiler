@@ -67,7 +67,12 @@ def setup(ctx: click.Context) -> None:
 @main.command("courts")
 @click.option("--type", "-t", "court_type", type=click.Choice(["district", "bankruptcy", "appellate"]))
 @click.option("--search", "-s", "query", type=str, help="Search by name or ID")
-def list_courts(court_type: str | None, query: str | None) -> None:
+@click.option(
+    "--qa",
+    is_flag=True,
+    help="List the PACER QA/training courts instead of the production ones",
+)
+def list_courts(court_type: str | None, query: str | None, qa: bool) -> None:
     """List available federal courts."""
     from rich.console import Console
     from rich.table import Table
@@ -75,7 +80,12 @@ def list_courts(court_type: str | None, query: str | None) -> None:
     from ecfiler.courts.registry import CourtRegistry
 
     console = Console()
-    registry = CourtRegistry()
+    registry = CourtRegistry(environment="qa" if qa else None)
+    if registry.environment == "qa":
+        console.print(
+            "[yellow]PACER QA environment[/yellow] — training courts only; "
+            "production courts are not in this directory."
+        )
 
     if query:
         courts = registry.search(query)
@@ -95,9 +105,10 @@ def list_courts(court_type: str | None, query: str | None) -> None:
     table.add_column("ECF URL", style="dim")
 
     for court in courts:
-        court_id = court["court_id"]
-        ecf_url = f"ecf.{court_id}.uscourts.gov"
-        table.add_row(court_id, court["name"], court["type"], ecf_url)
+        # The registry's own URL, not a guess from the court id — QA courts
+        # (and a handful of production ones) do not follow the convention.
+        host = court.get("ecf_url", "").replace("https://", "").rstrip("/")
+        table.add_row(court["court_id"], court["name"], court["type"], host)
 
     console.print(table)
 
@@ -685,6 +696,163 @@ def session_login(qa: bool, timeout: int) -> None:
         raise click.Abort()
 
 
+@session_group.command("auth-test")
+@click.option("--qa", is_flag=True, help="Authenticate against the PACER QA environment")
+@click.option("--username", "username", default="", help="Keychain account (defaults to config)")
+def session_auth_test(qa: bool, username: str) -> None:
+    """Non-interactive credential check against the PACER cso-auth API.
+
+    Reads the password from the OS keychain (service ecfiler-pacer), calls
+    the auth service, and reports success or failure. Never prints the
+    password or the token.
+    """
+    from rich.console import Console
+
+    from ecfiler.config import load_config
+    from ecfiler.pacer_auth import PacerAuth, PacerAuthError
+
+    console = Console()
+    if not username:
+        try:
+            username = load_config().pacer.username
+        except Exception:
+            username = ""
+    if not username:
+        console.print("  [red]No username: pass --username or set pacer.username in config.[/red]")
+        raise click.Abort()
+
+    env = "QA" if qa else "PRODUCTION"
+    console.print(f"  Authenticating [bold]{username}[/bold] against PACER {env}...")
+    auth = PacerAuth(username, use_qa=qa)
+    try:
+        token = auth.authenticate()
+    except PacerAuthError as e:
+        console.print(f"  [red]✗ Authentication failed:[/red] {e}")
+        raise click.Abort()
+    console.print(
+        f"  [green]✓[/green] Authenticated. Token received "
+        f"(length {len(token.token)}, not shown)."
+    )
+
+
+@session_group.command("find-cases")
+@click.option("--qa", is_flag=True, help="Search the QA Case Locator")
+@click.option("--username", default="", help="Keychain account (defaults to config)")
+@click.option("--court", "court_id", default="", help="Court ID filter (PCL court id)")
+@click.option("--party", default="smith", show_default=True, help="Party last name to search")
+@click.option("--case-number", "case_number", default="", help="Search by case number instead")
+def session_find_cases(qa: bool, username: str, court_id: str, party: str, case_number: str) -> None:
+    """Search the PACER Case Locator for filing-target candidates.
+
+    QA day needs a case that exists in the target test court; this finds one
+    without a browser. Credentials come from the OS keychain.
+    """
+    from rich.console import Console
+
+    from ecfiler.config import load_config
+    from ecfiler.pacer_auth import PacerAuth, PacerAuthError
+    from ecfiler.pacer_search import PacerSearch, PacerSearchError
+
+    console = Console()
+    if not username:
+        try:
+            username = load_config().pacer.username
+        except Exception:
+            username = ""
+    if not username:
+        console.print("  [red]No username: pass --username.[/red]")
+        raise click.Abort()
+
+    auth = PacerAuth(username, use_qa=qa)
+    try:
+        token = auth.get_token()
+    except PacerAuthError as e:
+        console.print(f"  [red]Auth failed:[/red] {e}")
+        raise click.Abort()
+
+    search = PacerSearch(token, use_qa=qa)
+    try:
+        if case_number:
+            results = search.search_by_case_number(case_number, court_id or None)
+        else:
+            results = search.search_by_party(party, court_id or None)
+    except PacerSearchError as e:
+        console.print(f"  [red]Search failed:[/red] {e}")
+        raise click.Abort()
+
+    if not results:
+        console.print("  [yellow]No cases found.[/yellow]")
+        return
+    for r in results[:20]:
+        console.print(f"  [bold]{r.court_id}[/bold] {r.case_number}  {r.display}")
+
+
+@session_group.command("filing-access")
+@click.option("--qa", is_flag=True, help="Use the PACER QA environment")
+@click.option("--username", default="", help="Keychain account (defaults to config)")
+@click.option("--court", "court_id", required=True, help="Court ID, e.g. azttdc")
+def session_filing_access(qa: bool, username: str, court_id: str) -> None:
+    """Report whether this account may FILE in a court, or only read it.
+
+    A PACER account grants access to read dockets; filing is a separate
+    privilege each court grants and must approve. This logs in, reads the
+    CM/ECF menu bar, and says which one you have — so a pending court
+    registration can be checked in seconds instead of by attempting a
+    filing (ledger L20).
+    """
+    from rich.console import Console
+
+    from ecfiler.browser.session import BrowserSession
+    from ecfiler.config import load_config
+    from ecfiler.courts.base import NotAnEFilerError
+    from ecfiler.courts.registry import CourtRegistry
+    from ecfiler.pacer_auth import PacerAuth, PacerAuthError
+
+    console = Console()
+    if not username:
+        try:
+            username = load_config().pacer.username
+        except Exception:
+            username = ""
+    if not username:
+        console.print("  [red]No username: pass --username.[/red]")
+        raise click.Abort()
+
+    registry = CourtRegistry(environment="qa" if qa else "production")
+    try:
+        court = registry.get(court_id)
+    except Exception as e:
+        console.print(f"  [red]{e}[/red]")
+        raise click.Abort()
+
+    try:
+        token = PacerAuth(username, use_qa=qa).get_token()
+    except PacerAuthError as e:
+        console.print(f"  [red]Auth failed:[/red] {e}")
+        raise click.Abort()
+
+    console.print(
+        f"  Checking filing access for [bold]{username}[/bold] at "
+        f"[bold]{court_id}[/bold] ({court.profile.ecf_url})..."
+    )
+    with BrowserSession(headless=True) as browser:
+        if not browser.login_with_token(token, court.profile.ecf_url):
+            browser.inject_pacer_token(token, court.profile.domain)
+        page = browser.page
+        page.goto(court.profile.query_url)
+        page.wait_for_load_state("networkidle")
+        menus = court.visible_menu_items(page)
+        try:
+            court.check_filing_entitlement(page)
+        except NotAnEFilerError as e:
+            console.print(f"\n  [red]✗ Read-only at {court_id}.[/red]")
+            console.print(f"  [dim]{e}[/dim]")
+            raise click.Abort()
+
+    console.print(f"  CM/ECF menu: {', '.join(menus) or '(none found)'}")
+    console.print(f"  [green]✓ This account may file in {court_id}.[/green]")
+
+
 @session_group.command("status")
 @click.option("--qa", is_flag=True, help="Use the PACER QA environment instead of production")
 @click.option("--probe/--no-probe", default=True, help="Actually test the session against PACER")
@@ -734,7 +902,13 @@ def session_status(qa: bool, probe: bool) -> None:
     default="",
     help="Your ECFiler web session token, for authenticating the pull",
 )
-def stage_pull(stage_code: str, server: str, token: str) -> None:
+@click.option(
+    "--dev-user",
+    envvar="ECFILER_DEV_USER",
+    default="",
+    help="Dev-mode user id for a server running ECFILER_DEV_AUTH=1 (QA dry runs)",
+)
+def stage_pull(stage_code: str, server: str, token: str, dev_user: str) -> None:
     """Pull a filing package staged on ecfiler.com into a local draft.
 
     The hosted app prepares and validates; filing happens here, on your
@@ -754,7 +928,7 @@ def stage_pull(stage_code: str, server: str, token: str) -> None:
         headers["Authorization"] = f"Bearer {token}"
     # QA/dry-run affordance: a server running with ECFILER_DEV_AUTH=1 accepts
     # an X-User-Id header instead of a Clerk token. Ignored by production.
-    dev_user = os.environ.get("ECFILER_DEV_USER", "")
+    dev_user = dev_user or os.environ.get("ECFILER_DEV_USER", "")
     if dev_user:
         headers["X-User-Id"] = dev_user
 
@@ -770,9 +944,44 @@ def stage_pull(stage_code: str, server: str, token: str) -> None:
         raise click.Abort()
 
     package = resp.json()
-    name = f"staged_{package.get('case_number', stage_code)}"
-    path = save_draft(name, package, overwrite=True)
+
+    # The draft is the package's canonical Filing record, validated through
+    # the same model the interactive workflow resumes from — a contract
+    # mismatch fails the pull loudly instead of writing an unparseable draft.
+    from pydantic import ValidationError
+
+    from ecfiler.filing.models import Filing
+
+    filing_data = package.get("filing")
+    if not isinstance(filing_data, dict):
+        console.print(
+            "[red]The server's package has no canonical filing record — the "
+            "server predates the current package format. Re-stage the filing "
+            "on an up-to-date server.[/red]"
+        )
+        raise click.Abort()
+    try:
+        filing = Filing.model_validate(filing_data)
+    except ValidationError as e:
+        console.print(
+            f"[red]Staged package does not parse as a Filing — refusing to "
+            f"save a draft the workflow cannot resume:[/red]\n{e}"
+        )
+        raise click.Abort()
+
+    name = f"staged_{filing.case.case_number or stage_code}"
+    path = save_draft(name, filing.model_dump(mode="json"), overwrite=True)
+    staged = filing.staged
     console.print(f"[green]✓[/green] Staged package saved as draft: [bold]{path}[/bold]")
+    console.print(
+        f"  Court: [bold]{filing.court_id}[/bold]"
+        + (
+            f" ({staged.environment}) — {staged.ecf_url}"
+            if staged
+            else ""
+        )
+    )
+    console.print(f"  Case:  {filing.case.case_number}   Event: {filing.event.description}")
     console.print("  Review it, then file with the interactive workflow: [bold]ecfiler[/bold]")
 
 

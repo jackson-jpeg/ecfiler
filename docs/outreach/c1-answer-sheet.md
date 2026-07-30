@@ -69,9 +69,13 @@ and there is no reason to put a payment instrument on a test account.
 
 **Activation is overnight.** Expect access the next business day. Once active:
 
-- Auth endpoint: `qa-pacer.uscourts.gov`
-- Case Locator API: `qa-pcl.uscourts.gov`
-- CSO login (what `ecfiler session login --qa` opens): `qa-pacer.login.uscourts.gov`
+- Auth endpoint: `qa-login.uscourts.gov/services/cso-auth` (measured
+  2026-07-29 — the previously-noted `qa-pacer.login.uscourts.gov` does not
+  resolve)
+- Case Locator: `qa-pcl.uscourts.gov`
+- CSO login (what `ecfiler session login --qa` opens):
+  `qa-login.uscourts.gov/csologin/login.jsf`
+- QA court roster: `qa-pacer.uscourts.gov/file-case/court-cmecf-lookup`
 
 **Store the QA credentials in the keychain, not in this repo:**
 

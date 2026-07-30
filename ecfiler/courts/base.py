@@ -30,6 +30,38 @@ class SealingUnavailableError(ECFFormError):
     """
 
 
+class NotAnEFilerError(ECFFormError):
+    """The account can read this court but is not registered to file in it.
+
+    A PACER account grants access to *read* dockets. Filing is a separate
+    privilege that each court grants individually, and until the court
+    approves the request CM/ECF serves no filing menu at all — so the event
+    list, the party checkboxes and the upload form are genuinely not on the
+    page. Retrying cannot help, and hunting for selectors is worse than
+    useless: it hides a permissions answer behind a technical one.
+
+    This is the first thing every new user hits on the day their court
+    registration has not come through, so the message is the product.
+    """
+
+
+# CM/ECF menu-bar items that mean "you may file here". A read-only account is
+# served Query / Reports / Utilities / Help / Log Out and nothing else.
+CMECF_MENU_ITEMS = (
+    "civil",
+    "criminal",
+    "bankruptcy",
+    "adversary",
+    "query",
+    "reports",
+    "utilities",
+    "search",
+    "help",
+    "log out",
+    "logout",
+)
+
+
 @dataclass
 class CourtSelectors:
     """CSS selectors for CM/ECF form elements.
@@ -98,6 +130,9 @@ class CourtProfile:
     name: str
     court_type: str  # district, bankruptcy, appellate
     ecf_url: str
+    # "production" for the real federal courts; "qa" for PACER QA-realm test
+    # courts (qa_courts.json). The registry never serves both at once.
+    environment: str = "production"
     selectors: CourtSelectors = field(default_factory=CourtSelectors)
     quirks: list[str] = field(default_factory=list)
     event_codes: list[dict[str, str]] = field(default_factory=list)
@@ -114,8 +149,25 @@ class CourtProfile:
         return f"{base}/cgi-bin/login.pl"
 
     @property
-    def filing_url(self) -> str:
+    def query_url(self) -> str:
+        """The docket-query CGI. Reading only — no filing form lives here."""
         return f"{self.ecf_url}/cgi-bin/iquery.pl"
+
+    @property
+    def menu_url(self) -> str:
+        """The CM/ECF main page: the menu bar a filer clicks Civil from."""
+        return self.ecf_url
+
+    @property
+    def filing_url(self) -> str:
+        """Where a human starts a filing.
+
+        This is the main menu, not the query CGI. `query_url` used to be
+        returned here and was surfaced to filers as `ecf_filing_url` in
+        staged packages, which pointed them at a screen that cannot file
+        (ledger L20).
+        """
+        return self.menu_url
 
     @property
     def domain(self) -> str:
@@ -132,9 +184,66 @@ class BaseCourt:
     override individual steps as needed.
     """
 
+    #: Menu-bar entries that grant filing. Empty tuple disables the check.
+    filing_menus: tuple[str, ...] = ("civil", "criminal")
+
     def __init__(self, profile: CourtProfile) -> None:
         self.profile = profile
         self.selectors = profile.selectors
+
+    def visible_menu_items(self, page: Page) -> list[str]:
+        """The CM/ECF menu-bar items this account is being served.
+
+        Matches anchor text exactly (case-folded) rather than by substring:
+        a docket page is full of links whose text merely contains "civil".
+        """
+        seen: list[str] = []
+        for anchor in page.query_selector_all("a"):
+            try:
+                text = (anchor.inner_text() or "").strip()
+            except Exception:  # detached node mid-navigation
+                continue
+            key = " ".join(text.split()).casefold()
+            if key in CMECF_MENU_ITEMS and key not in [s.casefold() for s in seen]:
+                seen.append(" ".join(text.split()))
+        return seen
+
+    def check_filing_entitlement(self, page: Page) -> None:
+        """Stop here if this account may read the court but not file in it.
+
+        Raised before the event list is looked for, because "no filing menu"
+        and "selector not found" are different answers and only one of them
+        is true here.
+        """
+        if not self.filing_menus:
+            return
+
+        menus = self.visible_menu_items(page)
+        if any(m.casefold() in self.filing_menus for m in menus):
+            return
+        if not menus:
+            # No CM/ECF menu bar at all — not a permissions answer. Let the
+            # ordinary form errors speak rather than guessing.
+            logger.debug("No CM/ECF menu bar found on %s", page.url)
+            return
+
+        offered = ", ".join(menus)
+        wanted = " or ".join(m.capitalize() for m in self.filing_menus)
+        raise NotAnEFilerError(
+            f"This PACER account is not registered to e-file in "
+            f"{self.profile.court_id}.\n\n"
+            f"CM/ECF served this account: {offered} — and no {wanted} menu. "
+            f"A PACER account grants access to read dockets; filing is a "
+            f"separate privilege that each court grants individually, and "
+            f"until this court approves the request the filing screens are "
+            f"not served at all. The event list is genuinely not on the "
+            f"page, so retrying and hunting for selectors cannot help.\n\n"
+            f"Nothing was filed and the staged package is unchanged.\n\n"
+            f"Next step: request e-filing privileges for "
+            f"{self.profile.court_id} through PACER's Manage My Account — "
+            f"see 'Requesting e-filing privileges' in "
+            f"docs/nef-roundtrip-runbook.md. Court approval takes days."
+        )
 
     def navigate_to_filing(self, page: Page) -> None:
         """Navigate to the CM/ECF filing menu.
@@ -209,7 +318,13 @@ class BaseCourt:
         selector = self.selectors.event_list
         el = page.query_selector(selector)
         if not el:
-            raise ECFFormError(f"Event list not found: {selector}")
+            # Say which page was actually being read. A missing event list is
+            # usually a routing or permissions answer, not a selector one.
+            self.check_filing_entitlement(page)
+            raise ECFFormError(
+                f"Event list not found ({selector}) on {page.url} — "
+                f"the page CM/ECF served has no event list on it."
+            )
 
         page.select_option(selector, value=event_code)
         page.wait_for_load_state("networkidle")
@@ -644,6 +759,7 @@ class BaseCourt:
             name=data["name"],
             court_type=data.get("court_type", "district"),
             ecf_url=data["ecf_url"],
+            environment=data.get("environment", "production"),
             selectors=selectors,
             quirks=data.get("quirks", []),
             event_codes=data.get("event_codes", []),

@@ -83,3 +83,63 @@ class TestApiKey:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-123")
         cfg = AppConfig()
         assert cfg.claude_api_key == "sk-test-123"
+
+
+class TestFilingEnvironment:
+    """QA runs must name their target; production defaults stay inert."""
+
+    def _clear(self, monkeypatch):
+        for var in (
+            "ECFILER_PACER_QA",
+            "ECFILER_ECF_URL",
+            "ECFILER_PACER_USERNAME",
+            "ECFILER_HEADED",
+        ):
+            monkeypatch.delenv(var, raising=False)
+
+    def test_defaults_are_inert(self, monkeypatch):
+        from ecfiler.config import filing_environment
+
+        self._clear(monkeypatch)
+        env = filing_environment()
+        assert env.use_qa is False
+        assert env.ecf_url_override == ""
+        assert env.username_override == ""
+        assert env.headed is False
+
+    def test_qa_without_target_refuses(self, monkeypatch):
+        from ecfiler.config import ConfigError, filing_environment
+
+        self._clear(monkeypatch)
+        monkeypatch.setenv("ECFILER_PACER_QA", "1")
+        with pytest.raises(ConfigError, match="ECFILER_ECF_URL"):
+            filing_environment()
+
+    def test_qa_with_target_resolves(self, monkeypatch):
+        from ecfiler.config import filing_environment
+
+        self._clear(monkeypatch)
+        monkeypatch.setenv("ECFILER_PACER_QA", "1")
+        monkeypatch.setenv("ECFILER_ECF_URL", "https://qa-ecf.example.uscourts.gov/")
+        monkeypatch.setenv("ECFILER_PACER_USERNAME", "qauser")
+        monkeypatch.setenv("ECFILER_HEADED", "1")
+        env = filing_environment()
+        assert env.use_qa is True
+        assert env.ecf_url_override == "https://qa-ecf.example.uscourts.gov"
+        assert env.username_override == "qauser"
+        assert env.headed is True
+
+    def test_non_https_target_refuses(self, monkeypatch):
+        from ecfiler.config import ConfigError, filing_environment
+
+        self._clear(monkeypatch)
+        monkeypatch.setenv("ECFILER_ECF_URL", "ftp://bad.example")
+        with pytest.raises(ConfigError, match="https"):
+            filing_environment()
+
+    def test_localhost_mock_court_allowed(self, monkeypatch):
+        from ecfiler.config import filing_environment
+
+        self._clear(monkeypatch)
+        monkeypatch.setenv("ECFILER_ECF_URL", "http://127.0.0.1:8123")
+        assert filing_environment().ecf_url_override == "http://127.0.0.1:8123"

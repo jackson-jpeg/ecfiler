@@ -67,13 +67,11 @@ class PacerSearch:
         Returns:
             List of matching cases
         """
-        params: dict[str, str] = {
-            "caseNumberFull": case_number,
-        }
+        criteria: dict = {"caseNumberFull": case_number}
         if court_id:
-            params["courtId"] = court_id
+            criteria["courtId"] = [court_id]
 
-        return self._search("cases", params)
+        return self._search("cases", criteria)
 
     def search_by_party(
         self,
@@ -91,15 +89,13 @@ class PacerSearch:
         Returns:
             List of matching cases
         """
-        params: dict[str, str] = {
-            "lastName": party_name,
-        }
+        criteria: dict = {"lastName": party_name}
         if court_id:
-            params["courtId"] = court_id
+            criteria["courtId"] = [court_id]
         if case_type:
-            params["caseType"] = case_type
+            criteria["caseType"] = [case_type]
 
-        return self._search("parties", params)
+        return self._search("parties", criteria)
 
     def get_case(self, court_id: str, case_number: str) -> CaseResult | None:
         """Get a specific case by court and case number.
@@ -113,18 +109,24 @@ class PacerSearch:
                 return r
         return results[0] if results else None
 
-    def _search(self, endpoint: str, params: dict[str, str]) -> list[CaseResult]:
-        """Execute a PCL API search — paced and identified."""
+    def _search(self, endpoint: str, criteria: dict) -> list[CaseResult]:
+        """Execute a PCL API search — paced and identified.
+
+        The PCL public API is POST-based: search criteria go in a JSON body
+        to /{endpoint}/find (the GET form 404s — measured against QA PCL
+        2026-07-29, ledger L16).
+        """
         from ecfiler.browser.throttle import DEFAULT_THROTTLE
         from ecfiler.useragent import USER_AGENT
 
         try:
             with DEFAULT_THROTTLE.slot("pcl"):
-                response = self._client.get(
-                    f"{self.base_url}/{endpoint}",
-                    params=params,
+                response = self._client.post(
+                    f"{self.base_url}/{endpoint}/find",
+                    json=criteria,
                     headers={
                         "Accept": "application/json",
+                        "Content-Type": "application/json",
                         "X-NEXT-GEN-CSO": self.auth_token,
                         "User-Agent": USER_AGENT,
                     },

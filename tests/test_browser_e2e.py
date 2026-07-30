@@ -228,6 +228,57 @@ with BrowserSession(headless=True, slow_mo=0) as browser:
         assert result["result"]["has_text"]
 
 
+class TestEFilingEntitlementInARealBrowser:
+    """The session-7 failure, reproduced against a real DOM.
+
+    The unit tests drive a fake page. This drives Chromium over HTML that
+    reproduces the menu bar the QA account was actually served, so the probe
+    is pinned against real anchor-text extraction and not against a stub.
+    """
+
+    def test_read_only_menu_bar_stops_the_run(self, mock_server: str) -> None:
+        result = _run_browser_script(f"""
+from ecfiler.browser.session import BrowserSession
+from ecfiler.courts.base import CourtProfile, NotAnEFilerError
+from ecfiler.courts.district import DistrictCourt
+with BrowserSession(headless=True, slow_mo=0) as browser:
+    page = browser.page
+    page.goto("{mock_server}/cgi-bin/readonly.pl")
+    page.wait_for_load_state("networkidle")
+    court = DistrictCourt(CourtProfile(court_id="azttdc", name="Az Test",
+                                       court_type="district", ecf_url="{mock_server}"))
+    try:
+        court.check_filing_entitlement(page)
+        result = {{"raised": False, "message": ""}}
+    except NotAnEFilerError as e:
+        result = {{"raised": True, "message": str(e)}}
+        """)
+        assert result["ok"], result.get("error")
+        assert result["result"]["raised"], "read-only account was allowed to proceed"
+        message = result["result"]["message"]
+        assert "not registered to e-file in azttdc" in message
+        # It reports what the account was served, and does not mistake the
+        # "View Civil Docket" link on the page for a Civil filing menu.
+        assert "Query, Reports, Utilities, Help, Log Out" in message
+
+    def test_filer_menu_bar_passes(self, mock_server: str) -> None:
+        result = _run_browser_script(f"""
+from ecfiler.browser.session import BrowserSession
+from ecfiler.courts.base import CourtProfile
+from ecfiler.courts.district import DistrictCourt
+with BrowserSession(headless=True, slow_mo=0) as browser:
+    page = browser.page
+    page.goto("{mock_server}/cgi-bin/showpage.pl")
+    page.wait_for_load_state("networkidle")
+    court = DistrictCourt(CourtProfile(court_id="test", name="Test",
+                                       court_type="district", ecf_url="{mock_server}"))
+    court.check_filing_entitlement(page)
+    result = {{"passed": True}}
+        """)
+        assert result["ok"], result.get("error")
+        assert result["result"]["passed"]
+
+
 @pytest.fixture(scope="module")
 def api_server(tmp_path_factory):
     """The hosted staging API, as a real HTTP server in dev-auth mode."""
@@ -243,8 +294,24 @@ def api_server(tmp_path_factory):
         cwd=str(Path(__file__).parent.parent),
         env=env,
     )
-    time.sleep(2)
-    yield "http://127.0.0.1:18924", data_dir
+    # Poll for readiness instead of guessing at a sleep: a fixed wait that is
+    # a little too short reports as "connection refused" from the first test,
+    # which reads like a product bug and is not one.
+    import httpx
+
+    url = "http://127.0.0.1:18924"
+    for _ in range(100):
+        if proc.poll() is not None:
+            raise RuntimeError(f"staging API exited early (rc={proc.returncode})")
+        try:
+            httpx.get(f"{url}/api/health", timeout=1)
+            break
+        except httpx.RequestError:
+            time.sleep(0.2)
+    else:
+        proc.terminate()
+        raise RuntimeError("staging API did not become ready within 20s")
+    yield url, data_dir
     proc.terminate()
     proc.wait(timeout=5)
 
@@ -314,16 +381,72 @@ class TestStagedToNefRoundTrip:
         drafts = list((filer_dir / "drafts").glob("staged_*.json"))
         assert len(drafts) == 1, "stage-pull did not save a draft"
         draft = json.loads(drafts[0].read_text())
-        assert draft["filing"]["case_number"] == "1:24-cv-01234"
+
+        # The draft must load as the product loads it — through the Filing
+        # model, the same call Resume Draft makes. Asserting on raw dict keys
+        # is what let the hosted→local seam ship broken: the old assertion
+        # matched the shape the code happened to write, not the shape the
+        # CLI can read.
+        from ecfiler.filing.models import Filing
+
+        filing = Filing.model_validate(draft["filing"])
+        assert filing.case.case_number == "1:24-cv-01234"
+        assert filing.event.code == "12"
+        assert filing.filing_party is not None
+
+        # The court survives the seam intact, with its provenance pinned.
+        assert filing.court_id == "nysd"
+        assert filing.staged is not None
+        assert filing.staged.court_id == "nysd"
+        assert filing.staged.ecf_url == "https://ecf.nysd.uscourts.gov"
+
+        # And the submit-time invariant accepts this filing only for the
+        # court it was staged for.
+        from ecfiler.config import FilingEnvironment
+        from ecfiler.courts.registry import CourtRegistry
+        from ecfiler.filing.invariants import (
+            CourtSubstitutionError,
+            enforce_court_invariants,
+        )
+
+        court = CourtRegistry(environment="production").get(filing.court_id)
+        enforce_court_invariants(filing, court, FilingEnvironment())
+        with pytest.raises(CourtSubstitutionError):
+            enforce_court_invariants(
+                filing,
+                CourtRegistry(environment="production").get("azd"),
+                FilingEnvironment(),
+            )
+
+        case_number = filing.case.case_number
+        draft_path = drafts[0]
 
         # 3. File it against the mock court, capture the NEF, attest — the
         #    exact calls FilingWorkflow._step_submit_filing makes.
         result = _run_browser_script(f"""
 import os
 os.environ["ECFILER_DATA_DIR"] = r"{filer_dir}"
+import json as _json
+
 from ecfiler.browser.session import BrowserSession
-from ecfiler.courts.base import BaseCourt, CourtProfile
+from ecfiler.config import FilingEnvironment
+from ecfiler.courts.registry import CourtRegistry
+from ecfiler.filing.invariants import enforce_court_invariants
+from ecfiler.filing.models import Filing
 from ecfiler.storage.attestation import AttestationLog
+
+# Everything below is driven by the draft the CLI actually wrote — no
+# literals. If stage-pull writes something the workflow cannot read, this
+# script fails before the browser opens.
+filing = Filing.model_validate(_json.loads(open(r"{draft_path}").read())["filing"])
+case_number = filing.case.case_number
+
+# The submit-step sequence: resolve from the registry, enforce the court
+# invariants, then apply the (localhost) URL override.
+court = CourtRegistry(environment="production").get(filing.court_id)
+env = FilingEnvironment(ecf_url_override="{mock_server}")
+enforce_court_invariants(filing, court, env)
+court.profile.ecf_url = env.ecf_url_override
 
 with BrowserSession(headless=True, slow_mo=0) as browser:
     page = browser.page
@@ -331,7 +454,7 @@ with BrowserSession(headless=True, slow_mo=0) as browser:
     page.wait_for_load_state("networkidle")
     page.click("input[value='Next']")
     page.wait_for_load_state("networkidle")
-    page.fill("input[name='case_num']", "1:24-cv-01234")
+    page.fill("input[name='case_num']", case_number)
     page.click("input[value='Next']")
     page.wait_for_load_state("networkidle")
     page.click("input[value='Next']")
@@ -350,16 +473,20 @@ with BrowserSession(headless=True, slow_mo=0) as browser:
     page.click("input[value='Next']")
     page.wait_for_load_state("networkidle")
 
-    court = BaseCourt(CourtProfile(court_id="test", name="Test", court_type="district", ecf_url="{mock_server}"))
     receipt_info = court.get_receipt_info(page)
-    receipt_path = browser.save_receipt("1:24-cv-01234", receipt_info.get("docket_number") or "unknown")
+    receipt_path = browser.save_receipt(case_number, receipt_info.get("docket_number") or "unknown")
 
     log = AttestationLog()
     rec = log.record(
         kind="submitted",
         attestor_name="Jane Doe, Esq.",
         attestation_text="Typed CONFIRM at attorney review and YES at the CM/ECF final confirmation screen.",
-        payload={{"court_id": "test", "case_number": "1:24-cv-01234", "event_code": "12"}},
+        payload={{
+            "court_id": filing.court_id,
+            "staged_court_id": filing.staged.court_id,
+            "case_number": case_number,
+            "event_code": filing.event.code,
+        }},
         nef_text=receipt_info.get("page_text", ""),
         trace_path="trace_dryrun",
     )
@@ -374,6 +501,8 @@ with BrowserSession(headless=True, slow_mo=0) as browser:
         "problems": problems,
         "receipt_path": str(receipt_path),
         "record_hash": rec.record_hash,
+        "court_id": filing.court_id,
+        "case_number": case_number,
     }}
         """, timeout=60)
         assert result["ok"], result.get("error")
@@ -381,6 +510,9 @@ with BrowserSession(headless=True, slow_mo=0) as browser:
         assert r["docket_number"] == "58"
         assert r["nef_captured"], "NEF text was not captured into the attestation"
         assert r["chain_ok"], r["problems"]
+        # The court and case that were staged are the ones that got filed.
+        assert r["court_id"] == "nysd"
+        assert r["case_number"] == "1:24-cv-01234"
 
         # 4. The receipt the filer keeps carries the chain-head anchor, and
         #    the stored NEF text round-trips through the payload store.

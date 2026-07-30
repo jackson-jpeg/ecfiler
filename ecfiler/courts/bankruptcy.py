@@ -24,6 +24,8 @@ class BankruptcyCourt(BaseCourt):
     - Chapter selection
     """
 
+    filing_menus = ("bankruptcy", "adversary")
+
     def navigate_to_filing(self, page: Page) -> None:
         """Bankruptcy courts may use a different filing entry URL."""
         url = f"{self.profile.ecf_url}/cgi-bin/iquery.pl"
