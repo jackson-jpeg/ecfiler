@@ -787,6 +787,72 @@ def session_find_cases(qa: bool, username: str, court_id: str, party: str, case_
         console.print(f"  [bold]{r.court_id}[/bold] {r.case_number}  {r.display}")
 
 
+@session_group.command("filing-access")
+@click.option("--qa", is_flag=True, help="Use the PACER QA environment")
+@click.option("--username", default="", help="Keychain account (defaults to config)")
+@click.option("--court", "court_id", required=True, help="Court ID, e.g. azttdc")
+def session_filing_access(qa: bool, username: str, court_id: str) -> None:
+    """Report whether this account may FILE in a court, or only read it.
+
+    A PACER account grants access to read dockets; filing is a separate
+    privilege each court grants and must approve. This logs in, reads the
+    CM/ECF menu bar, and says which one you have — so a pending court
+    registration can be checked in seconds instead of by attempting a
+    filing (ledger L20).
+    """
+    from rich.console import Console
+
+    from ecfiler.browser.session import BrowserSession
+    from ecfiler.config import load_config
+    from ecfiler.courts.base import NotAnEFilerError
+    from ecfiler.courts.registry import CourtRegistry
+    from ecfiler.pacer_auth import PacerAuth, PacerAuthError
+
+    console = Console()
+    if not username:
+        try:
+            username = load_config().pacer.username
+        except Exception:
+            username = ""
+    if not username:
+        console.print("  [red]No username: pass --username.[/red]")
+        raise click.Abort()
+
+    registry = CourtRegistry(environment="qa" if qa else "production")
+    try:
+        court = registry.get(court_id)
+    except Exception as e:
+        console.print(f"  [red]{e}[/red]")
+        raise click.Abort()
+
+    try:
+        token = PacerAuth(username, use_qa=qa).get_token()
+    except PacerAuthError as e:
+        console.print(f"  [red]Auth failed:[/red] {e}")
+        raise click.Abort()
+
+    console.print(
+        f"  Checking filing access for [bold]{username}[/bold] at "
+        f"[bold]{court_id}[/bold] ({court.profile.ecf_url})..."
+    )
+    with BrowserSession(headless=True) as browser:
+        if not browser.login_with_token(token, court.profile.ecf_url):
+            browser.inject_pacer_token(token, court.profile.domain)
+        page = browser.page
+        page.goto(court.profile.query_url)
+        page.wait_for_load_state("networkidle")
+        menus = court.visible_menu_items(page)
+        try:
+            court.check_filing_entitlement(page)
+        except NotAnEFilerError as e:
+            console.print(f"\n  [red]✗ Read-only at {court_id}.[/red]")
+            console.print(f"  [dim]{e}[/dim]")
+            raise click.Abort()
+
+    console.print(f"  CM/ECF menu: {', '.join(menus) or '(none found)'}")
+    console.print(f"  [green]✓ This account may file in {court_id}.[/green]")
+
+
 @session_group.command("status")
 @click.option("--qa", is_flag=True, help="Use the PACER QA environment instead of production")
 @click.option("--probe/--no-probe", default=True, help="Actually test the session against PACER")

@@ -29,12 +29,20 @@ from ecfiler.filing.models import (
     FilingStatus,
     PartyInfo,
     RelatedEntry,
+    VerificationRecord,
+    VerificationStatus,
 )
+from ecfiler.courts.base import NotAnEFilerError
 
 if TYPE_CHECKING:
     from ecfiler.config import AppConfig
 
 console = Console()
+
+# Verification stages, and the exact words that waive one.
+AI_VALIDATION = "ai_validation"
+STAGE_LABELS = {AI_VALIDATION: "AI validation"}
+WAIVER_PHRASE = "FILE UNVERIFIED"
 
 
 class FilingWorkflow:
@@ -121,6 +129,19 @@ class FilingWorkflow:
 
         except KeyboardInterrupt:
             console.print("\n[yellow]Filing cancelled by user.[/yellow]")
+            self._offer_save_draft()
+            return None
+        except NotAnEFilerError as e:
+            # A permissions answer, not a technical one. Say so plainly
+            # instead of reporting a missing selector.
+            console.print()
+            console.print(
+                Panel(
+                    str(e),
+                    title="[bold red]NOT REGISTERED TO E-FILE[/bold red]",
+                    border_style="red",
+                )
+            )
             self._offer_save_draft()
             return None
         except Exception as e:
@@ -714,20 +735,139 @@ class FilingWorkflow:
                 attachment_names=[d.filename for d in self.filing.attachments],
             )
 
-            if not result.get("parse_error"):
-                for warning in result.get("warnings", []):
-                    console.print(f"  [yellow]⚠ AI: {warning}[/yellow]")
-                for error in result.get("errors", []):
-                    console.print(f"  [red]✗ AI: {error}[/red]")
-                for suggestion in result.get("suggestions", []):
-                    console.print(f"  [dim]💡 {suggestion}[/dim]")
+            if result.get("parse_error"):
+                # A response we could not read is not a passed check.
+                raise RuntimeError(
+                    "the validator's response could not be parsed"
+                )
 
-                if result.get("valid"):
-                    console.print(
-                        "  [green]✓ AI validation passed[/green]"
-                    )
+            for warning in result.get("warnings", []):
+                console.print(f"  [yellow]⚠ AI: {warning}[/yellow]")
+            for error in result.get("errors", []):
+                console.print(f"  [red]✗ AI: {error}[/red]")
+            for suggestion in result.get("suggestions", []):
+                console.print(f"  [dim]💡 {suggestion}[/dim]")
+
+            if result.get("valid"):
+                console.print("  [green]✓ AI validation passed[/green]")
+                self._record_verification(
+                    AI_VALIDATION, VerificationStatus.PASSED
+                )
+            else:
+                # The check ran and objected. The attorney-review gate is the
+                # right place to decide, but the objection has to reach the
+                # panel and the attestation, not just scroll past.
+                self._record_verification(
+                    AI_VALIDATION,
+                    VerificationStatus.ISSUES_FOUND,
+                    detail="; ".join(result.get("errors", [])) or "not valid",
+                )
         except Exception as e:
-            console.print(f"  [dim]AI validation unavailable ({type(e).__name__}) — proceeding[/dim]")
+            self._verification_did_not_run(AI_VALIDATION, e)
+
+    def _record_verification(
+        self,
+        stage: str,
+        status: VerificationStatus,
+        detail: str = "",
+        waived_by: str = "",
+    ) -> None:
+        """Record what a check did. One record per stage, last write wins."""
+        if not self.filing:
+            return
+
+        from datetime import datetime, timezone
+
+        self.filing.verification = [
+            v for v in self.filing.verification if v.stage != stage
+        ]
+        self.filing.verification.append(
+            VerificationRecord(
+                stage=stage,
+                status=status,
+                detail=detail[:500],
+                waived_by=waived_by,
+                waived_at=(
+                    datetime.now(timezone.utc).isoformat() if waived_by else ""
+                ),
+            )
+        )
+
+    def _waiver_sentence(self) -> str:
+        """The plain-English waiver clause for the attestation text.
+
+        Empty when everything ran, so an ordinary filing's attestation reads
+        exactly as it always has.
+        """
+        if not self.filing:
+            return ""
+        waived = [v for v in self.filing.unverified_stages if v.is_waived]
+        if not waived:
+            return ""
+        names = ", ".join(STAGE_LABELS.get(v.stage, v.stage) for v in waived)
+        who = waived[0].waived_by
+        return (
+            f" Filed WITHOUT verification: {names} did not run and {who} "
+            f"typed {WAIVER_PHRASE} to proceed."
+        )
+
+    def _verification_did_not_run(self, stage: str, exc: Exception) -> None:
+        """Stop, unless the attorney explicitly waives the missing check.
+
+        A verification stage that cannot run used to print one dim line and
+        proceed (ledger L20). ECFiler's claim is that a filing is checked
+        before it goes out; the one thing it must never do is imply a check
+        happened when it did not.
+        """
+        from ecfiler.config import ConfigError
+
+        label = STAGE_LABELS.get(stage, stage)
+        reason = str(exc).strip() or type(exc).__name__
+        if isinstance(exc, ConfigError):
+            fix = (
+                "This is a configuration state, not a court problem: set "
+                "ANTHROPIC_API_KEY in this shell and run the filing again."
+            )
+        else:
+            fix = (
+                "Run the filing again when the validation service is "
+                "reachable."
+            )
+
+        console.print()
+        console.print(
+            Panel(
+                f"[bold]{label} did not run.[/bold]\n\n"
+                f"{reason}\n\n"
+                f"This is not a passed check. ECFiler cannot tell you whether "
+                f"the document matches the event code or whether anything is "
+                f"missing from the package.\n\n{fix}",
+                title="[bold red]VERIFICATION UNAVAILABLE[/bold red]",
+                border_style="red",
+            )
+        )
+
+        answer = Prompt.ask(
+            "  Type [bold]FILE UNVERIFIED[/bold] to file without this check, "
+            "or press Enter to stop",
+            default="",
+        )
+        if answer.strip().upper() != WAIVER_PHRASE:
+            self._record_verification(
+                stage, VerificationStatus.UNAVAILABLE, detail=reason
+            )
+            raise KeyboardInterrupt(f"Stopped: {label} did not run")
+
+        self._record_verification(
+            stage,
+            VerificationStatus.UNAVAILABLE,
+            detail=reason,
+            waived_by=self.config.attorney.name or "unnamed",
+        )
+        console.print(
+            "  [bold yellow]⚠ This filing will go out UNVERIFIED — the waiver "
+            "is recorded in the attestation.[/bold yellow]"
+        )
 
     def _step_attorney_review(self) -> bool:
         """Step 8: Attorney review and confirmation (Safety Gate 5).
@@ -783,6 +923,24 @@ class FilingWorkflow:
             label = "Document" if doc.is_main else "Attachment"
             size = f"{doc.validation.file_size_mb:.1f}MB" if doc.validation else "?"
             table.add_row(label, f"{status} {doc.filename} ({size})")
+
+        # Verification — what was checked, and what was not. A waived stage
+        # has to be in front of the attorney at the moment they type CONFIRM;
+        # an attestation is only honest if they saw this.
+        for record in self.filing.verification:
+            if record.status == VerificationStatus.PASSED:
+                table.add_row(STAGE_LABELS.get(record.stage, record.stage), "[green]✓ passed[/green]")
+            elif record.status == VerificationStatus.ISSUES_FOUND:
+                table.add_row(
+                    f"[yellow]{STAGE_LABELS.get(record.stage, record.stage)}[/yellow]",
+                    f"[yellow]⚠ raised issues: {record.detail}[/yellow]",
+                )
+            elif record.is_waived:
+                table.add_row(
+                    f"[bold red]{STAGE_LABELS.get(record.stage, record.stage)}[/bold red]",
+                    f"[bold red]DID NOT RUN — waived by {record.waived_by}. "
+                    f"This filing is unverified.[/bold red]",
+                )
 
         # Case opening warning
         if self.filing.is_case_opening:
@@ -1071,6 +1229,7 @@ class FilingWorkflow:
                     attestation_text=(
                         "Typed CONFIRM at attorney review (Safety Gate 5) and YES "
                         "at the CM/ECF final confirmation screen (Safety Gate 6)."
+                        + self._waiver_sentence()
                     ),
                     payload={
                         "court_id": self.filing.court_id,
@@ -1086,6 +1245,12 @@ class FilingWorkflow:
                         ),
                         "documents": [d.file_path for d in self.filing.documents],
                         "sealing": [d.sealing.value for d in self.filing.documents],
+                        # What was checked before this went out, and what was
+                        # waived. Hashed into the chain with everything else.
+                        "verification": [
+                            v.model_dump(mode="json")
+                            for v in self.filing.verification
+                        ],
                     },
                     context_text=confirm_text,
                     nef_text=receipt_info.get("page_text", ""),

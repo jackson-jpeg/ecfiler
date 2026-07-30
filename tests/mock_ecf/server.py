@@ -86,6 +86,31 @@ def ecf_menu():
     """)
 
 
+@app.get("/cgi-bin/readonly.pl", response_class=HTMLResponse)
+def read_only_account():
+    """CM/ECF as served to an account with no e-filing privileges.
+
+    Copied from the menu bar in the session-7 QA screenshots: Query,
+    Reports, Utilities, Help, Log Out — and no Civil or Criminal. This is
+    what every user sees before their court approves their registration.
+    """
+    return HTMLResponse(f"""
+    {HEADER}
+    <table>
+        <tr>
+            <td><a href="/cgi-bin/iquery.pl">Query</a></td>
+            <td><a href="/cgi-bin/reports.pl">Reports</a></td>
+            <td><a href="/cgi-bin/utilities.pl">Utilities</a></td>
+            <td><a href="/cgi-bin/help.pl">Help</a></td>
+            <td><a href="/cgi-bin/logout.pl">Log Out</a></td>
+        </tr>
+    </table>
+    <h3>Query</h3>
+    <p><a href="/cgi-bin/iquery.pl">View Civil Docket</a></p>
+    {FOOTER}
+    """)
+
+
 @app.get("/cgi-bin/filing.pl", response_class=HTMLResponse)
 def filing_tips():
     """ECF Filing Tips page (step 2)."""

@@ -217,6 +217,39 @@ class ExhibitPackageModel(BaseModel):
     has_sealed_exhibits: bool = False
 
 
+class VerificationStatus(str, Enum):
+    """What a pre-filing check did.
+
+    UNAVAILABLE is the one that matters: a check that could not run is not a
+    check that passed, and collapsing the two is how an unverified filing
+    goes out under a product whose claim is that it verifies filings.
+    """
+
+    PASSED = "passed"
+    ISSUES_FOUND = "issues_found"
+    UNAVAILABLE = "unavailable"
+
+
+class VerificationRecord(BaseModel):
+    """One verification stage's outcome, carried into the attestation.
+
+    When a stage is UNAVAILABLE the filing may still proceed, but only on an
+    explicit waiver — and then `waived_by` names who waived it, so the
+    permanent record shows the filing went out unverified rather than
+    showing nothing at all.
+    """
+
+    stage: str
+    status: VerificationStatus
+    detail: str = ""
+    waived_by: str = ""
+    waived_at: str = ""
+
+    @property
+    def is_waived(self) -> bool:
+        return bool(self.waived_by)
+
+
 class StagedProvenance(BaseModel):
     """Where a staged filing came from — pinned at staging, enforced at submit.
 
@@ -256,6 +289,16 @@ class Filing(BaseModel):
     # assembled interactively. When set, the submit step refuses to file in
     # any court other than the one staged (ecfiler/filing/invariants.py).
     staged: StagedProvenance | None = None
+    # What each pre-filing check did, including the ones that could not run.
+    # Surfaced in the attorney-review panel and hashed into the attestation.
+    verification: list[VerificationRecord] = Field(default_factory=list)
+
+    @property
+    def unverified_stages(self) -> list[VerificationRecord]:
+        """Stages that did not run — waived or not."""
+        return [
+            v for v in self.verification if v.status == VerificationStatus.UNAVAILABLE
+        ]
 
     @property
     def main_document(self) -> Document | None:

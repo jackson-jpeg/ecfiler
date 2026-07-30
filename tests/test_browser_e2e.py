@@ -228,6 +228,57 @@ with BrowserSession(headless=True, slow_mo=0) as browser:
         assert result["result"]["has_text"]
 
 
+class TestEFilingEntitlementInARealBrowser:
+    """The session-7 failure, reproduced against a real DOM.
+
+    The unit tests drive a fake page. This drives Chromium over HTML that
+    reproduces the menu bar the QA account was actually served, so the probe
+    is pinned against real anchor-text extraction and not against a stub.
+    """
+
+    def test_read_only_menu_bar_stops_the_run(self, mock_server: str) -> None:
+        result = _run_browser_script(f"""
+from ecfiler.browser.session import BrowserSession
+from ecfiler.courts.base import CourtProfile, NotAnEFilerError
+from ecfiler.courts.district import DistrictCourt
+with BrowserSession(headless=True, slow_mo=0) as browser:
+    page = browser.page
+    page.goto("{mock_server}/cgi-bin/readonly.pl")
+    page.wait_for_load_state("networkidle")
+    court = DistrictCourt(CourtProfile(court_id="azttdc", name="Az Test",
+                                       court_type="district", ecf_url="{mock_server}"))
+    try:
+        court.check_filing_entitlement(page)
+        result = {{"raised": False, "message": ""}}
+    except NotAnEFilerError as e:
+        result = {{"raised": True, "message": str(e)}}
+        """)
+        assert result["ok"], result.get("error")
+        assert result["result"]["raised"], "read-only account was allowed to proceed"
+        message = result["result"]["message"]
+        assert "not registered to e-file in azttdc" in message
+        # It reports what the account was served, and does not mistake the
+        # "View Civil Docket" link on the page for a Civil filing menu.
+        assert "Query, Reports, Utilities, Help, Log Out" in message
+
+    def test_filer_menu_bar_passes(self, mock_server: str) -> None:
+        result = _run_browser_script(f"""
+from ecfiler.browser.session import BrowserSession
+from ecfiler.courts.base import CourtProfile
+from ecfiler.courts.district import DistrictCourt
+with BrowserSession(headless=True, slow_mo=0) as browser:
+    page = browser.page
+    page.goto("{mock_server}/cgi-bin/showpage.pl")
+    page.wait_for_load_state("networkidle")
+    court = DistrictCourt(CourtProfile(court_id="test", name="Test",
+                                       court_type="district", ecf_url="{mock_server}"))
+    court.check_filing_entitlement(page)
+    result = {{"passed": True}}
+        """)
+        assert result["ok"], result.get("error")
+        assert result["result"]["passed"]
+
+
 @pytest.fixture(scope="module")
 def api_server(tmp_path_factory):
     """The hosted staging API, as a real HTTP server in dev-auth mode."""

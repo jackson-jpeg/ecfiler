@@ -25,6 +25,10 @@ class AppellateCourt(BaseCourt):
     - Docket number format: XX-XXXX (not district-style)
     """
 
+    # Appellate CM/ECF is the TransportRoom applet, not the district menu
+    # bar — the Civil/Criminal entitlement probe does not apply.
+    filing_menus = ()
+
     def navigate_to_filing(self, page: Page) -> None:
         """Appellate CM/ECF uses a different URL pattern."""
         url = f"{self.profile.ecf_url}/n/beam/servlet/TransportRoom"
