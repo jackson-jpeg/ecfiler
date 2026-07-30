@@ -19,7 +19,7 @@ after them — re-running the filing, and taking the SSH rules back out.
 |---|---|---|---|
 | 1 | [DNS records, then one activation command](#1) | Sandbox (DNS write blocked) | 3 min |
 | 2 | [Remove the scoped SSH allow-rules after QA day](#2) | Your laptop, your call | 1 min |
-| 3 | [Re-run the attended QA filing](#3) | CONFIRM + YES are yours | 10 min |
+| 3 | [Request e-filing privileges for AZTTDC, then re-run the filing](#3) | Web form + a court's approval | 10 min, then days |
 | 4 | [Rotate the PACER password](#4) | Credential | 90 s |
 | 5 | [Put `ANTHROPIC_API_KEY` on the Mac](#5) | Credential + sandbox | 60 s |
 | 6 | [Subscribe to GovDelivery](#6) | CAPTCHA | 30 s |
@@ -75,24 +75,44 @@ command execution on your laptop. `make qa-day MODE=live` checks that *some*
 `Bash(ssh macbook` rule exists and refuses to start otherwise, so pulling
 them ends VPS-driven QA runs until they go back — which is the point.
 
-## 3. Re-run the attended QA filing {#3}
+## 3. Request e-filing privileges for AZTTDC, then re-run the filing {#3}
 
-**The account is done** — registered, activated, stored in
-`ecfiler.keychain-db`, authenticating against QA cso-auth, with a live
-browser session you seeded by hand. That row is closed. What is left is the
-run itself, which is attended because the CONFIRM and YES gates are yours.
+**Start the request today — the wait is the long pole.** The 2026-07-30 run
+(ledger L20) got further than anything has: PDF validated, redaction scan
+clean, review gate rendered with the right court and case, court invariant
+passed, PACER authenticated, case number entered and accepted. It stopped at
+the court's own permission wall. The QA account can *read* the Az Test
+District Court and cannot file in it — CM/ECF served Query, Reports,
+Utilities, Help, Log Out and no Civil or Criminal menu. Filing is a separate
+privilege each court grants and must approve, on a multi-day turnaround
+(R-015).
 
-The first attempt (2026-07-29, ledger L16) passed all twelve preflight gates
-and then stopped at two real bugs — a staged package the CLI could not parse
-(R-013) and a draft naming the wrong court (R-012). Both are fixed, pinned by
-tests, and the runbook that produced the second one is rewritten. Nothing
-was filed; the chain on the filing machine is still empty.
+Numbered steps are in `docs/nef-roundtrip-runbook.md` → "Requesting e-filing
+privileges". It starts here, and steps 2–5 are a web form, which is why this
+is your row:
 
-The re-run command is at the top of `docs/nef-roundtrip-runbook.md` and in
-the session report. When it finishes, the proof list is: NEF text and docket
-number in the receipt, a `kind="submitted"` attestation carrying that NEF
-text, both chains verifying, and the chain head anchored in the saved
+```
+[MAC] open https://qa-pacer.psc.uscourts.gov/pscof/manage/maint.jsf
+```
+
+Check for approval without attempting a filing:
+
+```
+[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session filing-access --qa --court azttdc
+```
+
+Once it answers `✓ This account may file in azttdc`, the re-run command is
+at the top of the runbook. The proof list when it finishes: NEF text and
+docket number in the receipt, a `kind="submitted"` attestation carrying that
+NEF text, both chains verifying, and the chain head anchored in the saved
 receipt.
+
+Expect the approved run to find more. Everything past the case lookup has
+only ever run against the mock, and the route from the Civil menu to an
+event list is deliberately unbuilt until someone can see that screen
+(R-014). The earlier bugs from 2026-07-29 (R-012 wrong court, R-013 unusable
+staged package) are fixed and pinned. Nothing has been filed; the chain on
+the filing machine is still empty.
 
 **Rotate the QA credential when you're done with it** (your own plan — it
 was shared in chat, so treat it as exposed):
@@ -223,5 +243,7 @@ Full detail in the PR. **Suite: 605 passed, 0 failed** (was 546).
   **self-documenting reboot** — rows 1, 2, 3, 11 above got shorter.
 
 **Still not done, plainly: no filing has round-tripped to an NEF on a real
-court system.** Item 3 (QA account) remains the only thing between the dry
-run and the real one.
+court system.** Item 3 is what stands between the dry run and the real one —
+and as of 2026-07-30 it is no longer a code problem. Two attended runs have
+now reached a real court; the second one ran out of road at a permission a
+court has to grant (R-015).

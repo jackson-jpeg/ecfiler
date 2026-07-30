@@ -252,6 +252,87 @@ not been attempted since the fix.
 
 ---
 
+### L20 — 2026-07-30 — the re-run reached the court's own permission wall; the closest anything has come, and still no filing
+The second attended attempt, with the session-6 fixes in place:
+`[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=56DB64etAjX
+TARGET=https://ecf.tc1d.aztc.uscourts.gov SERVER=http://100.126.58.33:8901
+DEVUSER=qa-day`.
+
+**How far it got.** Every ECFiler-owned stage did its job: PDF validated,
+redaction scan clean, attorney review rendered with the right court and
+case, the court invariant from L17 passed (`Target confirmed`), PACER
+authenticated against the QA realm, the browser reached
+`https://ecf.tc1d.aztc.uscourts.gov/cgi-bin/iquery.pl`, and the case number
+`0:07-cv-00170` was entered and accepted with no CM/ECF error. Artifacts:
+`docs/qa-roundtrip/run-20260730-01-filing-page.png`,
+`run-20260730-02-case-entered.png`. The Playwright trace
+(`trace_0-07-cv-00170_20260730_114335.zip`, on the Mac) records the whole
+walk. It is deliberately **not** committed: a trace carries network data
+including session cookies, and the screenshots carry the evidence without
+them.
+
+**Where it stopped.** `Selecting event type…` → `#event_list` not found,
+three attempts, then abort. `~/.ecfiler/receipts/` is empty; nothing was
+filed, and no docket entry exists.
+
+**Why.** Not a selector bug. Both screenshots show the CM/ECF menu bar this
+account is served: **Query · Reports · Utilities · Help · Log Out** — and no
+Civil or Criminal menu. A PACER account grants access to *read* dockets;
+filing requires e-filing privileges the individual court grants separately
+and must approve. With no filing menu there is no filing form, so the event
+list genuinely is not on the page. The three retries were the product
+mistaking a permissions answer for a transient one.
+
+**A second defect, found in the trace and independent of the first.**
+`DistrictCourt.navigate_to_filing` went to `/cgi-bin/iquery.pl` — the docket
+*query* CGI. No event list exists on that page under any account, so an
+approved e-filer would have failed at the same line for a different reason.
+The same URL was being handed to filers as `ecf_filing_url` in every staged
+package. `filing_url` now returns the court's menu page and the query CGI is
+named `query_url` (`tests/test_efiling_entitlement.py`). The real route from
+the Civil menu to an event list stays unbuilt rather than guessed at, and is
+logged as R-014: it cannot be written or tested until an account with filing
+privileges exists.
+
+**Also observed, and treated as a defect:** `AI validation unavailable
+(ConfigError) — proceeding`. The verification stage this product is named
+for did not run, and the run continued on one dim line of console output.
+Fixed in L21.
+
+STAGED — the NEF round trip remains unproven, and is now blocked on a court
+approval rather than on code.
+
+---
+
+### L21 — 2026-07-30 — the two failures the run exposed, fixed and pinned
+1. **A permissions failure now says so.** `check_filing_entitlement` reads
+   the CM/ECF menu bar before the event list is looked for and raises
+   `NotAnEFilerError` naming the court, quoting the menu items the account
+   was actually served, stating that nothing was filed and that the staged
+   package is unchanged, and pointing at the privilege request. Matching is
+   on exact anchor text, so a "View Civil Docket" link is not mistaken for a
+   Civil menu. `retry_on_error` does not retry it. `[VPS] .venv/bin/python
+   -m pytest tests/test_efiling_entitlement.py -q` → **23 passed**, and the
+   failure is reproduced against a real Chromium DOM in
+   `tests/test_browser_e2e.py::TestEFilingEntitlementInARealBrowser` (2
+   passed) using a mock route that serves the exact menu bar from the
+   screenshots above.
+2. **A verification stage that cannot run no longer fails open.** An
+   unavailable check (missing key, unreachable service, unparseable
+   response) stops the run unless the attorney types `FILE UNVERIFIED`; the
+   waiver names who gave it and why the check could not run, appears in the
+   attorney-review panel above the CONFIRM gate, and is hashed into the
+   submission attestation — payload `verification[]` plus a plain-English
+   clause in the attestation text. A validator that *ran and objected* is
+   recorded distinctly (`issues_found`) and still routed to the attorney
+   review gate rather than blocking. `[VPS] .venv/bin/python -m pytest
+   tests/test_verification_gate.py -q` → **17 passed**.
+
+Full suite `[VPS] .venv/bin/python -m pytest tests/ -q` → **681 passed, 8
+skipped** (was 641 before this session's 40 new tests). VERIFIED.
+
+---
+
 ## Retro-audit — sessions 2–4 verification claims
 
 Each claim that used verification language in a report or doc, judged

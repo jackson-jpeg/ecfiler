@@ -6,7 +6,13 @@ L19) on the real machines. The filing itself has not happened — the
 first attempt stopped at two bugs in the hosted→local seam (L16, L17), both
 since fixed. What follows is the re-run.*
 
-## The re-run, one command
+## The re-run, one command — blocked on e-filing privileges
+
+**Read the next section first.** As of 2026-07-30 this command cannot
+succeed: the QA account may read the target court but not file in it, and
+the run now stops and says so within seconds (ledger L20). Once
+`session filing-access --qa --court azttdc` reports filing access, this is
+the command.
 
 The package is staged and its pull is pre-verified (ledger L19) on the filing
 machine. At the workflow menu choose **[2] Resume Draft**; the document is
@@ -22,6 +28,57 @@ machine. At the workflow menu choose **[2] Resume Draft**; the document is
 human by design. If the staging API is not answering (it does not survive a
 VPS reboot), restart it with the command in "Hosted staging" below and
 re-stage — stage codes are per-package, not permanent.
+
+## Requesting e-filing privileges (blocking — start this first)
+
+**The 2026-07-30 run stopped here (ledger L20).** The QA account can read the
+Az Test District Court but not file in it: CM/ECF served Query, Reports,
+Utilities, Help, Log Out and no Civil or Criminal menu. A PACER account
+grants access to *read* dockets. Filing is a separate privilege that each
+court grants and must approve, and the QA site says so in its own words:
+after registering for a PACER account you "apply for attorney admissions or
+electronic filing registration available for the selected court"
+(`qa-pacer.uscourts.gov/register-account/attorney-filers-cmecf`).
+
+Court approval takes days, not minutes. Nothing else on this page can happen
+until it clears. Steps 2–5 are a web form and are Jackson's alone:
+
+```
+[MAC] open https://qa-pacer.psc.uscourts.gov/pscof/manage/maint.jsf
+```
+
+1. That is the QA realm's Manage My Account → **Maintenance** tab. It
+   redirects to `qa-login.uscourts.gov` first (302 when checked from both
+   machines, 2026-07-30). Log in with the QA credential — the same one in
+   `ecfiler.keychain-db`. Do not paste it anywhere else.
+2. Choose **Attorney Admissions / E-File Registration** (NextGen wording; on
+   some builds it reads "E-File Registration").
+3. Court type **District Court**, court **Az Test District Court** — the
+   roster code is AZTTDC and its CM/ECF is
+   `https://ecf.tc1d.aztc.uscourts.gov`. If the court does not appear in the
+   dropdown, it does not accept registrations through this route: use
+   **Contact Us** on `qa-pacer.uscourts.gov` and ask the PACER Service Center
+   for filer credentials in the Az Test District Court training database,
+   naming the QA username.
+4. Complete the filer sections and submit. Expect an acknowledgement, then a
+   wait for the court.
+5. Note the date submitted in `HUMAN-QUEUE.md` so the wait is visible.
+
+Then check for approval without attempting a filing — this logs in, reads
+the CM/ECF menu bar, and answers in one line:
+
+```
+[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session filing-access --qa --court azttdc
+```
+
+`✗ Read-only at azttdc` means the court has not approved yet. `✓ This
+account may file in azttdc` means the re-run below can proceed.
+
+Two things stay true even after approval. The filing path beyond the case
+lookup has never run against a real court — the mock is the only thing that
+has exercised it (L09) — and the route from the Civil menu to an event list
+is not built (R-014), because it cannot be written against a screen no
+account here can reach. Expect the first approved run to find more.
 
 ## What is already proven (the dry run — ledger L09)
 
