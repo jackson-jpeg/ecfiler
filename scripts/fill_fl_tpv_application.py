@@ -3,7 +3,10 @@
 
 Source form has zero widgets; every insertion is positioned from measured
 label/rule geometry (see git history / packet checklist for the fact sheet).
-Company name, signatures, dates, and titles are deliberately left blank.
+The applicant is Bertlegs LLC d/b/a ECFiler (decided 2026-11-13: a single-member
+Florida LLC effective 01/01/2027, ECFiler a registered fictitious name of it;
+docs/fl/entity-recommendation.md). Signatures, dates, and titles are
+deliberately left blank.
 
 Source: the form the Certified Vendors page links today, the ADA re-upload of
 2026-05-06 (uploads/2026/05/..._ADA.pdf). Its text and geometry match the
@@ -44,7 +47,8 @@ p = doc[0]
 put(p, 395, 191.0, EMAIL)           # Contact Email
 put(p, 124.5, 210.2, "Jackson Sanger")                  # Contact Name
 put(p, 395, 210.2, "[phone]", color=GRAY)               # Contact Phone
-# Applicant Name value cell intentionally blank (entity not yet formed).
+APPLICANT = "Bertlegs LLC d/b/a ECFiler"
+put(p, 124.5, 191.0, APPLICANT)                         # Applicant Name
 
 # ---------------- Page 3: callback table + Filing Paths grid ---------------
 p = doc[2]
@@ -78,13 +82,14 @@ put(p, 130.5, 161.8, EMAIL)
 # II. Status of Company — margin note (form offers only Corporation /
 # Partnership / Joint Venture; do not force the LLC into those boxes).
 put(p, 200, 190.2,
-    "Applicant will be a single-member Florida limited liability company;",
+    f"Applicant: {APPLICANT}, a single-member Florida limited liability",
     size=8)
-x = put(p, 200, 200.2, "state and date of organization: Florida, ", size=8)
-put(p, x, 200.2, "[date of formation]", size=8, color=GRAY)
+put(p, 200, 200.2,
+    "company, organized effective 01/01/2027. State of organization: Florida.",
+    size=8)
 
 # III. Corporate History
-put(p, 352.5, 451.5, "[to complete at formation]", size=9, color=GRAY)  # A.
+put(p, 352.5, 451.5, "[to complete at mailing]", size=9, color=GRAY)  # A.
 put(p, 322.5, 465.1, "None.")                                            # B.
 # C. wraps to the full right margin ("...past five (5) years." ends x=570.9);
 # answer goes in the left margin beside the item letter, same baseline.
@@ -93,7 +98,8 @@ put(p, 538.5, 493.1, "No.")                                              # D.
 put(p, 194.0, 520.6, "No.")                                              # E.
 put(p, 440.5, 534.7, "See attached reference sheet.", size=8.5)          # F.
 
-# Declaration block (Company Name / date / Signature / Title): left blank.
+# Declaration block (Company Name / date / Signature / Title): left blank;
+# Jackson writes the company name there in ink when he signs.
 
 doc.save(OUT)
 print("wrote", OUT)

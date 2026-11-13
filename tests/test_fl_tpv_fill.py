@@ -33,18 +33,19 @@ EMAIL = "jackson@sang3r.com"
 
 # Every word the overlay adds, page by page, in reading order.
 EXPECTED_ADDED = {
-    1: f"{EMAIL} Jackson Sanger [phone]",
+    1: f"Bertlegs LLC d/b/a ECFiler {EMAIL} Jackson Sanger [phone]",
     3: "N/A N/A N/A N/A Not applicable: Applicant will use the "
     "FilingReviewCompleteResult polling service for status retrieval "
     "(see cover letter). X X",
     5: f"Jackson Sanger [street address] Tampa, FL [phone] {EMAIL} "
-    "Applicant will be a single-member Florida limited liability company; "
-    "state and date of organization: Florida, [date of formation] "
-    "[to complete at formation] None. None. No. No. See attached reference sheet.",
+    "Applicant: Bertlegs LLC d/b/a ECFiler, a single-member Florida limited liability "
+    "company, organized effective 01/01/2027. State of organization: Florida. "
+    "[to complete at mailing] None. None. No. No. See attached reference sheet.",
 }
 
 # Text that must sit inside a given cell (page, x0, y0, x1, y1), measured on the form.
 PLACEMENTS = [
+    (1, (120, 180, 304, 195), "Bertlegs LLC d/b/a ECFiler"),  # Applicant Name value cell
     (1, (391, 180, 570, 195), EMAIL),  # Contact Email value cell
     (1, (120, 199, 304, 214), "Jackson Sanger"),  # Contact Name value cell
     (1, (391, 199, 570, 214), "[phone]"),  # Contact Phone value cell
@@ -89,8 +90,6 @@ def test_overlay_reads_back_exactly(which: str, generated: Path) -> None:
         inside = " ".join(w[4] for w in sorted(added[page], key=lambda w: w[0]) if fitz.Rect(w[:4]) in fitz.Rect(rect))
         assert inside == text, f"p{page} {rect}: {inside!r}"
 
-    # Applicant Name cell (p1) stays blank: the entity is not formed yet.
-    assert not [w for w in added[1] if fitz.Rect(w[:4]).intersects(fitz.Rect(120, 180, 304, 195))]
 
     # The two scope marks: "Pleading on Existing Case" column, CA and CC rows only.
     xs = [w for w in added[3] if w[4] == "X"]

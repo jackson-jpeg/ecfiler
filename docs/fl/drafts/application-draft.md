@@ -20,7 +20,7 @@
 
 | Form field | Draft answer |
 |---|---|
-| Applicant Name | `[ENTITY NAME — see note A]` |
+| Applicant Name | Bertlegs LLC d/b/a ECFiler (see note A) |
 | Contact Name | Jackson Sanger |
 | Contact Email | `[BUSINESS EMAIL — see note B]` |
 | Contact Phone # | `[PHONE NUMBER]` |
@@ -30,9 +30,10 @@
 > individual. However, page 5's Status of Company section, the license agreement's
 > hold-harmless/liability structure (`docs/fl/batch-license-agreement.md` §2, §7), and the
 > penalty-of-perjury corporate disclosure all read much more cleanly against an entity.
-> **Recommendation: form a Florida LLC (e.g., "ECFiler LLC") before mailing the
-> application**, so the entity — not Jackson personally — carries the license obligations
-> and the hold-harmless. If the LLC is newly formed, answer the "years in business"
+> **Decided 2026-11-13: the applicant is Bertlegs LLC d/b/a ECFiler**, Jackson's
+> single-member Florida LLC (effective 01/01/2027) with ECFiler registered as its
+> fictitious name (`docs/fl/entity-recommendation.md`), so the entity, not Jackson
+> personally, carries the license obligations and the hold-harmless. Because the LLC is newly formed, answer the "years in business"
 > question honestly (see Corporate History A below) — new entities appear on the certified
 > list (the program does not require longevity; no such requirement appears in
 > `docs/fl/vendor-application.md`).
@@ -136,11 +137,11 @@ as written. Consequences to understand before signing:
 
 | Field | Draft answer |
 |---|---|
-| [NAME OF COMPANY] | `[ENTITY NAME — same as page 1]` |
+| [NAME OF COMPANY] | Bertlegs LLC d/b/a ECFiler |
 | Signature of Applicant | `[Jackson signs]` |
 | Date of Application | `[date mailed]` |
 | Printed Name of Applicant | Jackson Sanger |
-| Title | `[e.g., "Managing Member" if FL LLC; "Owner" if sole proprietor — must match the entity form chosen in note A]` |
+| Title | `[Jackson's title in Bertlegs LLC's Articles, e.g. "Authorized Member" or "Manager"]` |
 
 ---
 
@@ -156,21 +157,19 @@ as written. Consequences to understand before signing:
 
 | Field | Draft answer |
 |---|---|
-| Name | `[ENTITY NAME]` |
+| Name | Bertlegs LLC d/b/a ECFiler (the filled PDF types Jackson Sanger as the contact here) |
 | Address | `[BUSINESS ADDRESS — Jackson's Tampa business address; a physical street address is preferable to a P.O. box for a verification-oriented form]` |
 | Phone | `[PHONE]` |
 | E-mail | `[BUSINESS EMAIL]` |
 
 ### II. Status of Company
 
-Complete **one** subsection matching the entity form chosen in note A:
+The form offers Corporation / Partnership / Joint Venture and predates LLCs. The filled
+PDF answers with a margin note beside the heading: "Applicant: Bertlegs LLC d/b/a
+ECFiler, a single-member Florida limited liability company, organized effective
+01/01/2027. State of organization: Florida." The subsections stay blank.
 
-- **If a Corporation:** state and date of incorporation; President's, Vice President's,
-  Secretary's, Treasurer's names. `[Only if Jackson incorporates rather than forming an
-  LLC. Note: the form predates LLC ubiquity and offers Corporation / Partnership / Joint
-  Venture. An LLC most naturally completes the Corporation subsection with
-  "Limited Liability Company, State of Florida, organized [DATE]; Managing Member: Jackson
-  Sanger" — or ask the Portal team how they want an LLC recorded. Do not leave blank.]`
+- **If a Corporation:** `[N/A: an LLC; see the margin note]`
 - **If a Partnership:** state/date of organization; type; partners. `[N/A expected]`
 - **If a Joint Venture:** state/date; partners' names/addresses/form. `[N/A expected]`
 
@@ -178,8 +177,8 @@ Complete **one** subsection matching the entity form chosen in note A:
 
 | Item | Draft answer |
 |---|---|
-| A. Number of years in business under present name? | `[If newly formed LLC: "Less than one year; newly organized [MONTH YEAR] to hold the ECFiler product. The ECFiler product and its principal's court-filing practice predate the entity." Answer literally; do not inflate.]` |
-| B. List all Subsidiary or Affiliated Companies. | `[Presumably "None." Confirm — list any other Jackson entities that would count as affiliates under common ownership.]` |
+| A. Number of years in business under present name? | `["Less than one year. Bertlegs LLC was organized effective January 1, 2027, and registered ECFiler as its fictitious name on [DATE]." Answer literally; do not inflate.]` |
+| B. List all Subsidiary or Affiliated Companies. | `[Presumably "None." Jackson's other projects are product lines of Bertlegs LLC itself, not separate companies. If any of them has its own entity by the mailing date, list it here.]` |
 | C. List any regulatory fine, proceeding, or litigation filed against the Firm in the past five (5) years. | `[Presumably "None." Confirm with Jackson — covers the entity AND, prudently read, its principal's business conduct. If the LLC is new, note the entity has existed only since [DATE] and answer for that period truthfully.]` |
 | D. Any principals of the Firm ever been convicted of a first-degree misdemeanor or felony? | `[Presumably "No." Jackson must confirm personally — this is a lifetime question ("ever"), penalty of perjury.]` |
 | E. Currently under investigation by any public or private, state or federal law enforcement or regulatory body? | `[Presumably "No." Jackson must confirm as of the mailing date.]` |
@@ -194,8 +193,8 @@ Complete **one** subsection matching the entity form chosen in note A:
    firm's **accountant/CPA**; (c) a **commercial landlord, established client, or
    long-standing commercial counterparty** who can speak to payment history. Warn each
    reference that the Florida Courts E-Filing Authority may contact them.
-2. **Entity formation papers** (if forming the LLC): Florida Division of Corporations
-   filing, EIN, business bank account opened — the bank reference needs an account to
+2. **Entity papers**: Bertlegs LLC active on Sunbiz, the ECFiler fictitious name
+   registered (newspaper notice, then $50), EIN, business bank account opened — the bank reference needs an account to
    reference.
 3. Jackson's personal confirmations on items C, D, E above.
 
@@ -205,7 +204,7 @@ Declaration text is accepted as written (verbatim in `docs/fl/vendor-application
 
 | Field | Draft answer |
 |---|---|
-| Company Name | `[ENTITY NAME]` |
+| Company Name | Bertlegs LLC d/b/a ECFiler |
 | Dated this __ day of ____, 20__ | `[date signed]` |
 | Signature | `[Jackson signs]` |
 | Title | `[same title as page 4]` |
@@ -218,7 +217,7 @@ Declaration text is accepted as written (verbatim in `docs/fl/vendor-application
 - [ ] $500.00 check `[payable per the form's instruction — confirm payee wording on the
       actual PDF before writing the check; "Florida Courts E-Filing Authority" expected]`
 - [ ] Three financial references confirmed and warned
-- [ ] Entity formed, EIN + bank account in place (if going the LLC route)
+- [ ] Bertlegs LLC active, ECFiler fictitious name registered, EIN + bank account in place
 - [ ] Copy of the full package retained
 - [ ] Mail (tracked) to: Florida Courts E-Filing Authority, P.O. Box 16428,
       Tallahassee, FL 32317

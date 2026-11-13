@@ -2,6 +2,18 @@
 
 *Decided and deployed 2026-07-28 (session 3). Recurring cost: $0/month.*
 
+> **Status 2026-11-13 (session 7): the API half below is retired.** The VPS API
+> was retired with the rest of ECFiler's VPS units on 2026-09-24
+> (`/root/retired/RESTORE.md`). `www.ecfiler.com` runs with no backend: the free
+> tools and `/validate` work in the browser, the waitlist goes through a Vercel
+> route handler and Resend (ledger L25, L26, L28), and the signed-in workspace
+> says it is closed. **Restore trigger (Jackson, 2026-11-13): when the first NEF
+> lands**, not before. A restored API would give the people who signed up nothing,
+> since filing only runs from the CLI on the Mac. To restore: this doc's steps,
+> plus an `api` A record in the Hostinger DNS zone and `BACKEND_URL` in Vercel
+> (the site switches back on its own). The one VPS unit that is back is the EPA
+> monitor, an approved exception (`deploy/systemd/README-epa-monitor.md`).
+
 ## The decision
 
 | Component | Where | Cost | Why |

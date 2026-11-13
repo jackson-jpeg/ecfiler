@@ -1,0 +1,10 @@
+[Unit]
+Description=ECFiler EPA user-group window check, daily in the afternoon UTC
+
+[Timer]
+OnCalendar=*-*-* 15:10:00 UTC
+RandomizedDelaySec=20min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

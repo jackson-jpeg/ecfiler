@@ -1,86 +1,91 @@
-# Entity Recommendation — Florida Third Party Vendor Application
+# Entity: Bertlegs LLC d/b/a ECFiler (Florida Third Party Vendor application)
 
-- **Date:** 2026-07-28
-- **Question:** what entity, if any, should Jackson form before mailing the Florida
-  Courts E-Filing Authority Third Party Vendor application ($500,
-  `docs/fl/vendor-application.md`)?
-- **Options considered:** single-member Florida LLC · home-state LLC (same thing if
-  Jackson is Tampa-based, as the repo consistently states) · Delaware LLC foreign-
-  qualified in Florida · wait / apply as an individual.
-- **Recommendation: form a single-member Florida LLC — "ECFiler LLC" — now, before
-  mailing the application.**
-
----
-
-## The recommendation, defended
-
-Form **ECFiler LLC**, a single-member Florida LLC, and make it the applicant. The
-Authority does not require it — the application form says eligibility runs to
-"individuals or entities (including law firms, etc.)" and its page-5 "Status of
-Company" section asks only for *a* state and date of incorporation/organization, not a
-Florida one (`docs/fl/vendor-application.md`) — but everything about the paperwork reads
-better against an entity than against a person. The applicant signs a broad hold-harmless
-of the Authority and its contractors, accepts responsibility "under applicable law for
-any loss, damage, or injury" arising from use of the Portal, and enters a license whose
-terms include revocation after three non-compliance issues in 180 days
-(`docs/fl/batch-license-agreement.md` §5). A filing-transport tool that moves other
-people's court documents is exactly the kind of product where a $125 liability wrapper is
-cheap insurance: if a submission failure ever strands a filer's deadline, the claim should
-land on the LLC, not on Jackson's personal assets. The entity also directly serves the
-application's hardest gathering requirement — the three financial-stability references —
-because it gives Jackson a business bank account, an EIN, and vendor relationships *in the
-Firm's name* for the Authority to verify (the declaration explicitly authorizes contacting
-"any surety company, bank depository … to verify the statements made in this form").
-
-Florida, not Delaware, and now, not later. Jackson operates from Tampa (every document in
-this repo places him and the business there), so a Florida LLC *is* the home-state LLC:
-one filing (~$125), one annual report ($138.75), no registered-agent bill if he serves as
-his own agent at a Florida street address, and no second state to maintain. A Delaware LLC
-would add Delaware's formation fee, a ~$300/year franchise tax, a paid registered agent,
-*and* still require Florida foreign qualification (~$125) plus the same Florida annual
-report — double the cost and paperwork for benefits (investor familiarity, Chancery
-courts) that a solo, unfunded filing tool does not need and can get later by conversion if
-a financing ever demands it. Waiting and applying as an individual saves the $125 but
-costs more than it saves: Jackson would personally carry the hold-harmless and the
-penalty-of-perjury corporate disclosure, the "Status of Company" section would be answered
-awkwardly ("individual"), and the bank/processor references would attest to a person, not
-a Firm. Against a $500 non-refundable fee and a ~19-engineer-week build
-(`docs/fl-certification-gap-analysis.md`), the LLC is the smallest line item in the
-project — there is no scenario where skipping it is the right trade.
+- **Decided 2026-11-13 (Jackson, via the lead).** Jackson is forming **Bertlegs LLC**, a
+  single-member Florida LLC **effective 01/01/2027**, as the umbrella for all his
+  projects. ECFiler operates as a **registered fictitious name of Bertlegs LLC**, so the
+  applicant on every Florida document is **"Bertlegs LLC d/b/a ECFiler"**. ECFiler gets
+  its own LLC once law firms use it.
+- **Superseded:** the 2026-07-28 recommendation to form "ECFiler LLC" now. Its reasoning
+  for an entity over applying as an individual still holds and is kept below; only the
+  vehicle changed.
+- **Not this repo's job:** forming Bertlegs LLC, and bertlegs.com (a separate session).
+  ECFiler's part starts once Bertlegs LLC is active on Sunbiz.
 
 ---
 
-## Name: three candidates
+## What the decision means for the application
 
-All three must be checked for availability on Sunbiz
-(<https://search.sunbiz.org/Inquiry/CorporationSearch/ByName>) before filing — Florida
-requires the name to be distinguishable from existing registered entities. In preference
-order:
+| Item | Answer |
+|---|---|
+| Applicant Name (p. 1) | Bertlegs LLC d/b/a ECFiler (filled) |
+| Status of Company (p. 5 §II) | margin note: single-member Florida LLC, organized effective 01/01/2027 (filled) |
+| Years in business (p. 5 §III.A) | "Less than one year", with the organization and fictitious-name dates (gray blank, completed at mailing) |
+| [NAME OF COMPANY] / Company Name (signature blocks, pp. 4 and 5) | Bertlegs LLC d/b/a ECFiler, written by Jackson when he signs |
+| Title | his title in Bertlegs LLC's Articles (e.g. "Authorized Member" or "Manager"); written when he signs |
+| References, bank account, $500 check | in Bertlegs LLC's name (a d/b/a account lets the bank take payments made out to ECFiler) |
 
-1. **ECFiler LLC** — primary recommendation. Matches the product, the GitHub org, the
-   domains, and every public surface; the application's signature block asks for
-   "[NAME OF COMPANY]" and the certified-vendor list is published publicly, so the
-   entity name *is* the brand on that list.
-2. **ECFiler Software LLC** — fallback if "ECFiler LLC" is taken or too close to an
-   existing registration; "Software" also does useful UPL work (see below).
-3. **ECFiler Technologies LLC** — second fallback, same reasoning.
+**Order of operations.** The application cannot be mailed before 2027-01-01. Florida
+requires an LLC to be registered and **active** with the Division before it can
+register a fictitious name (s. 865.09(3)(a)4., Fla. Stat.), so:
 
-**UPL optics.** "ECFiler" reads as what it is — software for electronic court filing —
-and that is the right side of the line. Florida polices names that imply legal services
-by non-lawyers, so under no circumstances should the name contain "legal," "law,"
-"paralegal," or "attorney" (a name like "ECFiler Legal Services LLC" would invite exactly
-the scrutiny the batch-filing program's own license disclaims — the agreement recites
-that timely filing "requires the professional judgment of an attorney,"
-`docs/fl/batch-license-agreement.md` §7.c). The certified-vendor list norm is
-pure-transport vendors (process servers, filing services), and "ECFiler LLC" sits
-comfortably among them. If Sunbiz forces a fallback, "Software"/"Technologies" suffixes
-strengthen, not weaken, that posture.
+1. Bertlegs LLC becomes effective, 01/01/2027 (Jackson, outside this repo).
+2. Advertise "ECFiler" once in a newspaper in the county of the principal place of
+   business (Hillsborough, if that is Tampa), then register the fictitious name on Sunbiz,
+   **$50** (s. 865.09(3)(a)5. and (12)(a)). HUMAN-QUEUE #7.
+3. EIN for Bertlegs LLC, business account (with the d/b/a), references.
+4. Mail the application with the $500 check (HUMAN-QUEUE #8). The Authority's
+   vendor-fee work group meets 2026-12-08, before any of this can happen anyway.
 
-Also worth a five-minute check before committing: a USPTO TESS search and a scan of the
-certified-vendor list (`docs/fl/certified-vendor-list.md`) for confusingly similar vendor
-names.
+## Why an entity, and what the umbrella changes
 
-### Name availability: checked 2026-11-13 (bulk data, not the search page)
+The case for applying as an entity rather than as Jackson personally is unchanged. The
+applicant signs a broad hold-harmless of the Authority and its contractors, accepts
+responsibility "under applicable law for any loss, damage, or injury" arising from use
+of the Portal, and enters a license that can be revoked after three non-compliance issues
+in 180 days (`docs/fl/batch-license-agreement.md` §5). A tool that moves other people's
+court documents should carry that on an entity, not on Jackson's personal assets. The
+entity also serves the application's three financial-stability references: a business
+bank account, an EIN and vendor relationships the Authority can verify (the declaration
+authorizes contacting "any surety company, bank depository … to verify the statements
+made in this form").
+
+**What the umbrella changes, plainly.** A fictitious name is not a separate entity. Any
+claim arising from ECFiler is a claim against Bertlegs LLC, and so it can reach what
+Bertlegs LLC holds for Jackson's other projects; the reverse is true too. A separate
+ECFiler LLC would have walled that off. That is the trade Jackson chose: one entity, one
+annual report and one set of books now, and a separate LLC for ECFiler once law firms use
+it, which is when the filing-deadline exposure becomes real. Until then ECFiler files
+nothing for anyone but Jackson's own QA account. Keep Bertlegs's records clean
+(ECFiler's income and costs identifiable, nothing commingled with personal money) so the
+later spin-out is a transfer, not an untangling.
+
+**Florida, not Delaware.** Unchanged from July: a Florida LLC is the home-state LLC for a
+Tampa operator; Delaware would add a franchise tax, a paid agent and a Florida foreign
+qualification for benefits a solo, unfunded business does not need.
+
+## The fictitious name
+
+From s. 865.09, Fla. Stat. (read 2026-11-13 at leg.state.fl.us):
+
+- An LLC doing business under any name other than its legal name must register that
+  name first (865.09(3)(a)). Not registering bars Bertlegs LLC from suing in Florida
+  courts on ECFiler business until it complies, and is a noncriminal violation
+  (865.09(9)).
+- Registering requires certifying that the name was advertised at least once in a
+  newspaper (as defined in chapter 50) in the county of the principal place of business
+  (865.09(3)(a)5.). Expect a small newspaper fee on top of the filing fee.
+- Fee **$50** (865.09(12)(a)). Valid through December 31 of the fifth calendar year,
+  counting the year of registration (865.09(5)), then renewable for 5 years.
+- Registration is public notice only. It does not give Bertlegs LLC a presumption of
+  rights in the name (865.09(8)); trademark is the route for that (see USPTO below).
+
+**Name availability.** The November check below found no Florida entity of record named
+ECFiler or ECF Filer. It covers corporations and LLCs, not fictitious-name filings, and
+Florida does not refuse a fictitious name because another business registered the same
+one. So it is evidence that nobody in Florida trades as "ECFiler" through an entity, not
+a reservation.
+
+### Name check: 2026-11-13 (bulk data, not the search page)
 
 **Result: no Florida entity of record is named ECFiler, ECF Filer, or anything that
 normalizes to either.** "ECFiler LLC" looks available. The Division confirms
@@ -115,11 +120,11 @@ How, exactly:
 - **Not covered:** filings made on 2026-11-13 or later, and fictitious-name (d/b/a)
   registrations, which do not block an LLC name in Florida.
 
-**Click path to confirm by hand (1 minute, the day you file):**
-https://search.sunbiz.org/Inquiry/CorporationSearch/ByName → Entity Name: `ECFiler`
-→ Search Now. Expect no exact match (the list opens at the nearest names
-alphabetically). Repeat with `ECF Filer`. Then file the same day at
-https://efile.sunbiz.org/llc_file.html.
+**UPL optics.** Unchanged: "ECFiler" reads as software for electronic court filing, and
+the name must never carry "legal", "law", "paralegal" or "attorney". "Bertlegs LLC d/b/a
+ECFiler" keeps that posture. Before relying on the name, a five-minute USPTO trademark
+search and a scan of the certified-vendor list (`docs/fl/certified-vendor-list.md`) for
+confusingly similar vendors are still worth doing.
 
 ## What the application form actually asks (entity requirements)
 
@@ -129,12 +134,13 @@ From `docs/fl/vendor-application.md` (rev. 01-01-2021):
   *optional*, and no Florida domicile requirement appears anywhere in the form.
 - **Page 5, "Status of Company":** if a Corporation — state and date of incorporation
   plus officer names; if a Partnership or Joint Venture — equivalents. The form predates
-  LLC ubiquity and has no LLC subsection; per the application draft's Note A, an LLC most
-  naturally completes the Corporation subsection as "Limited Liability Company, State of
-  Florida, organized [DATE]; Managing Member: Jackson Sanger."
-- **Corporate History:** years in business under present name (answer honestly:
-  "less than one year; newly organized [MONTH YEAR] to hold the ECFiler product" — the
-  program has no longevity requirement); affiliates; 5-year litigation/fines; principal
+  LLC ubiquity and has no LLC subsection. The filled packet answers it with a margin
+  note: "Applicant: Bertlegs LLC d/b/a ECFiler, a single-member Florida limited liability
+  company, organized effective 01/01/2027. State of organization: Florida."
+- **Corporate History:** years in business under present name (answer honestly at
+  mailing: "Less than one year. Bertlegs LLC was organized effective January 1, 2027, and
+  registered ECFiler as its fictitious name on [DATE]." The program has no longevity
+  requirement); affiliates; 5-year litigation/fines; principal
   convictions; current investigations; **three financial-stability references** — all
   under penalty of perjury, with authorization to verify with banks et al.
 - **No insurance or bond requirement** anywhere in the application.
@@ -142,66 +148,16 @@ From `docs/fl/vendor-application.md` (rev. 01-01-2021):
 Conclusion: the Authority wants *an* answerable corporate disclosure and verifiable
 financial standing — any U.S. entity satisfies it; a Florida LLC satisfies it most simply.
 
-## Cost
+## Cost (ECFiler's share)
 
 | Item | Amount | Notes |
 |---|---|---|
-| FL Articles of Organization (Sunbiz e-file) | **$125** | $100 filing + $25 registered-agent designation |
-| Registered agent | $0 | Jackson serves as his own agent (requires a FL street address; it becomes public record — use the business address he is willing to publish) |
-| EIN (IRS) | $0 | Online, same-day |
-| FL annual report | **$138.75/yr** | Due Jan 1 – May 1 each year; **$400 late fee** if missed — calendar it |
-| Optional: certificate of status | $5 | Banks occasionally ask for it |
-| *Delaware alternative, for contrast* | ~$110 formation + $300/yr franchise tax + ~$100/yr agent + $125 FL foreign qualification + $138.75/yr FL report | Strictly dominated for this business |
+| Bertlegs LLC formation and annual report | not ECFiler's line | Jackson's umbrella; $125 to form and $138.75/yr in Florida |
+| Fictitious name registration | **$50** | after Bertlegs LLC is active; 5 years |
+| Newspaper notice | varies | one insertion in the county of the principal place of business |
+| Florida TPV application | **$500** | non-refundable |
 
-Florida has no state income tax on a single-member LLC's pass-through income. Ongoing
-compliance is one annual report and ordinary separateness hygiene.
+## Decision
 
-## Liability isolation — what the LLC does and does not do
-
-**Does:** interposes the entity between Jackson's personal assets and (a) the license's
-hold-harmless and "AS IS" allocation, (b) any claim by a customer whose filing is
-delayed, deficient, or mis-served through the tool, (c) contract liabilities to the
-Authority (monthly fees, cure obligations). For a product whose failure mode is "someone
-missed a court deadline," this is the whole point.
-
-**Does not:** shield Jackson from his own perjury exposure on the page-5 declaration —
-he signs that personally and it must be literally true regardless of entity form. Nor
-does it help if the veil is pierceable: sign everything as "Jackson Sanger, Managing
-Member, ECFiler LLC," run all program payments (the $500 fee, the $125/month license
-invoices) through the LLC's bank account, and never commingle. A single-member LLC's
-veil is only as good as its bookkeeping.
-
-## Banking and references implications
-
-The reference-gathering plan (`docs/fl/drafts/reference-request-emails.md`) depends on
-the entity existing *first*:
-
-1. Form ECFiler LLC → obtain EIN → **open the business bank account immediately** — the
-   bank reference needs an account to reference, and an account with even a few weeks of
-   history beats one opened the day before mailing.
-2. Move the Stripe account (and Railway/hosting billing) onto the LLC's name and EIN, so
-   the processor and vendor references attest to *the Firm's* standing, matching the
-   form's wording ("financial stability of the Firm").
-3. Pay the $500 application fee from the LLC account.
-
-## Timeline
-
-| When | Step |
-|---|---|
-| Day 0 | Sunbiz name check; e-file Articles of Organization ($125) |
-| Day 1–5 | Sunbiz processing (typically 2–5 business days for e-filings) |
-| Same week | EIN online (same day once the LLC exists) |
-| Week 1–2 | Open business bank account; move Stripe/Railway billing to the LLC |
-| Week 2–4 | Send reference-request emails; let the bank account age while confirmations come in |
-| Week 3–4+ | Complete the application (`docs/fl/drafts/application-draft.md`), mail with the $500 check drawn on the LLC account |
-
-Net: the entity adds roughly **two to three weeks** before the application can be mailed
-with references in place — which overlaps work Jackson is doing anyway (the application
-package itself) and costs the certification calendar nothing, since the pre-approval
-build (`docs/fl-cert-timeline-cost.md` M0–M2) is not gated on mailing date.
-
----
-
-**Decision needed from Jackson: yes/no on forming "ECFiler LLC" as a single-member
-Florida LLC now (~$125 filing, $138.75/yr annual report, Jackson as registered agent),
-as the applicant entity for the Florida Third Party Vendor application.**
+Made. No open question for Jackson in this doc. The queue holds the $50 fictitious-name
+filing (after the LLC exists) and the application.

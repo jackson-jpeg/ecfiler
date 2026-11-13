@@ -380,17 +380,19 @@ passed. `tests/test_claims_register.py tests/test_copy_lint.py` → green. VERIF
 
 ---
 
-### L25 — 2026-11-13 — production serves the no-backend site; 30 of 31 outside checks
+### L25 — 2026-11-13 — production serves the no-backend site; 29 of 30 outside checks
 `[VPS] POST https://api.vercel.com/v13/deployments` (project
 prj_7lNeWyl35Crp19TDQ5vbHcnZdrSP, target production, gitSource ref `session7`
 sha 4b1cd25) → `dpl_EaG7btYWf9rwxs173G13DQkb3L2Y` READY. `[VPS] curl
 https://www.ecfiler.com/api/health` → 200 `{"status":"ok","service":"ecfiler-web",
 "commit":"4b1cd25…","workspace":"offline"}` (was 502). `[VPS] bash
-scripts/verify-production.sh` → exit 1, **30 PASS / 1 FAIL**; the one FAIL is
+scripts/verify-production.sh` → exit 1, **29 PASS / 1 FAIL** (first written as
+"30 PASS / 1 FAIL" and "30 of 31": a miscount, corrected at L28 against the
+saved output; the script has 30 checks); the one FAIL is
 "production serves master HEAD" (serves 4b1cd25, master b1d6f64) and clears when
 the session PR merges. Also removed from Vercel production env:
 `NEXT_PUBLIC_API_URL=https://ecfiler-production.up.railway.app` (dead since July,
-contradicted docs/hosting-topology.md). STAGED until the merge row.
+contradicted docs/hosting-topology.md). STAGED until the merge row; closed by L28.
 
 ---
 
@@ -417,6 +419,17 @@ Fixed (`tests/test_filing_access_qa_username.py`, 2 passed, 2 failed on the old 
 `[MAC] ecfiler-mac session filing-access --qa --username ecfilercom --court azttdc`
 → read-only, "Nothing was filed", next step is the court's e-filing registration.
 The blocker is the one L20 found. VERIFIED.
+
+---
+
+### L28 — 2026-11-13 — after the merge, production serves master: 30 of 30 outside checks
+`[VPS] gh pr merge 4 --merge` → master `494da2a`. Vercel built it from master.
+`[VPS] bash scripts/verify-production.sh` → exit 0, **30 PASS / 0 FAIL**
+("production serves master HEAD 494da2a985b0", `/api/health` 200, unknown `/api`
+path 404, waitlist 400/200, no 5xx on 7 pages, no dead @ecfiler.com addresses,
+claims and court counts clean), "PRODUCTION VERIFIED". The script records 30
+checks; L25 and the session report had said 31, a miscount, now corrected.
+Closes L25. VERIFIED.
 
 ---
 

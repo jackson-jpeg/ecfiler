@@ -34,7 +34,7 @@ text. Never send the same message to two channels.
 - **2026-11-13: contact address.** The ecfiler.com mailbox no longer exists. Every
   outbound item (C2, C5, the FL application and its intro email) uses
   `jackson@sang3r.com`, never a Gmail address.
-- **2026-11-13: the C2 Gmail draft is stale.** HUMAN-QUEUE #7 says the Gmail draft
+- **2026-11-13: the C2 Gmail draft is stale.** The pre-session-7 HUMAN-QUEUE #7 said the Gmail draft
   to developers@psc.uscourts.gov "matches the repo text". It no longer does: the repo
   text was refreshed today (new From and signature, the developer-list subscription
   claim dropped, "lookup feeds" dropped, "still in development" added, no em

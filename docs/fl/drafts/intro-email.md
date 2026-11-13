@@ -27,7 +27,7 @@ information by reply or by phone.
 
 Best regards,
 Jackson Sanger
-`[TITLE, ENTITY NAME]`
+`[TITLE]`, Bertlegs LLC d/b/a ECFiler
 `[PHONE]` · jackson@sang3r.com
 Tampa, FL
 

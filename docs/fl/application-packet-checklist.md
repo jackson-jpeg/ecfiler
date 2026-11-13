@@ -22,10 +22,12 @@ report yet; next Board meeting 2026-12-08). Sources: `docs/fl/vendor-application
       Fees" no longer ends in `uploads/2021/08/Proposed_third_party_fees.pdf`, stop and
       have the packet regenerated (the work group may have changed the form or the fee).
 
-- [ ] **Form the entity** (recommended: single-member Florida LLC, `docs/fl/entity-recommendation.md`).
-      Name check 2026-11-13 against the Division's bulk data (13.07 million records):
-      no ECFiler / ECF Filer of record. Confirm on search.sunbiz.org the day you file.
-      — the company-name blanks and the "years in business" answer depend on it.
+- [ ] **Bertlegs LLC is active** on Sunbiz (effective 01/01/2027; formed by Jackson
+      outside this repo). The applicant is **Bertlegs LLC d/b/a ECFiler**
+      (`docs/fl/entity-recommendation.md`). Not before 2027-01-01.
+- [ ] **Register ECFiler as Bertlegs LLC's fictitious name**: one newspaper notice in the
+      county of the principal place of business, then $50 on Sunbiz (s. 865.09, Fla.
+      Stat.; the LLC must be active first). HUMAN-QUEUE #7.
 - [ ] **Open the business bank account + EIN** — the bank is your strongest financial reference.
 - [ ] **Line up three financial-stability references** and warn them the Authority may call
       (`docs/fl/drafts/reference-request-emails.md`). Type up a one-page reference sheet —
@@ -35,18 +37,17 @@ report yet; next Board meeting 2026-12-08). Sources: `docs/fl/vendor-application
 
 | Page | Blank | Why it was left for you |
 |---|---|---|
-| 1 | Applicant Name | Entity not yet formed / name not final |
 | 1 | Contact Phone # — gray `[phone]` | Personal data not kept in the repo |
-| 4 | [NAME OF COMPANY] | Entity name pending |
+| 4 | [NAME OF COMPANY] | Write **Bertlegs LLC d/b/a ECFiler** (left blank because it sits in the signature block) |
 | 4 | Signature of Applicant / Date of Application / Printed Name / Title | Your signature and legal assent — never pre-filled |
 | 5 §I | Address — gray `[street address]` (Tampa, FL is typed) | Street address not kept in the repo |
 | 5 §I | Phone — gray `[phone]` | Same |
-| 5 §II | Margin note's gray `[date of formation]` | Known only once the LLC is filed |
-| 5 §III.A | Gray `[to complete at formation]` | "Years in business under present name" is answerable only post-formation — answer literally (e.g., "Less than one year; organized [month year]") |
-| 5 | Company Name / "Dated this __ day of ____, 20__" / Signature / Title | Signature block — yours alone |
+| 5 §III.A | Gray `[to complete at mailing]` | "Years in business under present name": answer literally on the mailing date (e.g., "Less than one year. Bertlegs LLC organized effective January 1, 2027; ECFiler registered as its fictitious name on [date].") |
+| 5 | Company Name (Bertlegs LLC d/b/a ECFiler) / "Dated this __ day of ____, 20__" / Signature / Title (your title in the Articles) | Signature block — yours alone |
 
 Also confirm personally before signing (page 5 is **under penalty of perjury**):
-III.C "None.", III.D "No.", III.E "No." are pre-typed from your instructions — verify each
+III.B "None." (Jackson's other projects are product lines of Bertlegs LLC, not affiliated
+companies; list any that has its own entity), III.C "None.", III.D "No.", III.E "No." are pre-typed from your instructions — verify each
 is literally true on the mailing date. Note: III.C's "None." sits in the left margin
 beside item C (the printed question runs to the right edge; there was no inline blank).
 
@@ -56,12 +57,12 @@ beside item C (the printed question runs to the right edge; there was no inline 
 - [ ] Payee: **Florida Courts E-Filing Authority** (the form directs the fee to the
       Authority but does not print payee wording — call 850-577-4609 or email
       support@myflcourtaccess.com if you want it confirmed before writing the check).
-- [ ] Drawn on the business account if the LLC is formed in time.
+- [ ] Drawn on Bertlegs LLC's business account.
 
 ## Enclose
 
 - [ ] Signed cover letter on letterhead (`docs/fl/drafts/cover-letter.md`) — fill its
-      `[BRACKETS]` (date, entity name, phone, title, address, signature).
+      `[BRACKETS]` (date, entity name = Bertlegs LLC d/b/a ECFiler, phone, title, address, signature).
 - [ ] Completed application, all 5 pages, **both** signature blocks executed (p. 4 and p. 5).
 - [ ] Reference sheet (three financial-stability references: name, org, relationship, phone, email).
 - [ ] The $500 check.
@@ -79,5 +80,6 @@ Contact: Jackson Sanger / jackson@sang3r.com (pp. 1, 5; changed 2026-11-13 from 
 Gmail address, since the Authority's QA credentials and notices go to this mailbox). Status retrieval:
 FilingReviewCompleteResult polling; callback table marked N/A (p. 3). Scope: "X" in
 **Pleading on Existing Case** for **Circuit Civil (CA)** and **County Civil (CC)** only
-(p. 3). §II margin note: single-member Florida LLC. §III: B "None.", C "None.",
+(p. 3). Applicant Name (p. 1): Bertlegs LLC d/b/a ECFiler. §II margin note: Bertlegs LLC
+d/b/a ECFiler, single-member Florida LLC, organized effective 01/01/2027. §III: B "None.", C "None.",
 D "No.", E "No.", F "See attached reference sheet."

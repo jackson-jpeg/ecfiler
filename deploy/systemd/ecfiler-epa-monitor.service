@@ -1,0 +1,15 @@
+[Unit]
+Description=ECFiler: watch for the EPA Public User Group application window (approved exception, /root/CLAUDE.md)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/ecfiler-epa-monitor/epa-window-monitor.sh
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+StateDirectory=ecfiler-epa-monitor
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=10%
+MemoryMax=128M
+TimeoutStartSec=5min
