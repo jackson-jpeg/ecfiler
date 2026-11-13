@@ -51,8 +51,11 @@ until it clears. Steps 2–5 are a web form and are Jackson's alone:
    redirects to `qa-login.uscourts.gov` first (302 when checked from both
    machines, 2026-07-30). Log in with the QA credential — the same one in
    `ecfiler.keychain-db`. Do not paste it anywhere else.
-2. Choose **Attorney Admissions / E-File Registration** (NextGen wording; on
-   some builds it reads "E-File Registration").
+2. Choose **Non-Attorney E-File Registration**. *Corrected 2026-11-13
+   (session 7): this step used to say "Attorney Admissions / E-File
+   Registration", which asserts bar admission. Jackson is not an attorney.
+   Full route, the QA court list, the bankruptcy-creditor fallback (AZTTBK)
+   and the PACER Service Center email are in `docs/qa-efile-registration.md`.*
 3. Court type **District Court**, court **Az Test District Court** — the
    roster code is AZTTDC and its CM/ECF is
    `https://ecf.tc1d.aztc.uscourts.gov`. If the court does not appear in the

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { InteractiveDemo } from "@/components/demo";
 import { COURT_COUNT, PRO_PRICE, TIERS } from "@/lib/facts";
+import { WORKSPACE_ONLINE, WORKSPACE_OFFLINE_NOTE } from "@/lib/workspace";
 
 
 export default function LandingPage() {
@@ -38,8 +39,8 @@ export default function LandingPage() {
             <Link href="/what-is-cmecf" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Resources</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">GitHub</a>
             <div className="w-px h-5 bg-[#e8e5e0]" />
-            <Link href="/sign-in" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Sign In</Link>
-            <Link href="/sign-up" className="px-5 py-2 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm">Get Started Free</Link>
+            {WORKSPACE_ONLINE && <Link href="/sign-in" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Sign In</Link>}
+            <Link href={WORKSPACE_ONLINE ? "/sign-up" : "/#pricing"} className="px-5 py-2 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm">{WORKSPACE_ONLINE ? "Get Started Free" : "Join the Waitlist"}</Link>
           </div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-[#525252] hover:text-[#1a1a1a] transition" aria-label="Toggle menu">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -58,8 +59,8 @@ export default function LandingPage() {
             <Link href="/what-is-cmecf" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Resources</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">GitHub</a>
             <hr className="border-[#e8e5e0]" />
-            <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Sign In</Link>
-            <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)} className="px-5 py-2 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm text-center">Get Started Free</Link>
+            {WORKSPACE_ONLINE && <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)} className="text-[#525252] hover:text-[#1a1a1a] transition font-medium">Sign In</Link>}
+            <Link href={WORKSPACE_ONLINE ? "/sign-up" : "/#pricing"} onClick={() => setMobileMenuOpen(false)} className="px-5 py-2 bg-[#1e3a5f] text-white text-[13px] font-semibold rounded-lg hover:bg-[#162a47] transition shadow-sm text-center">{WORKSPACE_ONLINE ? "Get Started Free" : "Join the Waitlist"}</Link>
           </div>
         )}
       </nav>
@@ -80,11 +81,14 @@ export default function LandingPage() {
               Stop wrestling with<br />
               <span className="gradient-text-animated">CM/ECF forms</span>
             </h1>
-            <p className="text-[17px] sm:text-[19px] md:text-[21px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop a PDF. AI reads the document, extracts case number, court, event code, and filing party. Review, stage, and file it yourself &mdash; with everything validated first.</p>
+            <p className="text-[17px] sm:text-[19px] md:text-[21px] leading-[1.6] text-[#525252] mb-10 max-w-xl mx-auto">Drop a PDF. AI reads the document, extracts case number, court, event code, and filing party. Review, stage, and file it yourself, with everything validated first.</p>
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
-              <Link href="/sign-up" className="w-full sm:w-auto px-10 py-4 bg-[#1e3a5f] text-white text-[16px] font-bold rounded-xl hover:bg-[#162a47] transition-all shadow-xl shadow-[#1e3a5f]/25 hover:shadow-2xl hover:shadow-[#1e3a5f]/30 hover:-translate-y-0.5 text-center">Start Filing Free</Link>
+              <Link href={WORKSPACE_ONLINE ? "/sign-up" : "/tools"} className="w-full sm:w-auto px-10 py-4 bg-[#1e3a5f] text-white text-[16px] font-bold rounded-xl hover:bg-[#162a47] transition-all shadow-xl shadow-[#1e3a5f]/25 hover:shadow-2xl hover:shadow-[#1e3a5f]/30 hover:-translate-y-0.5 text-center">{WORKSPACE_ONLINE ? "Start Filing Free" : "Try the Free Tools"}</Link>
               <Link href="/what-is-cmecf" className="w-full sm:w-auto px-10 py-4 bg-white text-[#1a1a1a] text-[16px] font-semibold rounded-xl border-2 border-[#e8e5e0] hover:border-[#1e3a5f] hover:text-[#1e3a5f] transition-all text-center">Learn More</Link>
             </div>
+            {!WORKSPACE_ONLINE && (
+              <p data-testid="workspace-offline" className="mt-6 text-[13px] text-[#8a8a8a] max-w-xl mx-auto">{WORKSPACE_OFFLINE_NOTE} Join the waitlist below to hear when it opens.</p>
+            )}
           </div>
         </div>
       </section>
@@ -114,7 +118,7 @@ export default function LandingPage() {
           <div className="text-center mb-10">
             <div className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] mb-3">Product Walkthrough</div>
             <h2 className="text-[24px] sm:text-[30px] font-bold text-white tracking-tight">See how it works</h2>
-            <p className="text-[14px] sm:text-[16px] text-white/50 mt-2 max-w-lg mx-auto">A scripted walkthrough with sample data — how a motion is analyzed, checked, and staged for filing.</p>
+            <p className="text-[14px] sm:text-[16px] text-white/50 mt-2 max-w-lg mx-auto">A scripted walkthrough with sample data: how a motion is analyzed, checked, and staged for filing.</p>
           </div>
           <InteractiveDemo />
         </div>
@@ -125,12 +129,12 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
           <div className="text-center mb-16">
             <div className="text-[11px] font-bold text-[#1e3a5f] uppercase tracking-[0.2em] mb-3">How It Works</div>
-            <h2 className="text-[28px] sm:text-[36px] md:text-[42px] font-bold tracking-tight text-[#0f1f35] mb-4">Three steps. Under a minute.</h2>
+            <h2 className="text-[28px] sm:text-[36px] md:text-[42px] font-bold tracking-tight text-[#0f1f35] mb-4">Three steps.</h2>
             <p className="text-[17px] text-[#525252] max-w-lg mx-auto">No event code menus. No multi-step forms. Just drop your document.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 max-w-5xl mx-auto">
             {[
-              { n: "01", t: "Drop your filing", d: "Upload any federal court document — motion, brief, complaint, notice. AI reads the entire document in seconds.", color: "from-[#1e3a5f] to-[#0f2440]", accent: "#1e3a5f" },
+              { n: "01", t: "Drop your filing", d: "Upload any federal court document (motion, brief, complaint, notice). AI reads the entire document.", color: "from-[#1e3a5f] to-[#0f2440]", accent: "#1e3a5f" },
               { n: "02", t: "AI extracts everything", d: "Case number, court, event code, filing party, docket text. Every field extracted, then run through the 5-point readiness check.", color: "from-[#b8860b] to-[#8b6508]", accent: "#b8860b" },
               { n: "03", t: "Review and file it yourself", d: "See exactly what CM/ECF will receive. Attest, and ECFiler hands you a validated filing package with a CM/ECF deep link and step-by-step instructions. You submit it on CM/ECF.", color: "from-[#15803d] to-[#166534]", accent: "#15803d" },
             ].map(({ n, t, d, color, accent }, i) => (
@@ -184,7 +188,7 @@ export default function LandingPage() {
               <div className="absolute -top-3 left-6 text-[10px] font-bold text-[#15803d] uppercase tracking-wider bg-[#f0fdf4] border border-[#bbf7d0] px-3 py-1 rounded-full">With ECFiler</div>
               <div className="space-y-4 mt-2">
                 {[
-                  "Drop a PDF — AI reads and extracts the details",
+                  "Drop a PDF. AI reads and extracts the details",
                   "Event code matched by AI",
                   "Automatic redaction scanning",
                   "Filing fee displayed before you submit",
@@ -222,7 +226,7 @@ export default function LandingPage() {
               { t: "AI event code matching", d: "Describe your filing in plain English. AI matches the correct CM/ECF event code from hundreds of options.", icon: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z", accent: "from-[#7c3aed] to-[#a855f7]" },
               { t: "Rule 5.2 redaction scan", d: "AI detects unredacted SSNs, DOBs, financial accounts, and minor names before you file.", icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z", accent: "from-[#15803d] to-[#22c55e]" },
               { t: "PDF pre-flight checks", d: "Validates size, searchable text, encryption, and PDF/A compliance before CM/ECF can reject your filing.", icon: "M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z", accent: "from-[#b91c1c] to-[#ef4444]" },
-              { t: "Sealed content refused", d: "The hosted service refuses sealed or restricted documents outright — they never reach ECFiler's servers. Redacted public versions are supported.", icon: "M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z", accent: "from-[#b45309] to-[#f59e0b]" },
+              { t: "Sealed content refused", d: "The hosted service refuses sealed or restricted documents outright. They never reach ECFiler's servers. Redacted public versions are supported.", icon: "M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z", accent: "from-[#b45309] to-[#f59e0b]" },
               { t: "5-point readiness check", d: "PDF validity, redaction scan, case number, event code, signature block. Attorney attestation required before staging.", icon: "M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z", accent: "from-[#1e3a5f] to-[#0f2440]" },
             ].map(({ t, d, icon, accent }) => (
               <div key={t} className="bg-[#fafaf8] border border-[#e8e5e0] rounded-2xl p-7 hover:border-[#1e3a5f]/30 hover:shadow-lg hover:shadow-[#1e3a5f]/5 transition-all duration-300 group hover:-translate-y-1">
@@ -295,7 +299,7 @@ export default function LandingPage() {
               <div className="text-[11px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">Free Tools</div>
               <div className="text-[42px] font-bold text-[#0f1f35] mb-1">$0</div>
               <div className="text-[13px] text-[#8a8a8a] mb-6">Forever. No credit card.</div>
-              <Link href="/sign-up" className="block w-full py-3 text-center bg-white text-[#1e3a5f] text-[14px] font-semibold rounded-xl border-2 border-[#e8e5e0] hover:border-[#1e3a5f] hover:bg-[#f0f4fa] transition mb-6">Get Started</Link>
+              <Link href={WORKSPACE_ONLINE ? "/sign-up" : "/tools"} className="block w-full py-3 text-center bg-white text-[#1e3a5f] text-[14px] font-semibold rounded-xl border-2 border-[#e8e5e0] hover:border-[#1e3a5f] hover:bg-[#f0f4fa] transition mb-6">{WORKSPACE_ONLINE ? "Get Started" : "Use the Free Tools"}</Link>
               <div className="space-y-3">
                 {TIERS.free.features.map((f) => (
                   <div key={f} className="flex items-center gap-2.5 text-[13px] text-[#525252]">
@@ -308,7 +312,7 @@ export default function LandingPage() {
                 <div className="space-y-3">
                   {TIERS.free.notIncluded.map((f) => (
                     <div key={f} className="flex items-center gap-2.5 text-[13px] text-[#c4c4c4]">
-                      <div className="w-5 h-5 bg-[#f5f5f0] text-[#d4d0ca] rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">&mdash;</div>
+                      <div className="w-5 h-5 bg-[#f5f5f0] text-[#d4d0ca] rounded-full flex items-center justify-center text-[9px] font-bold shrink-0">&minus;</div>
                       {f}
                     </div>
                   ))}
@@ -324,7 +328,7 @@ export default function LandingPage() {
                 <span className="text-[42px] font-bold text-white">${PRO_PRICE}</span>
                 <span className="text-[14px] text-white/40">/attorney/mo</span>
               </div>
-              <div className="text-[13px] text-white/40 mb-6">Not available yet — join the waitlist for launch.</div>
+              <div className="text-[13px] text-white/40 mb-6">Not available yet. Join the waitlist for launch.</div>
               <Waitlist />
               <div className="space-y-3 mt-6">
                 {TIERS.pro.features.map((f) => (
@@ -346,7 +350,7 @@ export default function LandingPage() {
           <h2 className="text-[28px] sm:text-[36px] md:text-[42px] font-bold tracking-tight text-white mb-4">Ready to modernize your filing?</h2>
           <p className="text-[17px] text-white/50 mb-10 max-w-md mx-auto">Free tools. {COURT_COUNT} courts. No credit card required.</p>
           <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4 justify-center">
-            <Link href="/sign-up" className="w-full sm:w-auto px-10 py-4 bg-white text-[#0f1f35] text-[16px] font-bold rounded-xl hover:bg-[#f5f5f0] transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 text-center">Get Started Free</Link>
+            <Link href={WORKSPACE_ONLINE ? "/sign-up" : "/tools"} className="w-full sm:w-auto px-10 py-4 bg-white text-[#0f1f35] text-[16px] font-bold rounded-xl hover:bg-[#f5f5f0] transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 text-center">{WORKSPACE_ONLINE ? "Get Started Free" : "Try the Free Tools"}</Link>
             <a href="https://github.com/jackson-jpeg/ecfiler" target="_blank" className="w-full sm:w-auto px-10 py-4 border-2 border-white/20 text-white/80 text-[16px] font-semibold rounded-xl hover:border-white/40 hover:text-white transition-all text-center">Star on GitHub</a>
           </div>
         </div>
@@ -376,9 +380,10 @@ export default function LandingPage() {
             <div>
               <div className="text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-3">Product</div>
               <div className="space-y-2 text-[12px]">
-                <Link href="/file" className="block text-[#525252] hover:text-[#1a1a1a] transition">Filing Workspace</Link>
+                {WORKSPACE_ONLINE && <Link href="/file" className="block text-[#525252] hover:text-[#1a1a1a] transition">Filing Workspace</Link>}
                 <Link href="/federal-courts" className="block text-[#525252] hover:text-[#1a1a1a] transition">Court Directory</Link>
-                <Link href="/sign-up" className="block text-[#525252] hover:text-[#1a1a1a] transition">Sign Up</Link>
+                {WORKSPACE_ONLINE && <Link href="/sign-up" className="block text-[#525252] hover:text-[#1a1a1a] transition">Sign Up</Link>}
+                <Link href="/validate" className="block text-[#525252] hover:text-[#1a1a1a] transition">PDF Validation</Link>
               </div>
             </div>
             <div>
@@ -410,16 +415,25 @@ export default function LandingPage() {
 
 function Waitlist() {
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot, never shown to people
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [count, setCount] = useState(0);
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    fetch("/api/waitlist/count").then(r => r.json()).then(d => setCount(d.count || 0)).catch(() => {});
-  }, [status]);
-
+  // Success only on a 200 from /api/waitlist, which answers 200 only after
+  // the signup email was accepted for delivery. Before session 7 any
+  // response, including a 502, showed "You're on the list".
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!email) return; setStatus("loading");
-    try { await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }); setStatus("done"); } catch { setStatus("error"); }
+    e.preventDefault(); if (!email) return; setStatus("loading"); setMessage("");
+    try {
+      const r = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, website }) });
+      if (r.ok) { setStatus("done"); return; }
+      const d = await r.json().catch(() => ({}));
+      setMessage(typeof d.error === "string" ? d.error : "Something went wrong. Please try again.");
+      setStatus("error");
+    } catch {
+      setMessage("Could not reach the server. Check your connection and try again.");
+      setStatus("error");
+    }
   };
   return (
     <div>
@@ -429,13 +443,14 @@ function Waitlist() {
         </div>
       ) : (
         <form onSubmit={submit} className="flex gap-2">
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@lawfirm.com" required className="flex-1 px-3 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-white placeholder-white/30 outline-none focus:border-white/30" />
+          <input type="email" name="email" aria-label="Email address" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@lawfirm.com" required className="flex-1 min-w-0 px-3 py-2.5 bg-white/10 border border-white/10 rounded-xl text-[13px] text-white placeholder-white/30 outline-none focus:border-white/30" />
+          <input type="text" name="website" value={website} onChange={(e) => setWebsite(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
           <button type="submit" disabled={status === "loading"} className="px-4 py-2.5 bg-[#b8860b] text-white text-[13px] font-semibold rounded-xl hover:bg-[#a07709] disabled:opacity-50 transition shadow-lg shadow-[#b8860b]/30">
             {status === "loading" ? "..." : "Join Waitlist"}
           </button>
         </form>
       )}
-      {count > 0 && status !== "done" && <div className="text-[10px] text-white/30 mt-2">{count} attorney{count !== 1 ? "s" : ""} on the waitlist</div>}
+      {status === "error" && message && <div role="alert" className="text-[12px] text-[#fecaca] mt-2">{message}</div>}
     </div>
   );
 }

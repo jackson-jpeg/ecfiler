@@ -1,6 +1,8 @@
 # Public claims register
 
-*Built 2026-07-28 (session 4). Enforced by `tests/test_claims_register.py`.*
+*Built 2026-07-28 (session 4). Enforced by `tests/test_claims_register.py`.
+Re-verdicted 2026-11-13 (session 7) for a site with no backend: see
+"Session 7" below.*
 
 Every outward-facing factual claim about ECFiler, mapped to the code that
 implements it and the test that proves it. The enforcement test:
@@ -36,20 +38,20 @@ anything measurable is.
 | `5-point readiness check` | web/app/page.tsx | ecfiler/api/streaming.py::readiness_checks | tests/test_readiness_checks.py::TestReadinessChecks::test_exactly_five_checks | TRUE |
 | `Credentials never touch our servers` | web/app/page.tsx | no credential intake anywhere in ecfiler/api/app.py; legacy endpoints answer 410 | tests/test_security.py; tests/test_api.py | TRUE |
 | `Free tools, no credit card` | web/app/page.tsx | web/app/(tools)/* public routes, no auth gate | tests/test_web_public_access.py::test_free_tools_reachable_anonymously | TRUE |
-| `AI reads the document, extracts case number, court, event code, and filing party` | web/app/page.tsx | ecfiler/claude_client.py document analysis | tests/test_claude_client.py; tests/test_document_analyzer.py | TRUE |
+| `AI reads the document, extracts case number, court, event code, and filing party` | web/app/page.tsx | ecfiler/claude_client.py document analysis | tests/test_claude_client.py; tests/test_document_analyzer.py | TRUE-BUT-UNREACHABLE |
 | `AI detects unredacted SSNs, DOBs, financial accounts, and minor names` | web/app/page.tsx | ecfiler/pdf/redaction_check.py (regex) + claude_client redaction prompt (minor names) | tests/test_redaction.py | TRUE |
 | `Validates size, searchable text, encryption, and PDF/A compliance` | web/app/page.tsx | ecfiler/pdf/validator.py | tests/test_pdf_validator.py | TRUE |
 | `The hosted service refuses sealed or restricted documents outright` | web/app/page.tsx | ecfiler/api/app.py sealed 403s | tests/test_sealed_hardfail.py::test_submit_with_sealed_flag_403 | TRUE |
 | `PDF validated, PDF/A compliance checked` | web/app/page.tsx | ecfiler/pdf/validator.py `check_pdfa` | tests/test_pdf_validator.py | TRUE |
-| `Filing fee displayed before you submit` | web/app/page.tsx | ecfiler/filing/fees.py wired into ecfiler/api/streaming.py | tests/test_fees.py | TRUE |
-| `Docket text AI-generated and editable` | web/app/page.tsx | claude_client docket generation; editable textarea in web/app/(app)/file/page.tsx | tests/test_claude_client.py | TRUE |
-| `Event code matched by AI` | web/app/page.tsx | claude_client + ecfiler/filing/events.py | tests/test_claude_client.py; tests/test_event_crawler.py | TRUE |
-| `Attorney attestation required before staging` | web/app/page.tsx | POST /api/filing/stage rejects without attestation | tests/test_attestation.py::test_stage_without_attestation_422 | TRUE |
+| `Filing fee displayed before you submit` | web/app/page.tsx | ecfiler/filing/fees.py wired into ecfiler/api/streaming.py | tests/test_fees.py | TRUE-BUT-UNREACHABLE |
+| `Docket text AI-generated and editable` | web/app/page.tsx | claude_client docket generation; editable textarea in web/app/(app)/file/page.tsx | tests/test_claude_client.py | TRUE-BUT-UNREACHABLE |
+| `Event code matched by AI` | web/app/page.tsx | claude_client + ecfiler/filing/events.py | tests/test_claude_client.py; tests/test_event_crawler.py | TRUE-BUT-UNREACHABLE |
+| `Attorney attestation required before staging` | web/app/page.tsx | POST /api/filing/stage rejects without attestation | tests/test_attestation.py::test_stage_without_attestation_422 | TRUE-BUT-UNREACHABLE |
 | `Automatic redaction scanning` | web/app/page.tsx | ecfiler/pdf/redaction_check.py in the streaming pipeline | tests/test_redaction.py | TRUE |
 | `Manually check Rule 5.2 compliance` (the "without ECFiler" pain list) | web/app/page.tsx | statement about filing without ECFiler — Fed. R. Civ. P. 5.2 | — (external; rule cited) | TRUE |
 | `Court Passwords Held` = `0` | web/app/page.tsx | same custody row as above | tests/test_security.py | TRUE |
 | `$0` `To Start` | web/app/page.tsx | free tier has no payment surface at all (no billing code exists) | tests/test_claims_register.py::test_no_stripe_claims_without_stripe_code | TRUE |
-| `Not available yet — join the waitlist for launch.` (Pro card) | web/app/page.tsx | waitlist POST /api/waitlist; no purchase path exists | tests/test_api.py | TRUE |
+| `Not available yet. Join the waitlist for launch.` (Pro card) | web/app/page.tsx | web/app/api/waitlist/route.ts mails each signup through Resend and answers 200 only after Resend accepts it; no purchase path exists | tests/test_web_public_access.py::TestNoBackendGuards::test_waitlist_route_answers_only_after_resend_accepts; tests/test_web_public_access.py::test_waitlist_rejects_a_bad_address | TRUE |
 | Pro feature list under a `Coming Soon` badge (incl. `Team management`, `Priority support`) | web/app/page.tsx | planned offering, labeled Coming Soon; history/staging/AI parts exist | — (labeled planned) | ASPIRATIONAL |
 | `A scripted walkthrough with sample data` (the walkthrough section is labeled, not passed off as live) | web/app/page.tsx | web/components/demo.tsx is a scripted animation and now says so | tests/test_copy_lint.py::test_demo_is_labeled_scripted | TRUE |
 | `Built with` `Claude AI` / `Playwright (local CLI)` / `Next.js` | web/app/page.tsx | pyproject.toml, web/package.json | — (dependency manifests) | TRUE |
@@ -71,7 +73,7 @@ anything measurable is.
 |---|---|---|---|---|
 | `COURT_COUNT = 207` and `COURT_BREAKDOWN` | web/lib/facts.ts | ecfiler/courts/data/*.json | tests/test_web_data_parity.py::test_facts_constants_match_data | TRUE |
 | `RETENTION_DAYS = 30` | web/lib/facts.ts | ecfiler/storage/history.py compress_old_pdfs default | tests/test_claims_register.py::test_retention_days_pinned_to_storage | TRUE |
-| Free tier: `PDF validation & PDF/A checks` | web/lib/facts.ts | POST /api/validate (public) + web/app/(tools)/validate | tests/test_public_surface.py; tests/test_pdf_validator.py | TRUE-BUT-UNREACHABLE |
+| Free tier: `PDF validation & PDF/A checks` | web/lib/facts.ts | web/lib/validator.ts (browser port of ecfiler/pdf/validator.py, PDF/A check on) + web/app/(tools)/validate | tests/test_web_public_access.py::test_validate_tool_checks_pdfs_without_uploading; tests/test_web_public_access.py::TestNoBackendGuards::test_validator_mirrors_python_limits | TRUE |
 | Free tier: `Rule 5.2 redaction scanning` | web/lib/facts.ts | web/lib/redaction.ts (client-side regex pass) + web/app/(tools)/redaction | tests/test_web_data_parity.py::test_redaction_patterns_json_matches_python_source; tests/test_web_public_access.py | TRUE |
 | Free tier: `federal courts directory` | web/lib/facts.ts | web/lib/courts-data.ts + /courts | tests/test_web_data_parity.py; tests/test_web_public_access.py | TRUE |
 | Free tier: `Filing fee lookup` | web/lib/facts.ts | web/lib/fees.ts (client-side) + /fees | tests/test_web_data_parity.py::test_fees_json_matches_python_source; tests/test_web_public_access.py | TRUE |
@@ -101,12 +103,12 @@ anything measurable is.
 | Claim | Surface | Implementation | Proving test | Verdict |
 |---|---|---|---|---|
 | `No account, no credit card.` and per-tool descriptions (`Rule 5.2 Redaction Scan`, `PDF/A compliance` checks) | web/app/(tools)/tools/page.tsx | public routes; client-side libs | tests/test_web_public_access.py::test_free_tools_reachable_anonymously | TRUE |
-| `Runs in your browser` / `your documents never leave your machine` (marked tools) | web/app/(tools)/tools/page.tsx | courts/events/fees/certificate/redaction are static-data client code; only /validate posts to the server | tests/test_web_public_access.py | TRUE |
+| `Runs in your browser` / `your documents never leave your machine` (every tool) | web/app/(tools)/tools/page.tsx | all six tools are client code; /validate stopped posting to the server in session 7 | tests/test_web_public_access.py::test_validate_tool_checks_pdfs_without_uploading | TRUE |
 | `Rule 5.2 redaction scan` `Runs entirely in your browser — the document is never uploaded.` | web/app/(tools)/redaction/page.tsx | web/lib/redaction.ts + pdfjs-dist text extraction, no network call | tests/test_web_data_parity.py::test_redaction_patterns_json_matches_python_source | TRUE |
 | `This is the pattern pass only.` (AI-pass scoping) | web/app/(tools)/redaction/page.tsx | honest scoping of the regex pass vs the server AI pass | — (self-limiting statement) | TRUE |
 | Fee schedule content (amounts incl. `$0` no-fee rows) and `28 U.S.C. § 1914` sourcing | web/app/(tools)/fees/page.tsx | web/lib/data/fees.json ← ecfiler/filing/fees.py | tests/test_web_data_parity.py::test_fees_json_matches_python_source | TRUE |
 | Event codes shown per court type | web/app/(tools)/events/page.tsx | web/lib/data/event_codes/*.json ← ecfiler/courts/data | tests/test_web_data_parity.py::test_web_copy_matches_python_source | TRUE |
-| PDF validation results (`/validate`) | web/app/(tools)/validate/page.tsx | POST /api/validate (public, server-side pikepdf/qpdf) | tests/test_public_surface.py; tests/test_pdf_validator.py | TRUE-BUT-UNREACHABLE |
+| PDF validation results (`/validate`) | web/app/(tools)/validate/page.tsx | web/lib/validator.ts in the browser (pdf.js); same messages as ecfiler/pdf/validator.py | tests/test_web_public_access.py::test_validate_tool_checks_pdfs_without_uploading | TRUE |
 
 ## Legal pages — `web/app/privacy/page.tsx`, `web/app/terms/page.tsx`
 
@@ -130,6 +132,11 @@ machine-checkable architecture claims; the brief covers the rest.
 | `Rule 5.2` obligations references (§3, §4, §5) | web/app/terms/page.tsx | Fed. R. Civ. P. 5.2 | — (external; rule cited) | TRUE |
 
 ## Signed-in app — `web/app/(app)/*`
+
+*Session 7: every page in this group is replaced by the closed-workspace
+notice while the site builds without a backend (`web/app/(app)/layout.tsx`),
+so none of these surfaces render in production today. The rows stand for
+when `BACKEND_URL` is set again.*
 
 | Claim | Surface | Implementation | Proving test | Verdict |
 |---|---|---|---|---|
@@ -187,3 +194,26 @@ them:
   (BRANDING.md) — claims about third parties with no captured evidence.
 - **"Last updated: March 2026"** on both legal pages over July content —
   replaced with the `LEGAL_LAST_UPDATED` constant.
+
+## Session 7 — the site with no backend (2026-11-13)
+
+The API was retired from the VPS on 2026-09-24 and production builds with no
+`BACKEND_URL` (`web/lib/workspace.ts`). New and changed surfaces:
+
+| Claim | Surface | Implementation | Proving test | Verdict |
+|---|---|---|---|---|
+| `The signed-in filing workspace (AI analysis, staging, drafts and history) is closed while ECFiler finishes testing against a court system. The free tools work now.` (hero, `/file` and the rest of the app group, `/sign-up`) | web/lib/workspace.ts | no BACKEND_URL → no proxy, app group and sign-up render web/components/workspace-offline.tsx | tests/test_web_public_access.py::test_closed_workspace_says_so | TRUE |
+| `Your PDF is checked on this device and never uploaded.` | web/app/(tools)/validate/page.tsx | web/lib/validator.ts | tests/test_web_public_access.py::test_validate_tool_checks_pdfs_without_uploading | TRUE |
+| `Checks size, searchable text, encryption, form fields and PDF/A identification against CM/ECF requirements.` and the `PDF/A identified` / `Not PDF/A` result | web/app/(tools)/validate/page.tsx | web/lib/validator.ts: XMP metadata names pdfaid or PDF/A, as ecfiler/pdf/validator.py _check_pdfa_metadata | tests/test_web_public_access.py::TestNoBackendGuards::test_validator_mirrors_python_limits; tests/test_web_public_access.py::test_validate_tool_checks_pdfs_without_uploading | TRUE |
+| Privacy §7: `while it is closed no ECFiler server stores your documents, filings, or history` | web/app/privacy/page.tsx | no backend is deployed; the app group renders no data surface | tests/test_web_public_access.py::test_unknown_api_path_is_404_not_502 | TRUE |
+| Privacy §7/§8: waitlist addresses travel by email through `Resend` and are kept in that mailbox | web/app/privacy/page.tsx | web/app/api/waitlist/route.ts | tests/test_web_public_access.py::TestNoBackendGuards::test_waitlist_route_answers_only_after_resend_accepts | TRUE |
+
+Deleted in session 7, for the same reason as the session 4 list (nothing
+measures them): **"Prepare a CM/ECF filing in under a minute"** and **"Start
+preparing CM/ECF filings in under a minute"** (sign-up), **"Three steps. Under
+a minute."** and **"AI reads the entire document in seconds"** (homepage).
+Both phrases are now on the copy-lint ban list. **"`N` attorneys on the
+waitlist"** went with the waitlist count endpoint. Contact addresses
+`privacy@`, `legal@` and `support@ecfiler.com` were removed: ecfiler.com has
+no mailbox and no MX record, so mail to them bounced. The pages now give an
+address that receives mail.

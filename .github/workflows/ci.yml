@@ -1,10 +1,10 @@
 name: CI
 
+# Manual only (session 7, 2026-11-13): checks run on the VPS before a push,
+# and nothing pushed or opened as a PR triggers a run or an email. Run it from
+# the Actions tab only when asked.
 on:
-  push:
-    branches: [master, main]
-  pull_request:
-    branches: [master, main]
+  workflow_dispatch:
 
 env:
   ECFILER_DEV_AUTH: "1"

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "404 — Page Not Found | ECFiler",
+  title: "404: Page Not Found | ECFiler",
   description:
     "The page you're looking for doesn't exist. Head back to ECFiler to continue filing on CM/ECF.",
 };
@@ -61,7 +61,7 @@ export default function NotFound() {
         <p className="mt-6 text-[12px] text-[#8a8a8a]">
           If you think this is a mistake,{" "}
           <a
-            href="mailto:support@ecfiler.com"
+            href="mailto:jackson@sang3r.com"
             className="text-[#1e3a5f] hover:text-[#162a47] transition underline underline-offset-2"
           >
             let us know

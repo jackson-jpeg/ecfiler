@@ -291,13 +291,8 @@ export async function exportAccountData(): Promise<Record<string, unknown>> {
   return resp.json();
 }
 
-export async function validatePDF(file: File): Promise<ValidationResult> {
-  const fd = new FormData();
-  fd.append("document", file);
-  const resp = await fetchWithTimeout(`${API}/api/validate`, { method: "POST", body: fd }, 60000);
-  if (!resp.ok) throw new Error(await resp.text());
-  return resp.json();
-}
+// validatePDF (POST /api/validate) was removed in session 7: /validate now
+// runs web/lib/validator.ts in the browser and needs no backend.
 
 export interface HistoryResponse {
   items: FilingRecord[];

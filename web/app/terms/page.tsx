@@ -127,8 +127,8 @@ export default function TermsOfService() {
             </div>
             <p className="mt-3">
               ECFiler assists with portions of the CM/ECF filing workflow
-              &mdash; including document analysis, event code suggestion,
-              docket text generation, and PDF validation &mdash; and produces a
+              (including document analysis, event code suggestion,
+              docket text generation, and PDF validation) and produces a
               validated filing package for you to submit. All filing decisions,
               and the act of submission itself, remain the sole responsibility
               of the attorney of record. The Service is a tool to assist your
@@ -150,7 +150,7 @@ export default function TermsOfService() {
                   You are solely responsible for every filing you submit to
                   CM/ECF
                 </strong>{" "}
-                &mdash; whether prepared with ECFiler&apos;s hosted tools or
+                , whether prepared with ECFiler&apos;s hosted tools or
                 filed locally through the ECFiler CLI using your own
                 credentials. A filing prepared or staged with ECFiler carries
                 the same legal effect as any filing made on CM/ECF.
@@ -265,7 +265,7 @@ export default function TermsOfService() {
               </strong>{" "}
               The hosted platform prepares, validates, and stages filings
               without ever requiring a court password. Filing itself is
-              performed by you &mdash; either directly on CM/ECF, or locally
+              performed by you, either directly on CM/ECF or locally
               through the ECFiler CLI on your own machine, where your
               credentials are held in your operating system&apos;s keyring and
               never leave your device. With respect to any filing you make
@@ -468,7 +468,7 @@ export default function TermsOfService() {
               </li>
               <li>
                 Access the Service through automated means in a manner that is
-                abusive or excessive &mdash; for example, degrading the Service
+                abusive or excessive: for example, degrading the Service
                 for other users, scraping at volume, or circumventing rate
                 limits. (For clarity: ECFiler&apos;s own court-facing
                 automation identifies itself with a disclosed user agent,
@@ -551,10 +551,10 @@ export default function TermsOfService() {
               Before initiating any formal dispute resolution, you agree to
               contact us at{" "}
               <a
-                href="mailto:legal@ecfiler.com"
+                href="mailto:jackson@sang3r.com"
                 className="text-[#1e3a5f] underline underline-offset-2 hover:text-[#162a47] transition"
               >
-                legal@ecfiler.com
+                jackson@sang3r.com
               </a>{" "}
               and attempt to resolve the dispute informally for at least 30
               days. If the dispute cannot be resolved informally, either party
@@ -617,10 +617,10 @@ export default function TermsOfService() {
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:legal@ecfiler.com"
+                  href="mailto:jackson@sang3r.com"
                   className="text-[#1e3a5f] underline underline-offset-2 hover:text-[#162a47] transition"
                 >
-                  legal@ecfiler.com
+                  jackson@sang3r.com
                 </a>
               </p>
             </div>

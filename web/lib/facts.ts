@@ -30,7 +30,7 @@ export const COURT_BREAKDOWN = {
 } as const;
 
 /** "Last updated" line shown on the Privacy Policy and Terms of Service. */
-export const LEGAL_LAST_UPDATED = "July 2026";
+export const LEGAL_LAST_UPDATED = "November 2026";
 
 /** Days uploaded public documents are kept in original form before compressed archival. */
 export const RETENTION_DAYS = 30;
