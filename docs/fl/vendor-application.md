@@ -5,6 +5,31 @@
 - **Document revision:** rev. 01-01-2021 (5 pages)
 - **Fetched:** 2026-07-27 (full text extracted from the PDF)
 
+> **Update 2026-11-13: the form is unchanged; only the file it links to moved.**
+> The Certified Vendors page's "Batch Filing Application" link now points to an ADA
+> re-upload: https://documents.myflcourtaccess.com/uploads/2026/05/Third_Party_Vendor_Application_01-01-2021_ADA.pdf
+> (server Last-Modified 2026-05-06; PDF ModDate 2026-05-06 15:27 -05:00; same
+> creation date, 2021-01-13, and same title metadata as the 2021 file; now tagged for
+> accessibility). Compared with the 2021 upload using PyMuPDF on 2026-11-13: same 5
+> pages, same page size, zero form fields in both, **identical words at identical
+> coordinates on every page**, identical ruling lines. The revision is still
+> "01-01-2021", and everything captured below stands, including the $500.00
+> nonrefundable fee and the P.O. Box 16428 mailing address. Both files are kept in
+> `docs/fl/sources/` (`..._01-01-2021.pdf` and `..._01-01-2021_ADA.pdf`, sha256
+> `a42528fc…6b87`); the fill script now uses the ADA file.
+>
+> **Pending review that could change it:** on 2026-06-22 the Authority's Board
+> chair, citing "more and more third party vendors applying", appointed the
+> Hon. John Tomasino to lead a **work group to review the TPV processes and fees**
+> and make recommendations to the Board (minutes, approved at the 2026-07-27 meeting:
+> https://cms.myflcourtaccess.com/uploads/2026/07/Minutes-June-22-2026-1.pdf, §XI).
+> No recommendation has been published as of 2026-11-13: the 2026-07-27 draft minutes
+> and the agendas for 2026-09-30 and 2026-11-02 carry no work-group report (sources
+> list in `INDEX.md`). The next Board meeting is **2026-12-08**, 2:00 pm ET by
+> WebEx (https://cms.myflcourtaccess.com/uploads/2026/10/Public-Notice-12-08-26.pdf).
+> Re-check the Certified Vendors page before the check is written and the packet
+> mailed.
+
 ## Applicant Contact Information (form fields, page 1)
 
 - Applicant Name

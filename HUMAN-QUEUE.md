@@ -1,249 +1,129 @@
 # Human queue
 
-Everything here failed one of the blocking tests: money, identity/signature,
-a credential that exists nowhere on either machine, an irreversible action on
-production data, a lawyer's judgment, or the sandbox's permission layer.
-Nothing is here because it was tedious.
+*Rewritten 2026-11-13 (session 7). One list, ordered by what unblocks the
+most. A row is here only for money, a signature, Jackson's identity, a
+CAPTCHA that truly can't be passed, or a credential that exists nowhere.
+Each row says why it is his, the exact click path, and the time.*
 
-Ordered by what unblocks the most downstream work. Session 4 collapsed three
-rows (DNS, certbot, API key) into one command and turned the reboot row into
-"just reboot". Session 5 **deleted the "deploy the site" row permanently**:
-PR #1 merged to master, production deploys from every master push via the
-Vercel git integration (ledger L13), and the outside-in smoke passed 18/18
-(ledger L14) — deploying the site is now `git push`, not a queue item.
-Session 6 closed the QA-account row (it exists and authenticates) and the
-allow-rules paste row (pasted, scoped); both were replaced by what came
-after them — re-running the filing, and taking the SSH rules back out.
+Session 7 removed the old rows for DNS + API activation (the API stays
+retired until ECFiler has a real signup or paying user), the allow-rules
+removal (the operator does it after the NEF), and the VPS reboot (its
+post-reboot unit went with the retirement).
 
-| # | What | Why blocked | Time |
+| # | What | Why it's Jackson's | Time |
 |---|---|---|---|
-| 1 | [DNS records, then one activation command](#1) | Sandbox (DNS write blocked) | 3 min |
-| 2 | [Remove the scoped SSH allow-rules after QA day](#2) | Your laptop, your call | 1 min |
-| 3 | [Request e-filing privileges for AZTTDC, then re-run the filing](#3) | Web form + a court's approval | 10 min, then days |
-| 4 | [Rotate the PACER password](#4) | Credential | 90 s |
-| 5 | [Put `ANTHROPIC_API_KEY` on the Mac](#5) | Credential + sandbox | 60 s |
-| 6 | [Subscribe to GovDelivery](#6) | CAPTCHA | 30 s |
-| 7 | [Send the two outreach messages](#7) | Identity | 4 min |
-| 8 | [Decide the entity question](#8) | Identity/legal | 5 min read |
-| 9 | [Form the LLC + file the FL application](#9) | Money + signature | $625 |
-| 10 | [Counsel review of Terms/Privacy](#10) | Lawyer | two questions |
-| 11 | [Reboot the VPS](#11) | Kills live sessions incl. mine | 2 min |
+| 1 | [Register the QA account to e-file, and send the PSC email](#1) | Identity attestation + email in his name | 15 min, then the court's wait |
+| 2 | [The attended NEF run](#2) | Typing YES submits to a court under his account | 10 min, after #1 is approved |
+| 3 | [Rotate the production PACER password](#3) | Credential | 2 min |
+| 4 | [Send C2 and C5](#4) | His name; C5 has a CAPTCHA and needs his phone | 6 min |
+| 5 | [Subscribe to GovDelivery](#5) | CAPTCHA | 30 s |
+| 6 | [Form the LLC and file the Florida application](#6) | Money + signature | $625, about 45 min |
+| 7 | [Counsel review of Terms and Privacy](#7) | Money (a lawyer) | two questions |
+| 8 | [Put `ANTHROPIC_API_KEY` on the Mac](#8) | Credential that exists nowhere | 1 min |
 
 ---
 
-## 1. DNS records, then one activation command {#1}
+## 1. Register the QA account to e-file, and send the PSC email {#1}
 
-The API is live and healthy on the VPS; only the name is missing. Add the
-records (the sandbox blocked this write twice), then the new script does
-everything else — waits for propagation, runs certbot, drops the key,
-restarts, and verifies from outside with a pass/fail table:
+The only thing between ECFiler and its first NEF (ledger L20, re-checked
+L27: the account can read the Az Test District Court and cannot file). Filing
+is a privilege a court grants to a named person, and the form ends with that
+person acknowledging the filer terms. Use the **non-attorney** path: the
+runbook used to name the attorney path, which claims a bar admission.
+Full research: `docs/qa-efile-registration.md`.
 
-```
-[MAC] vercel dns add ecfiler.com api A 187.77.218.14
-[MAC] vercel dns add ecfiler.com api AAAA 2a02:4780:4:1c0b::1
-[VPS] ANTHROPIC_API_KEY=sk-ant-... bash /opt/ecfiler/scripts/deploy/activate-api.sh
-```
+1. `[MAC]` open <https://qa-pacer.psc.uscourts.gov/pscof/manage/maint.jsf> and
+   log in as **ecfilercom** (password in the ecfiler keychain).
+2. **Maintenance** tab → **Non-Attorney E-File Registration**.
+3. Court Type **U.S. District Courts** → Court **Az Test District Court**.
+   Role: the most accurate non-attorney role (Party / Pro Se / Interested Party).
+   If AZTTDC is not listed: Court Type **U.S. Bankruptcy Courts** → **Az Tc1b
+   Bankruptcy Court** (AZTTBK), Role **Creditor**. If no QA court is listed
+   under either: submit nothing and go to step 6.
+4. Tick that you are the individual registering; name, address, email
+   **jackson@sang3r.com**; email notices **on** (the NEF needs them). Next.
+   Payment: leave blank (QA is not billable). Next.
+5. Read the Non-Attorney E-Filing Terms, acknowledge, **Submit**. Screenshot
+   the confirmation. Tell the operator the court and role you picked (or
+   that nothing was listed).
+6. Send the email in `docs/qa-efile-registration.md` → "Draft request" to
+   `pacer@psc.uscourts.gov` from jackson@sang3r.com, filling in the date,
+   court and role (or its "nothing listed" sentence).
 
-(A dedicated key from console.anthropic.com beats reusing the sanger-monitor
-key — separate billing visibility — but either works. Omit the variable to
-activate without AI endpoints; they answer 503 until a key lands.)
+The operator checks for approval from then on (`session filing-access --qa
+--username ecfilercom`). No published turnaround exists; plan on 1 to 2
+weeks. Note: PACER now requires a password change every 180 days (since
+2026-08-17), and the QA account was registered 2026-07-28.
 
-Until this runs, the site's `/api/*` calls answer 502 — the waitlist widget,
-`/validate`, and signed-in backend features. Every other free tool is
-client-side and already works. The verification half of the script was
-proven against a local API instance — all six checks pass (ledger L10).
+## 2. The attended NEF run {#2}
 
-## 2. Remove the four scoped SSH allow-rules when QA day is over {#2}
-
-**This replaces the old "paste the allow-rules" row — the rules are in
-place.** You allowed them for an attended run and asked for a row to take
-them back out. Four prefixes, in two files:
-
-```json
-"Bash(ssh macbook-tunnel /Users/jackson/ecfiler/scripts/mac/ecfiler-mac:*)"
-"Bash(ssh macbook-tunnel git -C /Users/jackson/ecfiler:*)"
-"Bash(ssh macbook-tunnel ls:*)"
-"Bash(ssh macbook /Users/jackson/ecfiler/scripts/mac/ecfiler-mac:*)"
-```
-
-- `[VPS]` `/root/.claude/settings.json` — the global file on this machine, so
-  I can edit it myself when you say the word.
-- repo `.claude/settings.json` — committed; removing it is a normal commit.
-
-They are deliberately not `Bash(ssh macbook:*)`, which would be arbitrary
-command execution on your laptop. `make qa-day MODE=live` checks that *some*
-`Bash(ssh macbook` rule exists and refuses to start otherwise, so pulling
-them ends VPS-driven QA runs until they go back — which is the point.
-
-## 3. Request e-filing privileges for AZTTDC, then re-run the filing {#3}
-
-**Start the request today — the wait is the long pole.** The 2026-07-30 run
-(ledger L20) got further than anything has: PDF validated, redaction scan
-clean, review gate rendered with the right court and case, court invariant
-passed, PACER authenticated, case number entered and accepted. It stopped at
-the court's own permission wall. The QA account can *read* the Az Test
-District Court and cannot file in it — CM/ECF served Query, Reports,
-Utilities, Help, Log Out and no Civil or Criminal menu. Filing is a separate
-privilege each court grants and must approve, on a multi-day turnaround
-(R-015).
-
-Numbered steps are in `docs/nef-roundtrip-runbook.md` → "Requesting e-filing
-privileges". It starts here, and steps 2–5 are a web form, which is why this
-is your row:
+After #1 is approved. The sheet is `docs/qa-roundtrip/attended-run.md`. Jackson's
+part is one paste in a Mac terminal, defaults at the prompts, **CONFIRM** at the
+review table and **YES** at CM/ECF's confirmation screen. The operator does
+everything before and after. No server is involved (the July package is on
+the Mac and `STAGE=resume` files it).
 
 ```
-[MAC] open https://qa-pacer.psc.uscourts.gov/pscof/manage/maint.jsf
+[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=resume TARGET=https://ecf.tc1d.aztc.uscourts.gov
 ```
 
-Check for approval without attempting a filing:
+## 3. Rotate the production PACER password {#3}
 
-```
-[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session filing-access --qa --court azttdc
-```
-
-Once it answers `✓ This account may file in azttdc`, the re-run command is
-at the top of the runbook. The proof list when it finishes: NEF text and
-docket number in the receipt, a `kind="submitted"` attestation carrying that
-NEF text, both chains verifying, and the chain head anchored in the saved
-receipt.
-
-Expect the approved run to find more. Everything past the case lookup has
-only ever run against the mock, and the route from the Civil menu to an
-event list is deliberately unbuilt until someone can see that screen
-(R-014). The earlier bugs from 2026-07-29 (R-012 wrong court, R-013 unusable
-staged package) are fixed and pinned. Nothing has been filed; the chain on
-the filing machine is still empty.
-
-**Rotate the QA credential when you're done with it** (your own plan — it
-was shared in chat, so treat it as exposed):
-
-```
-[MAC] printf '%s' 'NEW-QA-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh 'ecfilercom'
-```
-
-## 4. Rotate the PACER password {#4}
-
-The production PACER password was exposed in a prior session transcript.
-Treat it as compromised (R-002).
-
-<https://pacer.uscourts.gov/my-account-billing/manage-my-account-login> →
-Settings → Change Password. Then update it on the Mac (piped, never in
-shell history):
+<https://pacer.uscourts.gov/my-account-billing/manage-my-account-login> → log in
+as jmsanger → Settings → Change Password. Then store it on the Mac:
 
 ```
 [MAC] printf '%s' 'NEW-PASSWORD' | bash ~/ecfiler/scripts/mac/keychain-setup.sh jmsanger
 ```
 
-## 5. Put `ANTHROPIC_API_KEY` on the Mac {#5}
+## 4. Send C2 and C5 {#4}
 
-`ecfiler check` on the Mac is 10/12; the two failures clear with one file:
+**C2** (2 min): in Gmail, delete the old draft to developers@psc.uscourts.gov
+(it is stale). New email from **jackson@sang3r.com** to
+developers@psc.uscourts.gov, pasting `docs/outreach/c2-dev-mailbox-email.md`.
 
-```
-[MAC] printf 'export ANTHROPIC_API_KEY=%s\n' 'sk-ant-...' > ~/.ecfiler/env.sh
-[MAC] chmod 600 ~/.ecfiler/env.sh
-[MAC] ~/ecfiler/scripts/mac/ecfiler-mac check
-```
+**C5** (4 min): <https://www.flmd.uscourts.gov/webforms/contact-cmecf>. The form
+now has a CAPTCHA. Answers are in `docs/outreach/c5-submission-sheet.md`; add
+your phone number, solve the CAPTCHA, submit.
 
-## 6. Subscribe to GovDelivery {#6}
+## 5. Subscribe to GovDelivery {#5}
 
 <https://public.govdelivery.com/accounts/USFEDCOURTS/subscriber/new?topic_id=USFEDCOURTS_1821>
+→ email jackson@sang3r.com → solve the MTCaptcha → submit → click the
+confirmation link. Do it before C2, so nothing in C2 needs to change.
 
-Email `realjacksons@gmail.com`, solve the MTCaptcha, submit, click the
-confirmation link. Blocked only by the CAPTCHA.
+## 6. Form the LLC and file the Florida application {#6}
 
-## 7. Send the two outreach messages {#7}
+No Sunbiz entity named "ECFiler" or "ECF Filer" exists (checked against the
+Division's own bulk data, `scripts/sunbiz_name_check.py`; not a reservation).
+Entity reasoning: `docs/fl/entity-recommendation.md`.
 
-**C2 — AO developer mailbox.** The Gmail draft in your account
-(`developers@psc.uscourts.gov`) is final — it matches the repo text (checked in session 3), untouched since. Read it and hit send, ideally after item 6 so
-"I'm subscribed to the developer updates list" is true.
+1. **LLC, $125, 15 min:** <https://search.sunbiz.org/Inquiry/CorporationSearch/ByName>
+   → Entity Name "ECFiler" to confirm, then <https://efile.sunbiz.org/llc_file.html>
+   → ECFiler LLC, registered agent yourself, principal address your Tampa address.
+2. **References, 5 min:** send the three emails in
+   `docs/fl/drafts/reference-request-emails.md`.
+3. **Application, $500, 30 min once references are in:** print
+   `docs/fl/Third_Party_Vendor_Application_FILLED.pdf` (form rev. 01-01-2021,
+   still current), add the LLC name, sign pages 4 and 5, check to the payee
+   confirmed with the Authority (support@myflcourtaccess.com / 850-577-4609),
+   mail to P.O. Box 16428. Checklist: `docs/fl/application-packet-checklist.md`.
+   The Authority's board has a work group reviewing vendor "processes and
+   fees"; its next meeting is 2026-12-08, so mailing after it costs nothing.
 
-**C5 — M.D. Fla. clerk.** Web form, not email:
-<https://www.flmd.uscourts.gov/webforms/contact-cmecf> — paste-ready answers
-in `docs/outreach/c5-submission-sheet.md`. Needs your phone number, which is
-nowhere in the repo.
+## 7. Counsel review of Terms and Privacy {#7}
 
-The identity rules are settled and lint-enforced (session 3): true
-profession in personal capacity, employer never named or implied, singular
-voice, no ECFiler-in-use claims. Skim `tests/test_copy_lint.py`'s header
-before sending if you want the reasoning.
+`docs/legal/counsel-review-brief.md`, Q1 (UPL) and Q2 (liability stack). Both
+pages still carry the "LEGAL REVIEW REQUIRED" note. Session 7 changed Privacy
+§7/§8 (no server holds data while the workspace is closed; Resend carries
+waitlist emails) and the contact address on both pages (the ecfiler.com
+mailboxes no longer exist).
 
-## 8. Decide the entity question {#8}
+## 8. Put `ANTHROPIC_API_KEY` on the Mac {#8}
 
-`docs/fl/entity-recommendation.md` — the recommendation is **ECFiler LLC, a
-single-member Florida LLC, formed now**, defended against Delaware and
-against waiting. Read it and say yes or overrule it. Everything in item 9
-waits on the name.
-
-Sunbiz sits behind Cloudflare bot protection and refused both machines, so
-the name-availability check is yours:
-<https://search.sunbiz.org/Inquiry/CorporationSearch/ByName>.
-
-## 9. Form the LLC and file the Florida application {#9}
-
-Money and your signature. Roughly **$625** total. The packet is
-signature-ready: the filled PDF reproduces from
-`scripts/fill_fl_tpv_application.py` (fill script re-run this session), and
-`docs/fl/application-packet-checklist.md` lists every remaining blank — all
-of them are entity name, signatures, dates, phone, or street address.
-
-- **LLC** (~$125): <https://efile.sunbiz.org/llc_file.html>. Registered
-  agent = yourself, principal address = your Tampa address.
-- **Application** ($500): confirm the check payee with the Authority
-  (support@myflcourtaccess.com / 850-577-4609) before writing it.
-- **References**: three request emails in
-  `docs/fl/drafts/reference-request-emails.md` (third is Hostinger — note
-  the account-name caveat in that file). Send these *before* mailing.
-- Engineering is ahead of the paperwork: gap items #2 (domain model), #3
-  (PDF/A enforcement), and #4 (ECF 4.01 message layer, this session) are
-  built and tested; the next build items need the post-approval XSDs.
-
-## 10. Counsel review of Terms and Privacy {#10}
-
-`docs/legal/counsel-review-brief.md`. Q1 (UPL) and Q2 (liability stack)
-remain the genuine lawyer questions; Q3/Q4 collapsed to "here is what we
-did" in session 3. Both pages still carry the `LEGAL REVIEW REQUIRED before
-deploy` banner. Session 4 note for counsel: Terms §5 no longer claims a
-"3-pass" verification system (nothing implemented it) — it now describes
-the real AI analysis + five-point readiness check; §10 states expressly
-that Pro is not yet purchasable.
-
-## 11. Reboot the VPS {#11}
-
-Now genuinely one step: `ecfiler-post-reboot.service` is installed and
-enabled, so the boot runs the check itself and writes a timestamped result.
+Not needed for the NEF (the run takes the pattern-scan path with its waiver
+gate). Needed for the AI analysis on the Mac.
 
 ```
-[VPS] reboot
-# ...after it returns, read the proof:
-[VPS] cat /var/log/ecfiler/post-reboot-latest.result
+[MAC] printf 'export ANTHROPIC_API_KEY=%s\n' 'sk-ant-...' > ~/.ecfiler/env.sh && chmod 600 ~/.ecfiler/env.sh
 ```
-
-The reboot kills every live Claude session on the box — including the one
-doing the work — so it is yours, whenever convenient.
-
----
-
-## Done in session 4 (check the work)
-
-Full detail in the PR. **Suite: 605 passed, 0 failed** (was 546).
-
-- **The marketing site stopped lying.** Free tools actually public (the
-  (app) auth gate was redirecting /courts to /sign-in), plus new public
-  /tools, /events, /fees, /redaction pages — the last two are client-side
-  ports with data-parity tests. Checked as an anonymous outsider with
-  Playwright; that check now runs in CI.
-- **Claims deleted rather than softened**: 3-pass verification, Stripe
-  billing, hosted CM/ECF filing, timing stats, sealed-filing-in-one-click,
-  competitor pricing. `docs/claims-register.md` maps every surviving claim
-  to code + test, and `tests/test_claims_register.py` enforces it.
-- **Every court number derives from the registry data**; the 207
-  decomposes explicitly (90+4 districts, 94 bankruptcy, 13 courts of
-  appeals, 3 BAPs, 3 national courts).
-- **activate-api.sh**, **make qa-day**, **ECF 4.01 message layer**,
-  **self-documenting reboot** — rows 1, 2, 3, 11 above got shorter.
-
-**Still not done, plainly: no filing has round-tripped to an NEF on a real
-court system.** Item 3 is what stands between the dry run and the real one —
-and as of 2026-07-30 it is no longer a code problem. Two attended runs have
-now reached a real court; the second one ran out of road at a permission a
-court has to grant (R-015).

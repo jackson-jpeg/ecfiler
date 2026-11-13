@@ -21,11 +21,14 @@ expects. I am not an attorney, and this inquiry is not made on behalf of any emp
 or client. I have a question I could not answer from the Administrative Procedures
 for Electronic Filing, and I would be grateful for the court's guidance.
 
-The tool runs entirely on the filer's own computer. It assists with document
-validation, deadline checks, and pre-filling filing information, and it submits only
-through the filer's own CM/ECF login, in their own browser session, after the person
-at the keyboard reviews and authorizes that specific filing. No credentials are
-transmitted to or stored by any outside service, including mine.
+The tool is still in development and has not yet completed a filing in any court.
+It runs on the filer's own computer. It checks documents before filing (PDF format,
+and a scan for personal identifiers that need redaction), walks the filer through a
+pre-filing checklist, and fills in the CM/ECF screens for the filer to review. It is
+built to submit only through the filer's own CM/ECF login, in their own browser
+session, after the person at the keyboard reviews and authorizes that specific
+filing. Login credentials are never transmitted to or stored by any outside service,
+including mine.
 
 My question: does the court consider this kind of attorney-supervised,
 software-assisted preparation and submission to fall within the ordinary use of an
@@ -33,16 +36,16 @@ attorney's ECF account by that attorney and their authorized staff? And is there
 anything the court would want filers using such tools to do, or to avoid, to stay
 squarely within its expectations?
 
-I would rather learn the court's preferences now than have filers discover them the
-hard way. If a different office or person is the right one for this question, I would
-appreciate a pointer.
+I would rather learn the court's preferences before the tool is finished than have
+filers discover them the hard way. If a different office or person is the right one
+for this question, I would appreciate a pointer.
 
 Respectfully,
 
 Jackson Sanger
 Independent Developer, ECFiler Project
 Tampa, Florida
-realjacksons@gmail.com · github.com/jackson-jpeg/ecfiler
+jackson@sang3r.com · github.com/jackson-jpeg/ecfiler
 
 ---
 
@@ -70,3 +73,24 @@ realjacksons@gmail.com · github.com/jackson-jpeg/ecfiler
 - M.D. Fla. note: verify at send time whether the district's Administrative
   Procedures have an "authorized agent"/staff-use provision to reference by section
   number — cite it if so, stay general if not. (Unverified at draft time.)
+
+### Refresh 2026-11-13 (true as of this date)
+
+- **Address:** `jackson@sang3r.com` replaces the Gmail address (the ecfiler.com
+  mailbox no longer exists; no Gmail on outbound correspondence).
+- **"still in development and has not yet completed a filing in any court"** added.
+  The only live run stopped at the court's permission wall and no NEF exists. The
+  old text ("it submits only through...") described the submission step as working;
+  it now says what it is *built* to do.
+- **"deadline checks" removed.** The code has a pre-filing checklist that asks the
+  filer to confirm the deadline (`ecfiler/filing/checklist.py`); it does not compute
+  or check deadlines. "Pre-filling filing information" became "fills in the CM/ECF
+  screens for the filer to review", which is what `ecfiler/courts/` does.
+- **"runs entirely on the filer's own computer" softened to "runs on".** The
+  optional AI checks (`ecfiler/claude_client.py`: event-code suggestion, redaction
+  scan) send document text to Anthropic under the filer's own API key when one is
+  set. The credentials sentence stays, now "Login credentials", which is exactly
+  true: no credential leaves the filer's machine, and ECFiler's hosted API is
+  offline (the website is frontend-only).
+- No em dashes in the letter body.
+

@@ -338,6 +338,88 @@ skipped** (was 641 before this session's 44 new tests). VERIFIED.
 
 ---
 
+### L22 — 2026-11-13 — PR #3 (session6-qa-day @ 25b1be0) re-verified before merge
+`[VPS] git worktree add --detach /root/ecfiler-s6 25b1be0; cd /root/ecfiler-s6 &&
+ECFILER_DEV_AUTH=1 PYTHONPATH=/root/ecfiler-s6 heavy -- /root/ecfiler/.venv/bin/python
+-m pytest -q tests/` → **685 passed, 7 failed, 8 skipped**. All 7 failures were in
+`tests/test_browser_e2e.py`, each `Executable doesn't exist at
+…/chromium_headless_shell-1254/…`: a fresh venv's Playwright 1.65 without its
+browser. `[VPS] .venv/bin/python -m playwright install chromium-headless-shell`, then
+the same worktree `pytest -q tests/test_browser_e2e.py` → **7 passed**. Total at
+25b1be0: **692 passed, 0 failed, 8 skipped**. Merged: `gh pr merge 3 --merge` →
+master `b1d6f64`. VERIFIED.
+
+---
+
+### L23 — 2026-11-13 — ecfiler.com is a verified Resend sending domain; both inboxes receive
+`[VPS] POST https://api.resend.com/domains {"name":"ecfiler.com"}` → 4 records
+(DKIM TXT `resend._domainkey`, MX + TXT `send`, CNAME `rsend`), added to the
+**Hostinger** zone (ecfiler.com's nameservers are `*.dns-parking.com`, not Vercel)
+with `PUT /api/dns/v1/zones/ecfiler.com {"overwrite":false,…}` after a 200 from
+`…/validate`; the 7 existing records re-read intact. `[VPS] dig +short TXT
+resend._domainkey.ecfiler.com @8.8.8.8` → the DKIM key; `GET /domains/40801801-…`
+→ `verified`, all four records `verified`. A send-only key scoped to that domain went
+straight into the Vercel `ecfiler` project (production) as `RESEND_API_KEY`, with
+`WAITLIST_NOTIFY_TO`; copy in `/root/.ecfiler-resend-key.env` (600). Delivery checks
+`POST /emails` to ECFILER@sang3r.com and jackson@sang3r.com → `last_event:
+delivered` (01a1d5b7-862e…, 01a1d5b7-86cd…); `[MAC] osascript` over Mail's iCloud
+INBOX lists both, received 11:22:20 and 11:22:21 local. VERIFIED.
+
+---
+
+### L24 — 2026-11-13 — the no-backend site, locally: build, 24 live checks, guards that can fail
+`[VPS] cd web && CLERK_SECRET_KEY=sk_test_placeholder heavy -- npm run build`
+(no BACKEND_URL) → exit 0, `/api/health` and `/api/waitlist` route handlers.
+`[VPS] npx next start -p 3117` then `ECFILER_WEB_URL=http://127.0.0.1:3117 heavy --
+.venv/bin/python -m pytest -q tests/test_web_public_access.py` → **24 passed**,
+including `test_validate_tool_checks_pdfs_without_uploading` (sample motion "1/1
+passed", a pikepdf-encrypted copy "password-protected", no POST to `/api/*`) and
+`test_closed_workspace_says_so`. Mutations: removing the waitlist's `if (r.ok)` and
+setting `MIN_TEXT_CHARS = 0` → `TestNoBackendGuards` **2 failed**; restored → 7
+passed. `tests/test_claims_register.py tests/test_copy_lint.py` → green. VERIFIED.
+
+---
+
+### L25 — 2026-11-13 — production serves the no-backend site; 30 of 31 outside checks
+`[VPS] POST https://api.vercel.com/v13/deployments` (project
+prj_7lNeWyl35Crp19TDQ5vbHcnZdrSP, target production, gitSource ref `session7`
+sha 4b1cd25) → `dpl_EaG7btYWf9rwxs173G13DQkb3L2Y` READY. `[VPS] curl
+https://www.ecfiler.com/api/health` → 200 `{"status":"ok","service":"ecfiler-web",
+"commit":"4b1cd25…","workspace":"offline"}` (was 502). `[VPS] bash
+scripts/verify-production.sh` → exit 1, **30 PASS / 1 FAIL**; the one FAIL is
+"production serves master HEAD" (serves 4b1cd25, master b1d6f64) and clears when
+the session PR merges. Also removed from Vercel production env:
+`NEXT_PUBLIC_API_URL=https://ecfiler-production.up.railway.app` (dead since July,
+contradicted docs/hosting-topology.md). STAGED until the merge row.
+
+---
+
+### L26 — 2026-11-13 — one real waitlist signup through the production form lands in the inbox
+`[VPS] .venv/bin/python -I` Playwright: `goto https://www.ecfiler.com/#pricing`,
+fill `waitlist-test-2026-11-13@sang3r.com`, click "Join Waitlist" at
+16:33:00.63 UTC → `/api/waitlist` **200**, page shows "You're on the list".
+`[VPS] GET https://api.resend.com/emails` → `01a1d5c1-5a3c-7ae1-a70a-3fe565a62ad6`
+to ECFILER@sang3r.com, subject "ECFiler waitlist signup:
+waitlist-test-2026-11-13@sang3r.com", `delivered`. `[MAC] osascript` over Mail's
+iCloud INBOX → the same subject, received Friday, November 13, 2026 at 11:33:04 AM
+(16:33:04 UTC). VERIFIED.
+
+---
+
+### L27 — 2026-11-13 — the filing machine after 3½ months idle: green, and still read-only at AZTTDC
+`[MAC] ~/ecfiler/.venv/bin/python -m playwright install chromium` (the browser
+cache had been cleared since July). `[MAC] cd ~/ecfiler && make qa-day MODE=live` →
+**12/12 PASS**, "Preflight green" (keychain unlocks, QA credential authenticates
+against cso-auth, persisted QA session live, attestation chain verifies).
+`[MAC] ecfiler-mac session filing-access --qa --court azttdc` → "Auth failed: Login
+Failed": with no `--username` it used the production account in the QA realm.
+Fixed (`tests/test_filing_access_qa_username.py`, 2 passed, 2 failed on the old code).
+`[MAC] ecfiler-mac session filing-access --qa --username ecfilercom --court azttdc`
+→ read-only, "Nothing was filed", next step is the court's e-filing registration.
+The blocker is the one L20 found. VERIFIED.
+
+---
+
 ## Retro-audit — sessions 2–4 verification claims
 
 Each claim that used verification language in a report or doc, judged

@@ -5,6 +5,12 @@
 - **Version:** 1.0, created 1/21/2017 by the Portal Team (per Document Version Control table). 10 pages.
 - **Fetched:** 2026-07-27 (full text extracted from the PDF)
 
+> **Update 2026-11-13:** the page now links an ADA re-upload,
+> https://documents.myflcourtaccess.com/uploads/2026/05/TPVTestCaseDocumentation_v1_ADA.pdf
+> (Last-Modified 2026-05-06). Compared page by page with the 2021 upload: same 10
+> pages, identical words at identical coordinates. Still v1.0 (1/21/2017); nothing
+> below changes. Both files are in `docs/fl/sources/`.
+
 ## Purpose (verbatim)
 
 > To define the test case scenarios required to be successfully completed in order to receive Certification in a filing path [New Case or Existing Case] and a Division [Circuit Civil, County Civil, Probate, Domestic Relations/Family, Juvenile Dependency, Juvenile Delinquency, Circuit Criminal, Criminal Traffic].

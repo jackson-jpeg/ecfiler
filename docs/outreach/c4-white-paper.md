@@ -3,7 +3,7 @@
 **A practitioner's perspective for the case-management modernization program**
 
 Jackson Sanger — Independent Developer, ECFiler Project
-realjacksons@gmail.com · github.com/jackson-jpeg/ecfiler · July 2026
+jackson@sang3r.com · github.com/jackson-jpeg/ecfiler · July 2026
 
 *Written to be forwardable inside the AO: no product pitch, every requirement
 anchored to a security or accuracy benefit, sources cited.*
