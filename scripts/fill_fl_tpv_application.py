@@ -4,11 +4,24 @@
 Source form has zero widgets; every insertion is positioned from measured
 label/rule geometry (see git history / packet checklist for the fact sheet).
 Company name, signatures, dates, and titles are deliberately left blank.
+
+Source: the form the Certified Vendors page links today, the ADA re-upload of
+2026-05-06 (uploads/2026/05/..._ADA.pdf). Its text and geometry match the
+2021 upload word for word and coordinate for coordinate (checked 2026-11-13),
+so the measured positions below carry over unchanged.
+
+Usage: fill_fl_tpv_application.py [OUT]   (run from the repo root)
 """
+import sys
+
 import fitz
 
-SRC = "docs/fl/sources/Third_Party_Vendor_Application_01-01-2021.pdf"
-OUT = "docs/fl/Third_Party_Vendor_Application_FILLED.pdf"
+SRC = "docs/fl/sources/Third_Party_Vendor_Application_01-01-2021_ADA.pdf"
+OUT = sys.argv[1] if len(sys.argv) > 1 else "docs/fl/Third_Party_Vendor_Application_FILLED.pdf"
+
+# Contact address for the Authority. The ecfiler.com mailbox no longer
+# exists, and no Gmail address goes on anything outbound (2026-11-13).
+EMAIL = "jackson@sang3r.com"
 
 BLACK = (0, 0, 0)
 GRAY = (0.45, 0.45, 0.45)
@@ -28,7 +41,7 @@ doc = fitz.open(SRC)
 p = doc[0]
 # table: label col1 36-119, value col 120-304 | label col2 305-390, value 391-570
 # row1 y 182.2-193.4 (Applicant Name / Contact Email), row2 y 201.4-212.6
-put(p, 395, 191.0, "realjacksons@gmail.com")           # Contact Email
+put(p, 395, 191.0, EMAIL)           # Contact Email
 put(p, 124.5, 210.2, "Jackson Sanger")                  # Contact Name
 put(p, 395, 210.2, "[phone]", color=GRAY)               # Contact Phone
 # Applicant Name value cell intentionally blank (entity not yet formed).
@@ -60,7 +73,7 @@ put(p, 128.5, 120.2, "Jackson Sanger")
 x = put(p, 139.0, 134.5, "[street address]", color=GRAY)
 put(p, x + 3, 134.5, "Tampa, FL")
 put(p, 129.5, 148.2, "[phone]", color=GRAY)
-put(p, 130.5, 161.8, "realjacksons@gmail.com")
+put(p, 130.5, 161.8, EMAIL)
 
 # II. Status of Company — margin note (form offers only Corporation /
 # Partnership / Joint Venture; do not force the LLC into those boxes).

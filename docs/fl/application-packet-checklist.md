@@ -4,9 +4,27 @@ One page. Companion to `docs/fl/Third_Party_Vendor_Application_FILLED.pdf` (pre-
 overlay on the official form, rev. 01-01-2021). Everything typed in black is done;
 everything in **gray brackets** on the PDF, and everything below, is yours.
 
+**Checked 2026-11-13** against the Authority's Certified Vendors page
+(https://www.myflcourtaccess.com/authority/certified-vendors): the form it links is
+an ADA re-upload (2026-05-06) of the same rev. 01-01-2021, identical word for word and
+position for position; the filled PDF was regenerated on it and read back
+(`tests/test_fl_tpv_fill.py`). Fee still **$500**; P.O. Box unchanged. One open item:
+a Board work group is reviewing TPV "processes and fees" (appointed 2026-06-22, no
+report yet; next Board meeting 2026-12-08). Sources: `docs/fl/vendor-application.md`,
+`docs/fl/fee-schedule.md`.
+
 ## Before you print
 
-- [ ] **Form the entity** (recommended: single-member Florida LLC, `docs/fl/entity-recommendation.md`)
+- [ ] **Re-check the form and the fee the week you mail** (2 min): open
+      https://www.myflcourtaccess.com/authority/certified-vendors → "Batch Filing As a
+      Third-Party Vendor" → "Batch Filing Application". If the link no longer ends in
+      `uploads/2026/05/Third_Party_Vendor_Application_01-01-2021_ADA.pdf`, or "Vendor
+      Fees" no longer ends in `uploads/2021/08/Proposed_third_party_fees.pdf`, stop and
+      have the packet regenerated (the work group may have changed the form or the fee).
+
+- [ ] **Form the entity** (recommended: single-member Florida LLC, `docs/fl/entity-recommendation.md`).
+      Name check 2026-11-13 against the Division's bulk data (13.07 million records):
+      no ECFiler / ECF Filer of record. Confirm on search.sunbiz.org the day you file.
       — the company-name blanks and the "years in business" answer depend on it.
 - [ ] **Open the business bank account + EIN** — the bank is your strongest financial reference.
 - [ ] **Line up three financial-stability references** and warn them the Authority may call
@@ -57,7 +75,8 @@ beside item C (the printed question runs to the right edge; there was no inline 
 
 ## What the filled PDF already commits you to (typed answers)
 
-Contact: Jackson Sanger / realjacksons@gmail.com (pp. 1, 5). Status retrieval:
+Contact: Jackson Sanger / jackson@sang3r.com (pp. 1, 5; changed 2026-11-13 from the
+Gmail address, since the Authority's QA credentials and notices go to this mailbox). Status retrieval:
 FilingReviewCompleteResult polling; callback table marked N/A (p. 3). Scope: "X" in
 **Pleading on Existing Case** for **Circuit Civil (CA)** and **County Civil (CC)** only
 (p. 3). §II margin note: single-member Florida LLC. §III: B "None.", C "None.",

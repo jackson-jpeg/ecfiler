@@ -5,6 +5,28 @@
   - Official PDF list: http://documents.myflcourtaccess.com/uploads/2025/05/05012024-TPV-List-1.pdf — titled "FLORIDA E-FILING CERTIFIED THIRD PARTY VENDORS **05/01/2025**" (24 vendors, with certification scopes and restrictions). Linked from the page as "Third Party Vendor List 2025".
 - **Fetched:** 2026-07-27
 
+> **Update 2026-11-13: newer official list, 27 vendors.** The page now links
+> "Third Party Vendor List 7-30-2026":
+> http://documents.myflcourtaccess.com/uploads/2026/07/07302026-TPV-List.pdf (titled
+> "FLORIDA E-FILING CERTIFIED THIRD PARTY VENDORS 07/30/2026"; saved as
+> `docs/fl/sources/07302026-TPV-List.pdf`). Changes against the 05/01/2025 list below:
+> - **Added:** Bail Bond Hub, LLC (Existing Case/CF only); Heist, Weiss & Wolk
+>   (Existing and New Case, CC, no restrictions); Pro Legal Serve (Existing Case
+>   CA, CC, SC, DR; approved by the Board 2026-07-27).
+> - **Renamed and widened:** eFileMadeEasy is now First Legal Buyer; its New Case
+>   scope grew from CA, CC to CA, CC, SC, CP, GA, MH, DR.
+> - **Unchanged precedents the cover letter cites:** DreamBuild and TSI Legal
+>   (Existing Case CA, CC; no submission with fee, one document per submission),
+>   ProVest (Existing Case CA, the same plus no Correction or Abandoned Filing
+>   Queue), Caffeine Code (Existing Case only, no new case initiation).
+> - **In the pipeline:** the Board's 2026-09-30 agenda lists TPV approvals for
+>   Connect2Court, Southron (Southron Firm, P.A.) and Flash Justice
+>   (https://cms.myflcourtaccess.com/uploads/2026/09/E-Filing-Agenda-September-30-2026.pdf);
+>   they are not yet on the 07/30/2026 list.
+> - The web page now names 25 vendors (it adds PaperTracker, absent from the PDF,
+>   and omits Bail Bond Hub, Caffeine Code and Landau). The two lists are still out
+>   of sync.
+
 Page intro (verbatim): "The companies linked below have been certified by the Florida Courts E-Filing Authority to offer batch filing in a variety of case types. Please contact the company directly for information on batch filing."
 
 ## Web page list (23 vendors, with linked sites where given)

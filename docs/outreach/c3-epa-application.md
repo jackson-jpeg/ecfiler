@@ -101,7 +101,7 @@ annual meeting and do the between-meeting work.
 
 ## One-page résumé (if the form accepts an upload — final skeleton)
 
-**Jackson Sanger** — Tampa, FL · realjacksons@gmail.com · `[JACKSON — phone]`
+**Jackson Sanger** — Tampa, FL · jackson@sang3r.com · `[JACKSON — phone]`
 
 **Litigation docketing specialist** (`[JACKSON — years, stated honestly; employer
 deliberately unnamed — this application is personal]`)

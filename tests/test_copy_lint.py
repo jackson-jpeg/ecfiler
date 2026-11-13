@@ -34,6 +34,10 @@ FORBIDDEN_PHRASES = [
     "last updated: march 2026",
     "min saved per filing",
     "cancel anytime",
+    # Session 7 (2026-11-13): timing claims that survived the session 4 purge
+    # on the homepage and sign-up page. Nothing measures preparation time.
+    "under a minute",
+    "in seconds",
 ]
 
 # Public-facing surfaces under lint. Python internals are covered by
@@ -144,7 +148,8 @@ PLURAL_VOICE_RE = re.compile(r"\b(we|our|us)\b")
 # quoted court/form labels, quotes from official documents, and named-entity
 # constructions. Keep this list short and literal.
 PLURAL_ALLOWED_SUBSTRINGS = [
-    "how can we assist you",  # the M.D. Fla. web form's own field label
+    "how can we assist you",  # the M.D. Fla. web form's own field label (to 2026-07)
+    "how may we help you",  # the same form's field label, re-read 2026-11-13
     "> the undersigned",  # quoted declaration text from the FL application form
 ]
 

@@ -1,8 +1,45 @@
 # Florida Courts E-Filing Authority — Certified Vendor / Batch Filing Program: Capture Inventory
 
-- **Fetched:** 2026-07-27
+- **Fetched:** 2026-07-27; **re-checked 2026-11-13** (section below)
 - **Program entry point:** https://www.myflcourtaccess.com/authority/certified-vendors (live; did NOT 404)
 - **Program status:** ACTIVE. The page's "Batch Filing As a Third-Party Vendor" section links the application, license agreement, test checklist, fees, FAQs, and an informational video. The license agreement PDF was re-uploaded (ADA-tagged) in March 2026 and the vendor list is dated 05/01/2025 — both indicate ongoing maintenance.
+
+## Re-check 2026-11-13: what changed since July 2026
+
+**Requirements: no substantive change.** Application rev. 01-01-2021, **$500**
+nonrefundable fee, P.O. Box 16428 mailing address, license agreement (1/16/2018
+template), monthly fees $125 to $250, test checklist v1.0: all still current. What
+did change:
+
+| What | Before (2026-07-27) | Now (2026-11-13) | Source |
+|---|---|---|---|
+| Application file linked | `uploads/2021/08/Third_Party_Vendor_Application_01-01-2021.pdf` | ADA re-upload `uploads/2026/05/Third_Party_Vendor_Application_01-01-2021_ADA.pdf` (Last-Modified 2026-05-06); same words at the same coordinates on all 5 pages | https://documents.myflcourtaccess.com/uploads/2026/05/Third_Party_Vendor_Application_01-01-2021_ADA.pdf |
+| Test checklist file linked | `uploads/2021/08/TPVTestCaseDocumentation_v1.pdf` | ADA re-upload `uploads/2026/05/TPVTestCaseDocumentation_v1_ADA.pdf`; text identical, still v1.0 | https://documents.myflcourtaccess.com/uploads/2026/05/TPVTestCaseDocumentation_v1_ADA.pdf |
+| Official vendor list | 05/01/2025, 24 vendors | **07/30/2026, 27 vendors** (+Bail Bond Hub, Heist Weiss & Wolk, Pro Legal Serve; eFileMadeEasy renamed First Legal Buyer) | http://documents.myflcourtaccess.com/uploads/2026/07/07302026-TPV-List.pdf |
+| License agreement, Vendor Fees PDF, Batch FAQ | as captured | byte-identical (sha256) | Certified Vendors page |
+| TPV fee/process review | none known | **Board work group appointed 2026-06-22** (Hon. John Tomasino) to review TPV processes and fees; no report as of 2026-11-13 | https://cms.myflcourtaccess.com/uploads/2026/07/Minutes-June-22-2026-1.pdf §XI |
+
+Board materials read for this check (all via the Authority's own WordPress API,
+`https://cms.myflcourtaccess.com/wp-json/wp/v2/meetings`, because the Meetings page
+renders them with JavaScript):
+
+- 2026-06-22 minutes (work group appointed): https://cms.myflcourtaccess.com/uploads/2026/07/Minutes-June-22-2026-1.pdf
+- 2026-07-27 agenda and draft minutes (Pro Legal Serve approved; no work-group report): https://cms.myflcourtaccess.com/uploads/2026/07/Agenda-July-27-2026.pdf, https://cms.myflcourtaccess.com/uploads/2026/09/Minutes-July-27-2026-draft.pdf
+- 2026-09-30 agenda (TPV approvals: Connect2Court, Southron, Flash Justice; no fee item): https://cms.myflcourtaccess.com/uploads/2026/09/E-Filing-Agenda-September-30-2026.pdf. Its minutes are not posted yet.
+- 2026-11-02 agenda (security briefing and a CaseAccess integration request from a legal-research vendor; no TPV item): https://cms.myflcourtaccess.com/uploads/2026/10/E-Filing-Agenda-November-2-2026-2.pdf
+- Next meeting 2026-12-08, 2:00 pm ET, WebEx: https://cms.myflcourtaccess.com/uploads/2026/10/Public-Notice-12-08-26.pdf
+- Related, not a TPV requirement: on 2026-06-16 the Florida Supreme Court asked the
+  Authority to add a Portal notice that filers are responsible for the accuracy of
+  everything they submit, "including documents that have been produced using
+  technology such as generative artificial intelligence" (Rule 2.515(d)):
+  https://cms.myflcourtaccess.com/uploads/2026/06/06162026-Portal-Notification-on-GenAI.pdf.
+  Relevant to how ECFiler's AI checks are described to Florida filers.
+
+New files in `docs/fl/sources/` (originals kept): `Third_Party_Vendor_Application_01-01-2021_ADA.pdf`,
+`TPVTestCaseDocumentation_v1_ADA.pdf`, `07302026-TPV-List.pdf`,
+`Minutes-June-22-2026-1.pdf`, `Minutes-July-27-2026-draft.pdf`,
+`E-Filing-Agenda-September-30-2026.pdf`, `06162026-Portal-Notification-on-GenAI.pdf`.
+All read as data only, with PyMuPDF under `python3 -I`.
 
 ## Captured extracts (all PDFs were fetched and text-extracted in full)
 

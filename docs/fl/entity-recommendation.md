@@ -80,6 +80,47 @@ Also worth a five-minute check before committing: a USPTO TESS search and a scan
 certified-vendor list (`docs/fl/certified-vendor-list.md`) for confusingly similar vendor
 names.
 
+### Name availability: checked 2026-11-13 (bulk data, not the search page)
+
+**Result: no Florida entity of record is named ECFiler, ECF Filer, or anything that
+normalizes to either.** "ECFiler LLC" looks available. The Division confirms
+availability only when it accepts the Articles, so this is strong evidence, not a
+reservation (Florida has no name reservation for LLCs).
+
+How, exactly:
+
+- **search.sunbiz.org (the name search) refused automated access**: `curl` with an
+  ordinary browser User-Agent got HTTP 403 and a Cloudflare "Just a moment..."
+  challenge on both `/Inquiry/CorporationSearch/ByName` and a direct `SearchResults`
+  URL. OpenCorporates answered with a reCAPTCHA (its API needs a paid token). Neither
+  was pushed further: no CAPTCHA solving, no evasion.
+- **The Division's own bulk data**, the sanctioned route: the public SFTP server
+  whose host and public login are printed on
+  https://dos.fl.gov/sunbiz/other-services/data-downloads/ (read 2026-11-13).
+  - Quarterly corporate file `doc/Quarterly/Cor/cordata.zip` (dated 2026-10-07,
+    1,793,034,019 bytes, 10 members): **12,987,601 records scanned, active and
+    inactive** (it carries both: status `A` and `I` both present), every
+    corporation, LLC and LP of record.
+  - Daily corporate files `doc/cor/20261001c.txt` through `20261112c.txt` (40 files,
+    overlapping the quarterly cut-off): **79,126 records scanned**.
+  - **Zero hits.** Each name (columns 13-204 of the 1440-character record, per the
+    Division's corporate-data-file definitions) was normalized the way Florida
+    judges distinguishability (entity designator, punctuation, spaces, a leading
+    "THE" and "&"/"and" ignored), then compared with `ECFILER` and `ECFFILER`; any
+    name matching `E C F ... FIL` in any spacing was also reported. The matcher was
+    shown to fire on planted records ("E.C.F. FILER, L.L.C.", "THE ECFILER COMPANY")
+    before the real run. Unrelated names such as "FILER LLC" and "NEXT FILER LLC"
+    exist and do not conflict.
+  - Reproduce: `scripts/sunbiz_name_check.py` (its header says where the files are).
+- **Not covered:** filings made on 2026-11-13 or later, and fictitious-name (d/b/a)
+  registrations, which do not block an LLC name in Florida.
+
+**Click path to confirm by hand (1 minute, the day you file):**
+https://search.sunbiz.org/Inquiry/CorporationSearch/ByName → Entity Name: `ECFiler`
+→ Search Now. Expect no exact match (the list opens at the nearest names
+alphabetically). Repeat with `ECF Filer`. Then file the same day at
+https://efile.sunbiz.org/llc_file.html.
+
 ## What the application form actually asks (entity requirements)
 
 From `docs/fl/vendor-application.md` (rev. 01-01-2021):

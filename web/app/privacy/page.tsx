@@ -6,7 +6,7 @@ import { LEGAL_LAST_UPDATED, RETENTION_DAYS } from "@/lib/facts";
 export const metadata: Metadata = {
   title: "Privacy Policy | ECFiler",
   description:
-    "How ECFiler collects, stores, and protects your data — including filing documents and usage information. Court credentials never reach our servers.",
+    "How ECFiler collects, stores, and protects your data, including filing documents and usage information. Court credentials never reach our servers.",
 };
 
 const TOC = [
@@ -101,11 +101,11 @@ export default function PrivacyPolicy() {
             </h3>
             <ul className="list-disc pl-5 space-y-1">
               <li>
-                <strong>Email address and name</strong> &mdash; collected during
+                <strong>Email address and name</strong>: collected during
                 account registration through our authentication provider, Clerk.
               </li>
               <li>
-                <strong>Bar admission and attorney identifiers</strong> &mdash;
+                <strong>Bar admission and attorney identifiers</strong>:
                 if you choose to provide them in your profile.
               </li>
             </ul>
@@ -129,17 +129,17 @@ export default function PrivacyPolicy() {
                 main documents and attachments.
               </li>
               <li>
-                <strong>Case information</strong> &mdash; case numbers, court
+                <strong>Case information</strong>: case numbers, court
                 identifiers, party names, and event codes associated with your
                 filings.
               </li>
               <li>
-                <strong>AI-generated metadata</strong> &mdash; docket text
+                <strong>AI-generated metadata</strong>: docket text
                 suggestions, event code predictions, and document analysis
                 results produced by our AI systems during the filing workflow.
               </li>
               <li>
-                <strong>Filing history</strong> &mdash; records of filings
+                <strong>Filing history</strong>: records of filings
                 prepared and staged through the Service, including timestamps,
                 courts, and status.
               </li>
@@ -191,8 +191,8 @@ export default function PrivacyPolicy() {
               <li>
                 <strong>Legacy note:</strong> an earlier version of the Service
                 offered server-side credential storage. That capability was
-                removed from the code in July 2026 &mdash; before any filing
-                path ever used it &mdash; and the hosting environment that held
+                removed from the code in July 2026 (before any filing
+                path ever used it), and the hosting environment that held
                 the legacy store has since been decommissioned. No ECFiler
                 server stores court credentials today.
               </li>
@@ -282,7 +282,7 @@ export default function PrivacyPolicy() {
               authentication tokens. Clerk may also collect device and browser
               information for security purposes (e.g., detecting suspicious
               login attempts). ECFiler does not store your password for your
-              ECFiler account &mdash; that is managed entirely by Clerk. Please
+              ECFiler account. That is managed entirely by Clerk. Please
               review{" "}
               <a
                 href="https://clerk.com/privacy"
@@ -333,19 +333,28 @@ export default function PrivacyPolicy() {
             <h2 className="text-[20px] font-bold text-[#1a1a1a] mb-3">
               7. Infrastructure & Data Storage
             </h2>
-            <p>ECFiler&apos;s infrastructure is hosted by two providers:</p>
+            <p>ECFiler&apos;s infrastructure is hosted as follows:</p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                <strong>Vercel</strong> &mdash; hosts the frontend application
+                <strong>Vercel</strong>: hosts the frontend application
                 (the website and user interface you interact with). Vercel
                 operates data centers in the United States and complies with SOC
                 2 Type II standards.
               </li>
               <li>
-                <strong>Self-hosted backend</strong> &mdash; the backend API
-                server, database, and document storage run on infrastructure
-                we operate directly (a dedicated virtual private server), not
-                on a third-party application platform.
+                <strong>Self-hosted backend</strong>: when the signed-in
+                filing workspace is open, the backend API server, database, and
+                document storage run on infrastructure we operate directly (a
+                dedicated virtual private server), not on a third-party
+                application platform. The workspace is closed for now, and
+                while it is closed no ECFiler server stores your documents,
+                filings, or history.
+              </li>
+              <li>
+                <strong>Resend (email delivery)</strong>: if you join the Pro
+                waitlist, your email address is sent to us in an email
+                delivered by Resend. We keep it in that mailbox, use it only to
+                tell you when Pro opens, and delete it if you ask.
               </li>
             </ul>
             <p className="mt-3">
@@ -373,16 +382,16 @@ export default function PrivacyPolicy() {
               </p>
               <ul className="list-disc pl-5 space-y-1 mt-2">
                 <li>
-                  <strong>Clerk (authentication)</strong> &mdash; email and
+                  <strong>Clerk (authentication)</strong>: email and
                   account data as described in Section 5.
                 </li>
                 <li>
-                  <strong>Vercel and our hosting provider</strong> &mdash; as
+                  <strong>Vercel, Resend, and our hosting provider</strong>: as
                   infrastructure providers, these companies process data on our
                   behalf under their standard data processing terms.
                 </li>
                 <li>
-                  <strong>Legal compliance</strong> &mdash; we may disclose
+                  <strong>Legal compliance</strong>: we may disclose
                   information if required by law, subpoena, court order, or
                   government request. We will notify you of such requests to the
                   extent legally permitted.
@@ -420,10 +429,10 @@ export default function PrivacyPolicy() {
             <p className="mt-3">
               To exercise any of these rights, contact us at{" "}
               <a
-                href="mailto:privacy@ecfiler.com"
+                href="mailto:jackson@sang3r.com"
                 className="text-[#1e3a5f] underline underline-offset-2 hover:text-[#162a47] transition"
               >
-                privacy@ecfiler.com
+                jackson@sang3r.com
               </a>
               . We will respond within 30 days.
             </p>
@@ -441,24 +450,24 @@ export default function PrivacyPolicy() {
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                <strong>Right to know</strong> &mdash; you may request a
+                <strong>Right to know</strong>: you may request a
                 detailed disclosure of the categories and specific pieces of
                 personal information we have collected about you in the preceding
                 12 months.
               </li>
               <li>
-                <strong>Right to delete</strong> &mdash; you may request deletion
+                <strong>Right to delete</strong>: you may request deletion
                 of your personal information, subject to certain exceptions
                 (e.g., data required for completing a transaction you
                 initiated).
               </li>
               <li>
-                <strong>Right to non-discrimination</strong> &mdash; we will not
+                <strong>Right to non-discrimination</strong>: we will not
                 discriminate against you for exercising your CCPA rights. You
                 will not receive different pricing or service levels.
               </li>
               <li>
-                <strong>No sale of personal information</strong> &mdash; ECFiler
+                <strong>No sale of personal information</strong>: ECFiler
                 does not sell personal information as defined under the CCPA. We
                 have not sold personal information in the preceding 12 months.
               </li>
@@ -466,10 +475,10 @@ export default function PrivacyPolicy() {
             <p className="mt-3">
               To submit a CCPA request, email{" "}
               <a
-                href="mailto:privacy@ecfiler.com"
+                href="mailto:jackson@sang3r.com"
                 className="text-[#1e3a5f] underline underline-offset-2 hover:text-[#162a47] transition"
               >
-                privacy@ecfiler.com
+                jackson@sang3r.com
               </a>{" "}
               with the subject line &quot;CCPA Request.&quot; We will verify
               your identity before processing your request and respond within 45
@@ -488,13 +497,13 @@ export default function PrivacyPolicy() {
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-3">
               <li>
-                No court credentials need to be deleted &mdash; we never had
+                No court credentials need to be deleted. We never had
                 them (see Section 2).
               </li>
               <li>
                 Your filing history, uploaded documents, staged filing packages,
-                and all associated case data are permanently deleted immediately
-                &mdash; not queued.
+                and all associated case data are permanently deleted immediately,
+                not queued.
               </li>
               <li>
                 <strong>Attestation integrity records are the one narrow
@@ -523,10 +532,10 @@ export default function PrivacyPolicy() {
             <p className="mt-3">
               If you need assistance with account deletion, contact{" "}
               <a
-                href="mailto:privacy@ecfiler.com"
+                href="mailto:jackson@sang3r.com"
                 className="text-[#1e3a5f] underline underline-offset-2 hover:text-[#162a47] transition"
               >
-                privacy@ecfiler.com
+                jackson@sang3r.com
               </a>
               .
             </p>
@@ -575,10 +584,10 @@ export default function PrivacyPolicy() {
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:privacy@ecfiler.com"
+                  href="mailto:jackson@sang3r.com"
                   className="text-[#1e3a5f] underline underline-offset-2 hover:text-[#162a47] transition"
                 >
-                  privacy@ecfiler.com
+                  jackson@sang3r.com
                 </a>
               </p>
             </div>

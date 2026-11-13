@@ -809,13 +809,21 @@ def session_filing_access(qa: bool, username: str, court_id: str) -> None:
     from ecfiler.pacer_auth import PacerAuth, PacerAuthError
 
     console = Console()
-    if not username:
+    if not username and qa:
+        # Never fall back to the configured (production) account in QA: the
+        # production username is not a QA-realm account, so the login fails
+        # and the check reports nothing (found 2026-11-13, session 7).
+        import os
+
+        username = os.environ.get("ECFILER_PACER_USERNAME", "").strip()
+    elif not username:
         try:
             username = load_config().pacer.username
         except Exception:
             username = ""
     if not username:
-        console.print("  [red]No username: pass --username.[/red]")
+        hint = " (the QA account, e.g. --username ecfilercom)" if qa else ""
+        console.print(f"  [red]No username: pass --username{hint}.[/red]")
         raise click.Abort()
 
     registry = CourtRegistry(environment="qa" if qa else "production")

@@ -66,6 +66,26 @@ for path in /tools /events /fees /redaction /courts /certificate /validate /fede
   fi
 done
 
+# -- 2b. No backend, nothing broken (session 7) ------------------------------
+# The site runs with no API. /api/health answers for the frontend itself; any
+# other /api/* path is a 404, never a 5xx from a dead proxy; the waitlist
+# rejects junk with a 400 and its honeypot path answers 200 without sending
+# anything, so this check never mails anyone.
+code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 -A "$UA" "$BASE/api/health")
+[ "$code" = "200" ] && record PASS "GET /api/health" "200" || record FAIL "GET /api/health" "got $code"
+code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 -A "$UA" "$BASE/api/history")
+case "$code" in 5*) record FAIL "unknown /api path is not a 5xx" "got $code";; *) record PASS "unknown /api path is not a 5xx" "$code";; esac
+code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 -A "$UA" -H 'Content-Type: application/json' -d '{"email":"not-an-address"}' "$BASE/api/waitlist")
+[ "$code" = "400" ] && record PASS "waitlist rejects a bad address" "400" || record FAIL "waitlist rejects a bad address" "got $code"
+code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 -A "$UA" -H 'Content-Type: application/json' -d '{"email":"bot@example.com","website":"x"}' "$BASE/api/waitlist")
+[ "$code" = "200" ] && record PASS "waitlist route alive (honeypot, sends nothing)" "200" || record FAIL "waitlist route alive (honeypot, sends nothing)" "got $code"
+for path in / /tools /validate /privacy /terms /file /sign-up; do
+  code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 -A "$UA" "$BASE$path")
+  case "$code" in 5*) record FAIL "no 5xx on $path" "got $code";; *) record PASS "no 5xx on $path" "$code";; esac
+done
+dead=$(for path in / /privacy /terms; do fetch "$path"; done | grep -o -E '[A-Za-z0-9._-]+@ecfiler\.com' | sort -u | tr '\n' ' ')
+[ -z "$dead" ] && record PASS "no dead @ecfiler.com addresses" || record FAIL "no dead @ecfiler.com addresses" "$dead"
+
 # -- 3. Court numbers match the shipped data ---------------------------------
 result=$(fetch /federal-courts | python3 -c "
 import json, re, sys
@@ -105,6 +125,7 @@ forbidden = [
     'automated cm/ecf filing', 'automated cm/ecf submission',
     'encrypted server-side', 'decrypted at the moment of filing',
     'live demo', 'automatically files your documents',
+    'under a minute', 'in seconds',
 ]
 print(';'.join(p for p in forbidden if p in html))
 ")

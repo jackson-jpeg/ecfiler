@@ -19,10 +19,18 @@ machine. At the workflow menu choose **[2] Resume Draft**; the document is
 `/Users/jackson/ecfiler/docs/qa-roundtrip/sample-motion.pdf`:
 
 ```
-[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=56DB64etAjX \
-        TARGET=https://ecf.tc1d.aztc.uscourts.gov \
-        SERVER=http://100.126.58.33:8901 DEVUSER=qa-day
+[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=resume \
+        TARGET=https://ecf.tc1d.aztc.uscourts.gov
 ```
+
+*Session 7 (2026-11-13): no server is involved any more. The VPS staging API
+that `STAGE=56DB64etAjX SERVER=http://100.126.58.33:8901` pointed at was an ad
+hoc process and is gone with the API's retirement; the package it staged was
+already pulled to the Mac (`~/.ecfiler/drafts/staged_0_07-cv-00170.json`,
+provenance azttdc / qa, ledger L19, re-read L27), and `STAGE=resume` files that
+draft without pulling. The one-sitting sheet is `docs/qa-roundtrip/attended-run.md`.
+If the court that approves is not AZTTDC, the draft must be re-staged for that
+court first: that is the operator's prep, not Jackson's.*
 
 `CONFIRM` at attorney review and `YES` at the CM/ECF confirmation screen are
 human by design. If the staging API is not answering (it does not survive a
@@ -51,8 +59,11 @@ until it clears. Steps 2–5 are a web form and are Jackson's alone:
    redirects to `qa-login.uscourts.gov` first (302 when checked from both
    machines, 2026-07-30). Log in with the QA credential — the same one in
    `ecfiler.keychain-db`. Do not paste it anywhere else.
-2. Choose **Attorney Admissions / E-File Registration** (NextGen wording; on
-   some builds it reads "E-File Registration").
+2. Choose **Non-Attorney E-File Registration**. *Corrected 2026-11-13
+   (session 7): this step used to say "Attorney Admissions / E-File
+   Registration", which asserts bar admission. Jackson is not an attorney.
+   Full route, the QA court list, the bankruptcy-creditor fallback (AZTTBK)
+   and the PACER Service Center email are in `docs/qa-efile-registration.md`.*
 3. Court type **District Court**, court **Az Test District Court** — the
    roster code is AZTTDC and its CM/ECF is
    `https://ecf.tc1d.aztc.uscourts.gov`. If the court does not appear in the

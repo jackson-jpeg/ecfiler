@@ -12,7 +12,7 @@ const TOOLS = [
   {
     href: "/courts",
     title: "Court Directory",
-    desc: `Search all ${COURT_COUNT} federal courts — district, bankruptcy, and appellate — with CM/ECF links.`,
+    desc: `Search all ${COURT_COUNT} federal courts (district, bankruptcy, and appellate) with CM/ECF links.`,
     clientSide: true,
   },
   {
@@ -30,14 +30,14 @@ const TOOLS = [
   {
     href: "/redaction",
     title: "Rule 5.2 Redaction Scan",
-    desc: "Scan a PDF or pasted text for unredacted SSNs, account numbers, and dates of birth — entirely in your browser. Nothing is uploaded.",
+    desc: "Scan a PDF or pasted text for unredacted SSNs, account numbers, and dates of birth, entirely in your browser. Nothing is uploaded.",
     clientSide: true,
   },
   {
     href: "/validate",
     title: "PDF Validation",
     desc: "Check size, searchable text, encryption, and PDF/A compliance before CM/ECF can reject the file.",
-    clientSide: false,
+    clientSide: true,
   },
   {
     href: "/certificate",
@@ -66,8 +66,8 @@ export default function ToolsPage() {
       <div className="max-w-5xl mx-auto px-5 sm:px-6 py-10">
         <h1 className="text-[26px] sm:text-[32px] font-bold tracking-tight text-[#1a1a1a] mb-2">Free filing tools</h1>
         <p className="text-[15px] text-[#525252] mb-8 max-w-2xl">
-          No account, no credit card. Tools marked &ldquo;runs in your browser&rdquo; work
-          entirely client-side — your documents never leave your machine.
+          No account, no credit card. Every tool here runs in your browser, so
+          your documents never leave your machine.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -122,7 +122,7 @@ export default function GlobalError({
         <p className="mt-6 text-[12px] text-[#8a8a8a]">
           If this keeps happening,{" "}
           <a
-            href="mailto:support@ecfiler.com"
+            href="mailto:jackson@sang3r.com"
             className="text-[#1e3a5f] hover:text-[#162a47] transition underline underline-offset-2"
           >
             contact support

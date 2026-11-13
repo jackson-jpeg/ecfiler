@@ -5,6 +5,29 @@
   - http://documents.myflcourtaccess.com/uploads/2026/03/Third_Party_Batch_Filing-License_Agreement_11618_ada.pdf (License Agreement Section 3, binding fee schedule)
   - https://documents.myflcourtaccess.com/uploads/2021/08/Third_Party_Vendor_Application_01-01-2021.pdf (application fee)
 - **Fetched:** 2026-07-27
+- **Re-verified:** 2026-11-13 (see below)
+
+> **Update 2026-11-13: fees unchanged; a fee review is open.**
+> - **Application fee: still $500.00, nonrefundable**, mailed with the application to
+>   P.O. Box 16428, Tallahassee, FL 32317. Source: the application the Certified
+>   Vendors page links today (ADA re-upload of rev. 01-01-2021, Last-Modified
+>   2026-05-06), whose text is identical to the 2021 file.
+> - **Monthly license fee: still $125 to $250 by volume.** The "Vendor Fees" PDF
+>   (https://documents.myflcourtaccess.com/uploads/2021/08/Proposed_third_party_fees.pdf)
+>   and the license agreement
+>   (http://documents.myflcourtaccess.com/uploads/2026/03/Third_Party_Batch_Filing-License_Agreement_11618_ada.pdf)
+>   downloaded 2026-11-13 are byte-identical (sha256) to the copies in
+>   `docs/fl/sources/`.
+> - **Portal convenience fees** (Authority FAQ page, read 2026-11-13): credit card
+>   3.5% of the filing fee; electronic check $5 flat. Unchanged.
+> - **Open review:** on 2026-06-22 the Board appointed a work group led by the
+>   Hon. John Tomasino "to review the processes and fees" of the TPV program and
+>   report to the Board
+>   (https://cms.myflcourtaccess.com/uploads/2026/07/Minutes-June-22-2026-1.pdf, §XI).
+>   No change has been adopted or published as of 2026-11-13. The License Agreement
+>   (§3) lets the Authority revise license fees on 30 days' notice; the application
+>   fee is set by the application form itself. If the form or the "Vendor Fees" PDF
+>   changes, the amount on the check changes with it. Next Board meeting: 2026-12-08.
 
 ## Application fee
 

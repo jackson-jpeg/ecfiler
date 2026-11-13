@@ -1,12 +1,12 @@
 # DRAFT — Intro Email to Portal Support
 
-*To be sent from Jackson's business email. No pitch; process questions only. Support
+*To be sent from jackson@sang3r.com (the ecfiler.com mailbox no longer exists; never a Gmail address). No pitch; process questions only. Support
 contact per `docs/fl/test-case-checklist.md`: support@myflcourtaccess.com, 850-577-4609.*
 
 ---
 
 **To:** support@myflcourtaccess.com
-**Subject:** Prospective Third Party Vendor (batch filing) — current application process and QA/TEST details
+**Subject:** Prospective Third Party Vendor (batch filing): current application process and QA/TEST details
 
 Hello,
 
@@ -22,13 +22,13 @@ omitted from testing? Could you also confirm the current process and typical seq
 for QA Portal and TEST environment credentials after application approval, and whether
 the FilingReviewCompleteResult polling service alone is acceptable for status retrieval,
 without the callback service? Finally, is there anything you recommend an applicant
-prepare in advance of the emailed XML review? Thank you — happy to provide any further
+prepare in advance of the emailed XML review? Thank you. I'm happy to provide any further
 information by reply or by phone.
 
 Best regards,
 Jackson Sanger
 `[TITLE, ENTITY NAME]`
-`[PHONE]` · `[EMAIL]`
+`[PHONE]` · jackson@sang3r.com
 Tampa, FL
 
 ---

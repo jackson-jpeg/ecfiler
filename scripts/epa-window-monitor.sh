@@ -1,220 +1,111 @@
 #!/bin/bash
-# EPA Public User Group application-window monitor.
+# EPA Public User Group application-window monitor (rewritten session 7,
+# 2026-11-13, from the findings in docs/pacer-engagement-plan.md
+# "Changes since July").
 #
-# The Electronic Public Access Public User Group opens applications for a short
-# window (the last cycle ran about two weeks). A note in a markdown file gets
-# missed; this polls the two pages that would announce it and emails on a hit.
+# The call expected around Aug 2026 has not gone out; the current members'
+# terms end 2026-12-31, so a call is overdue rather than missed. In 2024
+# uscourts.gov posted the call 17 days before PACER did, so the primary
+# trigger is the uscourts.gov news feed:
 #
-# Two independent triggers, because either alone would be wrong:
-#   1. Content diff — any change at all to the watched pages.
-#   2. Keyword hit — application language appearing on either page.
-# A keyword hit fires even if the diff is noisy from unrelated edits, and the
-# diff catches an opening announced in wording the keyword list didn't predict.
+#   1. RSS: a NEW item on https://www.uscourts.gov/news/rss whose title says
+#      "user group" (seen item links are remembered; first run only records).
+#   2. Keyword: application language on the EPA Public User Group page.
 #
-# Install:  bash scripts/epa-window-monitor.sh --install
-# Test:     bash scripts/epa-window-monitor.sh --test   (forces a positive)
-# Run once: bash scripts/epa-window-monitor.sh
+# The old version also paged on any change to two whole pages: 22 alerts
+# between July and September, every one noise. That trigger is gone.
+#
+# Alerts go through ops-page (the one paging path on the VPS), deduped by tag.
+# Stops by itself after WATCH_UNTIL. NOT INSTALLED: the VPS timer was retired
+# with ECFiler on 2026-09-24 and comes back only with Jackson's okay.
+#
+# Run once:  bash scripts/epa-window-monitor.sh
+# Test:      bash scripts/epa-window-monitor.sh --test   (forces both triggers
+#            against a fixture, pages nothing unless EPA_TEST_PAGE=1)
 set -uo pipefail
 
 STATE_DIR="${EPA_STATE_DIR:-/var/lib/ecfiler-epa-monitor}"
-RECIPIENT="${EPA_ALERT_EMAIL:-realjacksons@gmail.com}"
-UA="ECFiler-EPA-Monitor/1.0 (+https://github.com/jackson-jpeg/ecfiler; realjacksons@gmail.com)"
+WATCH_UNTIL="${EPA_WATCH_UNTIL:-2027-03-31}"
+UA="ecfiler-epa-monitor/2.0 (+https://github.com/jackson-jpeg/ecfiler)"
+FEED="https://www.uscourts.gov/news/rss"
+GROUP_PAGE="https://www.uscourts.gov/court-records/electronic-public-access-public-user-group"
+KEYWORDS=("accepting applications" "application period" "apply by" "applications are due"
+          "submit an application" "call for applications" "now open")
 
-PAGES=(
-  "https://pacer.uscourts.gov/announcements"
-  "https://www.uscourts.gov/court-records/electronic-public-access-public-user-group"
-)
+log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*"; }
 
-# Language that would accompany an open window. Lowercased substring match.
-KEYWORDS=(
-  "accepting applications"
-  "application period"
-  "applications are now being accepted"
-  "apply to serve"
-  "call for applications"
-  "nominations are open"
-  "now accepting"
-  "seeking applicants"
-  "seeking members"
-  "submit an application"
-  "user group application"
-)
-
-mkdir -p "$STATE_DIR"
-
-log() { printf '%s %s\n' "$(date -Is)" "$*"; }
-
-# Strip markup and volatile cruft so the diff tracks prose, not build ids.
-extract_text() {
-  sed -e 's/<script[^>]*>.*<\/script>//g' \
-      -e 's/<style[^>]*>.*<\/style>//g' \
-      -e 's/<[^>]*>/ /g' \
-      -e 's/&nbsp;/ /g' -e 's/&amp;/\&/g' -e 's/&#[0-9]*;//g' \
-  | tr -s '[:space:]' ' ' \
-  | sed -e 's/[0-9a-f]\{16,\}//g' \
-        -e 's/[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}T[0-9:.+-]*//g'
-}
-
-# Deliver on every channel that works, not the first one that does. A missed
-# EPA window costs a year; a duplicate alert costs nothing. The VPS has no MTA
-# configured, so email fires only once an SMTP credential exists (msmtp/mail/
-# sendmail, whichever is installed) — the dashboard and desktop channels work
-# today and are what actually reach Jackson.
-notify() {
-  local subject="$1" body="$2" delivered=0
-
-  if command -v msmtp >/dev/null 2>&1 && [ -f "$HOME/.msmtprc" ]; then
-    printf 'To: %s\nSubject: %s\n\n%s\n' "$RECIPIENT" "$subject" "$body" \
-      | msmtp "$RECIPIENT" 2>/dev/null && { delivered=1; log "delivered: email(msmtp)"; }
-  elif command -v mail >/dev/null 2>&1; then
-    printf '%s\n' "$body" | mail -s "$subject" "$RECIPIENT" 2>/dev/null \
-      && { delivered=1; log "delivered: email(mail)"; }
-  elif command -v sendmail >/dev/null 2>&1; then
-    printf 'To: %s\nSubject: %s\n\n%s\n' "$RECIPIENT" "$subject" "$body" \
-      | sendmail -t 2>/dev/null && { delivered=1; log "delivered: email(sendmail)"; }
-  fi
-
-  # Sanger dashboard notification (sang3r.com), service-token authenticated.
-  # The route checks x-service-token against SANGER_API_SECRET.
-  local tok="${SANGER_API_SECRET:-}"
-  [ -z "$tok" ] && [ -f /root/.sanger-monitor.env ] && \
-    tok=$(sed -n 's/^SANGER_SERVICE_TOKEN=//p' /root/.sanger-monitor.env | head -1)
-  if [ -n "$tok" ]; then
-    if curl -sS --max-time 20 -X POST https://sang3r.com/api/notifications \
-        -H "Content-Type: application/json" \
-        -H "x-service-token: $tok" \
-        --data "$(python3 -c 'import json,sys; print(json.dumps({"type":"alert","title":sys.argv[1],"message":sys.argv[2],"metadata":{"source":"ecfiler-epa-monitor"}}))' "$subject" "$body")" \
-        -o /dev/null -w '%{http_code}' 2>/dev/null | grep -q '^2'; then
-      delivered=1; log "delivered: sanger-dashboard"
-    fi
-  fi
-
-  # macOS desktop notification via the tunnel.
-  if command -v mac >/dev/null 2>&1; then
-    mac notify "$subject" >/dev/null 2>&1 && { delivered=1; log "delivered: mac-notify"; }
-  fi
-
-  # Always leave a durable local record, whatever else happened.
-  mkdir -p "$STATE_DIR"
-  printf '=== %s\n%s\n%s\n\n' "$(date -Is)" "$subject" "$body" >> "$STATE_DIR/alerts.log"
-
-  if [ "$delivered" = 0 ]; then
-    log "NO CHANNEL DELIVERED — alert recorded in $STATE_DIR/alerts.log only:"
-    printf '%s\n%s\n' "$subject" "$body"
-    return 1
-  fi
-  return 0
-}
-
-check_page() {
-  local url="$1"
-  local key; key=$(printf '%s' "$url" | md5sum | cut -c1-12)
-  local snapshot="$STATE_DIR/$key.txt"
-  local body text
-
-  body=$(curl -sS --max-time 45 --retry 2 --retry-delay 5 -A "$UA" "$url" 2>/dev/null)
-  if [ -z "$body" ]; then
-    log "WARN unreachable: $url"
+page() { # page <tag> <title> <body>
+  if [ "${MODE:-}" = "test" ] && [ "${EPA_TEST_PAGE:-0}" != "1" ]; then
+    log "TEST would page [$1]: $2"
     return 0
   fi
-  text=$(printf '%s' "$body" | extract_text)
-  # --test appends application language to the fetched text so the keyword
-  # path is exercised against a real fetch, not a hand-built fixture.
-  [ -n "${EPA_TEST_INJECT:-}" ] && text="$text ${EPA_TEST_INJECT}"
-
-  local hits=""
-  local lower; lower=$(printf '%s' "$text" | tr '[:upper:]' '[:lower:]')
-  for kw in "${KEYWORDS[@]}"; do
-    case "$lower" in *"$kw"*) hits="$hits\n  - \"$kw\"" ;; esac
-  done
-
-  local changed=0
-  if [ -f "$snapshot" ]; then
-    if ! printf '%s' "$text" | diff -q "$snapshot" - >/dev/null 2>&1; then
-      changed=1
-    fi
-  else
-    log "baseline captured: $url"
-  fi
-  printf '%s' "$text" > "$snapshot"
-
-  # Keyword hits alert every run while present; only a *new* keyword is news.
-  local seen="$STATE_DIR/$key.keywords"
-  local prev_hits=""; [ -f "$seen" ] && prev_hits=$(cat "$seen")
-  printf '%s' "$hits" > "$seen"
-
-  if [ -n "$hits" ] && [ "$hits" != "$prev_hits" ]; then
-    notify "[ECFiler] EPA user-group application language detected" \
-"Application-window language appeared on:
-
-  $url
-
-Matched:$(printf "$hits")
-
-Next step: docs/outreach/c3-epa-application.md is submit-ready. Open the page,
-confirm the window is genuinely open, and paste the prepared answers.
-
-(Detected $(date -Is) by epa-window-monitor on the VPS.)"
-    log "ALERT keyword $url"
-  elif [ "$changed" = 1 ]; then
-    notify "[ECFiler] EPA watch page changed" \
-"The content changed on:
-
-  $url
-
-No application keywords matched, so this may be unrelated. Worth a look if the
-window is expected soon (last cycle: ~2 weeks, expected ~Aug 2026).
-
-(Detected $(date -Is) by epa-window-monitor on the VPS.)"
-    log "ALERT diff $url"
-  else
-    log "no change: $url"
-  fi
+  ops-page --priority high --tag "$1" "$2" "$3"
 }
 
-case "${1:-}" in
-  --install)
-    install -m 755 "$(readlink -f "$0")" /usr/local/bin/ecfiler-epa-monitor
-    cat > /etc/systemd/system/ecfiler-epa-monitor.service <<'UNIT'
-[Unit]
-Description=ECFiler EPA user-group application window monitor
-After=network-online.target
+rss_titles() { # stdin: RSS XML -> "link<TAB>title" per item
+  python3 -I -c '
+import sys, xml.etree.ElementTree as ET
+root = ET.fromstring(sys.stdin.read())
+for it in root.iter("item"):
+    t = (it.findtext("title") or "").strip().replace("\t", " ")
+    l = (it.findtext("link") or it.findtext("guid") or t).strip()
+    print(f"{l}\t{t}")'
+}
 
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/ecfiler-epa-monitor
-UNIT
-    cat > /etc/systemd/system/ecfiler-epa-monitor.timer <<'UNIT'
-[Unit]
-Description=Daily EPA application window check
+check_feed() { # check_feed <xml>
+  local seen="$STATE_DIR/rss-seen.txt" first=0 hits=0
+  [ -f "$seen" ] || { first=1; : > "$seen"; }
+  while IFS=$'\t' read -r link title; do
+    [ -n "$link" ] || continue
+    grep -qxF "$link" "$seen" && continue
+    echo "$link" >> "$seen"
+    if [ "$first" = "0" ] && printf '%s' "$title" | grep -qi "user group"; then
+      hits=$((hits + 1))
+      page "epa-rss-$(printf '%s' "$link" | md5sum | cut -c1-10)" \
+        "EPA Public User Group: new uscourts.gov item" "$title  $link"
+    fi
+  done < <(printf '%s' "$1" | rss_titles)
+  [ "$first" = "1" ] && log "feed: first run, recorded $(wc -l < "$seen") items, no alerts"
+  log "feed: $hits new user-group item(s)"
+}
 
-[Timer]
-OnCalendar=*-*-* 13:17:00
-Persistent=true
+check_group_page() { # check_group_page <html>
+  local text kw
+  text=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+  for kw in "${KEYWORDS[@]}"; do
+    if printf '%s' "$text" | grep -qF "$kw"; then
+      page "epa-group-keyword" "EPA Public User Group page: \"$kw\"" "$GROUP_PAGE"
+      log "group page: keyword hit '$kw'"
+      return 0
+    fi
+  done
+  log "group page: no application language"
+}
 
-[Install]
-WantedBy=timers.target
-UNIT
-    systemctl daemon-reload
-    systemctl enable --now ecfiler-epa-monitor.timer
-    log "installed; next run:"
-    systemctl list-timers ecfiler-epa-monitor.timer --no-pager
-    ;;
-  --test)
-    # Force a positive against real fetches, proving detection AND delivery.
-    # Two runs: the first establishes baselines so the diff path is quiet, the
-    # second injects application language so the KEYWORD path is what fires.
-    log "FORCED POSITIVE TEST"
-    tmp_state=$(mktemp -d)
-    log "  pass 1/2: capturing baselines (expect: no change)"
-    EPA_STATE_DIR="$tmp_state" "$0" 2>&1 | sed 's/^/    /'
-    log "  pass 2/2: injecting application language (expect: ALERT keyword)"
-    EPA_STATE_DIR="$tmp_state" EPA_TEST_INJECT="The user group is now accepting applications." \
-      "$0" 2>&1 | sed 's/^/    /'
-    log "  alerts recorded: $(grep -c '^=== ' "$tmp_state/alerts.log" 2>/dev/null || echo 0)"
-    rm -rf "$tmp_state"
-    ;;
-  *)
-    for url in "${PAGES[@]}"; do check_page "$url"; done
-    ;;
-esac
+main() {
+  if [[ "$(date -u +%F)" > "$WATCH_UNTIL" ]]; then
+    log "past WATCH_UNTIL=$WATCH_UNTIL; nothing to do (remove the timer)"
+    return 0
+  fi
+  mkdir -p "$STATE_DIR"
+  local xml html
+  xml=$(curl -sS --fail --max-time 45 --retry 2 -A "$UA" "$FEED") || { log "feed fetch failed"; return 1; }
+  html=$(curl -sS --fail --max-time 45 --retry 2 -A "$UA" "$GROUP_PAGE") || { log "group page fetch failed"; return 1; }
+  check_feed "$xml"
+  check_group_page "$html"
+}
+
+if [ "${1:-}" = "--test" ]; then
+  MODE=test
+  STATE_DIR=$(mktemp -d)
+  trap 'rm -rf "$STATE_DIR"' EXIT
+  item() { printf '<item><title>%s</title><link>%s</link></item>' "$1" "$2"; }
+  base="<rss><channel>$(item 'Judiciary budget update' https://x/1)</channel></rss>"
+  check_feed "$base"                                     # first run: records only
+  check_feed "<rss><channel>$(item 'Judiciary budget update' https://x/1)$(item 'Courts seek members for EPA Public User Group' https://x/2)</channel></rss>"
+  check_group_page "<p>The group is now ACCEPTING APPLICATIONS through March.</p>"
+  check_group_page "<p>2025-2026 Membership</p>"
+  exit 0
+fi
+
+main
