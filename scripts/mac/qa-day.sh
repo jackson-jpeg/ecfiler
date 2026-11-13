@@ -94,8 +94,8 @@ fi
 echo
 echo "Preflight green."
 if [ -z "$STAGE" ]; then
-  echo "No STAGE code given. Stage a filing at www.ecfiler.com/file, then:"
-  echo "  [MAC] make qa-day MODE=live STAGE=<code> TARGET=<qa-ecf-base-url>"
+  echo "No STAGE given. To file the draft already staged on this machine:"
+  echo "  [MAC] make qa-day MODE=live STAGE=resume TARGET=<qa-ecf-base-url>"
   exit 0
 fi
 if [ -z "$TARGET" ]; then
@@ -112,11 +112,19 @@ export ECFILER_ECF_URL="$TARGET"
 export ECFILER_PACER_USERNAME="$QA_USER"
 export ECFILER_HEADED=1
 
-echo "== Pulling staged package $STAGE =="
-PULL_ARGS=("$STAGE")
-[ -n "${QA_SERVER:-}" ] && PULL_ARGS+=(--server "$QA_SERVER")
-[ -n "${QA_DEV_USER:-}" ] && PULL_ARGS+=(--dev-user "$QA_DEV_USER")
-"$ECFILER_MAC" stage-pull "${PULL_ARGS[@]}" || exit 1
+if [ "$STAGE" = "resume" ]; then
+  # Session 7: no staging server exists (the API is retired and the site has
+  # no backend). The package staged and pulled on 2026-07-29 (ledger L19) is
+  # still on this machine; the check below proves it names TARGET before the
+  # browser opens. Choose [2] Resume Draft at the workflow menu.
+  echo "== Reusing the staged draft already on this machine (no server) =="
+else
+  echo "== Pulling staged package $STAGE =="
+  PULL_ARGS=("$STAGE")
+  [ -n "${QA_SERVER:-}" ] && PULL_ARGS+=(--server "$QA_SERVER")
+  [ -n "${QA_DEV_USER:-}" ] && PULL_ARGS+=(--dev-user "$QA_DEV_USER")
+  "$ECFILER_MAC" stage-pull "${PULL_ARGS[@]}" || exit 1
+fi
 
 # The draft must name the court we are about to file in. Session 6 pulled a
 # draft naming `azd` — the real District of Arizona — for a QA run, and
