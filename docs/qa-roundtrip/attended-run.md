@@ -18,6 +18,7 @@ they are, and the sitting is cut down to the minutes that need Jackson.
 ## Operator prep (VPS, before Jackson sits down; no Jackson time)
 
 ```
+[MAC] cd ~/ecfiler && .venv/bin/python -m playwright install chromium   # ~540 MB; removed 2026-11-13 when the Mac disk filled, so reinstall first (check free space)
 [MAC] ~/ecfiler/scripts/mac/ecfiler-mac session filing-access --qa --username ecfilercom --court azttdc
 [MAC] cd ~/ecfiler && make qa-day MODE=live            # preflight only, must be 12/12 green
 ```
