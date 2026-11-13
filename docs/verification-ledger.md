@@ -114,6 +114,228 @@ auth bounce; /federal-courts court numbers sum to 207 matching
 labeled scripted; aspirational Pro claims carry the Coming Soon label.
 This closes L01's 13-FAIL baseline. VERIFIED.
 
+### L15 — 2026-07-29 — QA PACER account live; filing target established; dry run green on the filing machine
+`[MAC] ~/ecfiler/scripts/mac/ecfiler-mac session auth-test --qa --username
+ecfilercom` → `✓ Authenticated. Token received (length 128, not shown)` —
+after fixing two bugs the first real call exposed: the QA CSO constants
+pointed at `qa-pacer.login.uscourts.gov` (NXDOMAIN; the real host is
+`qa-login.uscourts.gov`, pinned by test), and a function-local `import
+time` crashed `authenticate()`'s success path (regression-tested).
+Target discovery: `[VPS/MAC]` `ecf-train.<court>.uscourts.gov` hosts
+resolve but refuse TCP from both machines; the QA realm's roster at
+`qa-pacer.uscourts.gov/file-case/court-cmecf-lookup` lists its own test
+courts; `*.aocms.uscourts.gov` ones are firewalled from here;
+**`https://ecf.tc1d.aztc.uscourts.gov` (Az Test District Court, AZTTDC)
+answers 200 from the Mac**, serves District CM/ECF v10.8.4, and its login
+page names `qa-login.uscourts.gov` — same realm the account authenticates
+against. Recorded in docs/nef-roundtrip-runbook.md.
+`[MAC] make qa-day` (dry, mock court, on the filing machine) → `1 passed`.
+`[MAC] make qa-day MODE=live` → 9 PASS / 3 FAIL — the three reds are the
+two human steps (headed `session login --qa` seeds the Chromium profile
+and live session) plus the sandbox allow-rules paste. VERIFIED for
+everything above; the live NEF round trip itself remains STAGED.
+
+### L16 — 2026-07-29 — attended QA run reached the filing machine and stopped at a contract bug; no filing was made
+The first live attempt at the NEF round trip. Preflight, on the Mac, with
+the real QA account:
+`[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=FEp-ZKwdKcg
+TARGET=https://ecf.tc1d.aztc.uscourts.gov SERVER=http://100.126.58.33:8901
+DEVUSER=qa-day` → **12/12 preflight PASS** (macOS, venv, keychain exists,
+keychain password file, keychain unlocks, QA credential stored, QA
+credential authenticates via cso-auth, Chromium profile, persisted QA
+session live, sandbox allow-rules, receipts dir writable, attestation chain
+verifies), then `✓ Staged package saved as draft:
+/Users/jackson/.ecfiler/drafts/staged_0_07-cv-00170.json`.
+
+Then it stopped. `[2] Resume Draft` → `Error resuming draft: 3 validation
+errors for Filing` (`case` Field required, `event` Field required,
+`filing_party` Input should be a valid dictionary or instance of
+FilingParty). `[1] New Filing` → `207 courts available` / search `tc1d` →
+`No courts found`. Jackson quit at `[6]`.
+
+Proof state after the run, from the same terminal:
+`✓ Attestation chain intact — head 0000000000000000…` (the empty-chain
+head — no attestation was written), `~/.ecfiler/receipts/` empty,
+`~/.ecfiler/traces/` empty.
+
+**No filing was submitted, no browser reached the court, no NEF exists.**
+The QA-day proof list (L15's STAGED item) is still STAGED. What this run
+did verify: the twelve preflight gates pass against live PACER QA
+infrastructure, and the hosted→local staging seam was broken in production
+code the whole time. VERIFIED as a failed run — the failure state above is
+the evidence, captured before any retry.
+
+### L17 — 2026-07-29 — two real bugs found by the failed run, fixed and pinned
+Both were found only because a human drove the real path; both had passing
+tests over them.
+
+1. **The hosted→local contract had never been exercised.** The API returned
+   a flat display dict; `stage-pull` wrote it verbatim; the CLI parsed it as
+   a `Filing` and raised. `StagedPackage` now embeds the canonical `Filing`
+   the CLI resumes from, and `stage-pull` validates through that model
+   before it writes anything. `[VPS] .venv/bin/python -m pytest
+   tests/test_staged_contract.py -q` → **13 passed**.
+2. **The draft named the wrong court.** It said `azd` — the real District of
+   Arizona — for a run targeting the QA court, because the runbook staged
+   against a production court ID and "overrode" the URL at submit time. A
+   pydantic error was the only thing between that draft and a production
+   endpoint. Fixed structurally: `StagedProvenance` pins court id, ECF URL
+   and environment at staging; `enforce_court_invariants` aborts before the
+   browser launches on any mismatch; `ECFILER_ECF_URL` is now a
+   confirmation, never a substitution; the registry serves exactly one PACER
+   environment, so a QA court is absent from production mode rather than
+   merely unlikely. `[VPS] .venv/bin/python -m pytest
+   tests/test_court_invariants.py -q` → **19 passed**.
+
+A third, smaller bug the run exposed: stage codes came from
+`token_urlsafe`, which can start with `-`; the CLI then answers `Error: No
+such option '-c'`. Codes are now alphanumeric (`new_stage_code`), pinned by
+test. Full suite `[VPS] .venv/bin/python -m pytest tests/ -q` → **643
+passed, 8 skipped** (includes the browser round trip). VERIFIED.
+
+### L18 — 2026-07-29 — what the mock round-trip test was actually proving
+Audited after L17, because the mock passed while the real seam was broken.
+`TestStagedToNefRoundTrip` asserted `draft["filing"]["case_number"]` — a key
+that exists only in the shape the bug produced — then drove the browser from
+hardcoded literals, built its court profile inline with `court_id="test"`,
+and recorded an attestation for a court (`test`) that was not the court it
+staged (`nysd`). It never loaded the draft through `Filing`, never called
+the workflow's submit path, and never compared staged court to filed court.
+It did prove: the API stages and chains; the CLI can fetch a package and
+write a file; Playwright walks the mock's ten steps to a receipt; NEF text
+lands in a `kind="submitted"` attestation, the chain verifies, and the
+chain head anchors into the saved receipt.
+
+The test now parses the pulled draft through `Filing`, drives every browser
+step from the draft's own values, runs `enforce_court_invariants` on the
+registry-resolved court, asserts the substitution case raises, and asserts
+the court and case that were staged are the ones in the receipt.
+`[VPS] .venv/bin/python -m pytest
+tests/test_browser_e2e.py::TestStagedToNefRoundTrip -q` → **1 passed**.
+VERIFIED.
+
+### L19 — 2026-07-29 — the fixed seam re-staged and pulled clean onto the filing machine
+Restaged against the QA court with the fixed code, on a QA-mode staging API:
+`[VPS] ECFILER_DEV_AUTH=1 ECFILER_PACER_QA=1
+ECFILER_DATA_DIR=/root/.ecfiler-qa-staging .venv/bin/python -m uvicorn
+ecfiler.api.app:app --host 100.126.58.33 --port 8901` (health 200), then
+`[VPS] curl -X POST …/api/filing/stage -H 'X-User-Id: qa-day' -d
+'{"court_id":"azttdc",…}'` → `stage_code: 56DB64etAjX`, `court: azttdc Az
+Test District Court (PACER QA)`, `filing.court_id: azttdc`, provenance
+`{court_id: azttdc, ecf_url: https://ecf.tc1d.aztc.uscourts.gov,
+environment: qa}`.
+
+Pulled with the real CLI on the Mac:
+`[MAC] /Users/jackson/ecfiler/scripts/mac/ecfiler-mac stage-pull 56DB64etAjX
+--server http://100.126.58.33:8901 --dev-user qa-day` → `✓ Staged package
+saved as draft: /Users/jackson/.ecfiler/drafts/staged_0_07-cv-00170.json` /
+`Court: azttdc (qa) — https://ecf.tc1d.aztc.uscourts.gov` / `Case:
+0:07-cv-00170   Event: Motion for Extension of Time`. The draft is visible
+to the product: `[MAC] … ecfiler-mac drafts` lists it as `azttdc
+0:07-cv-00170 Motion for Extension of Time`. In production mode the QA court
+stays invisible: `[MAC] … ecfiler-mac courts --search tc1d` → `No courts
+found`.
+
+The new qa-day provenance gate was exercised in both directions with its own
+script extracted from `scripts/mac/qa-day.sh`: a draft naming `azd` →
+`FAIL  staged ECF URL https://ecf.azd.uscourts.gov != TARGET
+https://ecf.tc1d.aztc.uscourts.gov; staged environment is 'production', not
+'qa' — refusing to file.` (exit 1); the real draft → `PASS  → azttdc @
+https://ecf.tc1d.aztc.uscourts.gov (qa)` (exit 0).
+
+CI on PR #3 (`session6-qa-day`, head `7446ecf`): `test (3.11)` pass,
+`test (3.12)` pass, `web` pass, Vercel preview pass. VERIFIED.
+
+**Still STAGED:** the live NEF round trip. Everything up to the browser is
+now proven on the real machines with the real account; the filing itself has
+not been attempted since the fix.
+
+---
+
+### L20 — 2026-07-30 — the re-run reached the court's own permission wall; the closest anything has come, and still no filing
+The second attended attempt, with the session-6 fixes in place:
+`[MAC] cd ~/ecfiler && make qa-day MODE=live STAGE=56DB64etAjX
+TARGET=https://ecf.tc1d.aztc.uscourts.gov SERVER=http://100.126.58.33:8901
+DEVUSER=qa-day`.
+
+**How far it got.** Every ECFiler-owned stage did its job: PDF validated,
+redaction scan clean, attorney review rendered with the right court and
+case, the court invariant from L17 passed (`Target confirmed`), PACER
+authenticated against the QA realm, the browser reached
+`https://ecf.tc1d.aztc.uscourts.gov/cgi-bin/iquery.pl`, and the case number
+`0:07-cv-00170` was entered and accepted with no CM/ECF error. Artifacts:
+`docs/qa-roundtrip/run-20260730-01-filing-page.png`,
+`run-20260730-02-case-entered.png`. The Playwright trace
+(`trace_0-07-cv-00170_20260730_114335.zip`, on the Mac) records the whole
+walk. It is deliberately **not** committed: a trace carries network data
+including session cookies, and the screenshots carry the evidence without
+them.
+
+**Where it stopped.** `Selecting event type…` → `#event_list` not found,
+three attempts, then abort. `~/.ecfiler/receipts/` is empty; nothing was
+filed, and no docket entry exists.
+
+**Why.** Not a selector bug. Both screenshots show the CM/ECF menu bar this
+account is served: **Query · Reports · Utilities · Help · Log Out** — and no
+Civil or Criminal menu. A PACER account grants access to *read* dockets;
+filing requires e-filing privileges the individual court grants separately
+and must approve. With no filing menu there is no filing form, so the event
+list genuinely is not on the page. The three retries were the product
+mistaking a permissions answer for a transient one.
+
+**A second defect, found in the trace and independent of the first.**
+`DistrictCourt.navigate_to_filing` went to `/cgi-bin/iquery.pl` — the docket
+*query* CGI. No event list exists on that page under any account, so an
+approved e-filer would have failed at the same line for a different reason.
+The same URL was being handed to filers as `ecf_filing_url` in every staged
+package. `filing_url` now returns the court's menu page and the query CGI is
+named `query_url` (`tests/test_efiling_entitlement.py`). The real route from
+the Civil menu to an event list stays unbuilt rather than guessed at, and is
+logged as R-014: it cannot be written or tested until an account with filing
+privileges exists.
+
+**Also observed, and treated as a defect:** `AI validation unavailable
+(ConfigError) — proceeding`. The verification stage this product is named
+for did not run, and the run continued on one dim line of console output.
+Fixed in L21.
+
+STAGED — the NEF round trip remains unproven, and is now blocked on a court
+approval rather than on code.
+
+---
+
+### L21 — 2026-07-30 — the two failures the run exposed, fixed and pinned
+1. **A permissions failure now says so.** `check_filing_entitlement` reads
+   the CM/ECF menu bar before the event list is looked for and raises
+   `NotAnEFilerError` naming the court, quoting the menu items the account
+   was actually served, stating that nothing was filed and that the staged
+   package is unchanged, and pointing at the privilege request. Matching is
+   on exact anchor text, so a "View Civil Docket" link is not mistaken for a
+   Civil menu. `retry_on_error` does not retry it. `[VPS] .venv/bin/python
+   -m pytest tests/test_efiling_entitlement.py -q` → **23 passed**, and the
+   failure is reproduced against a real Chromium DOM in
+   `tests/test_browser_e2e.py::TestEFilingEntitlementInARealBrowser` (2
+   passed) using a mock route that serves the exact menu bar from the
+   screenshots above.
+2. **A verification stage that cannot run no longer fails open.** An
+   unavailable check (missing key, unreachable service, unparseable
+   response) stops the run unless the attorney types `FILE UNVERIFIED`; the
+   waiver names who gave it and why the check could not run, appears in the
+   attorney-review panel above the CONFIRM gate, and is hashed into the
+   submission attestation — payload `verification[]` plus a plain-English
+   clause in the attestation text. A validator that *ran and objected* is
+   recorded distinctly (`issues_found`) and still routed to the attorney
+   review gate rather than blocking. The same audit found the redaction scan
+   doing a quieter version of it: without an API key it silently degrades to
+   a pattern scan and still printed "No redaction issues", and a document it
+   could not read at all printed one dim line and was filed anyway. It now
+   names the scan it actually performed, and an unreadable document goes
+   through the same waiver gate. `[VPS] .venv/bin/python -m pytest
+   tests/test_verification_gate.py -q` → **21 passed**.
+
+Full suite `[VPS] .venv/bin/python -m pytest tests/ -q` → **685 passed, 8
+skipped** (was 641 before this session's 44 new tests). VERIFIED.
+
 ---
 
 ## Retro-audit — sessions 2–4 verification claims

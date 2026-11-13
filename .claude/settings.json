@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh macbook-tunnel /Users/jackson/ecfiler/scripts/mac/ecfiler-mac:*)",
+      "Bash(ssh macbook-tunnel git -C /Users/jackson/ecfiler:*)",
+      "Bash(ssh macbook-tunnel ls:*)",
+      "Bash(ssh macbook /Users/jackson/ecfiler/scripts/mac/ecfiler-mac:*)"
+    ]
+  }
+}

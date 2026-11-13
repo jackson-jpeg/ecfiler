@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from jwt import PyJWKClient
 from pydantic import BaseModel
 
+from ecfiler.filing.models import Filing
 from ecfiler.logging import get_logger
 
 logger = get_logger(__name__)
@@ -898,7 +899,14 @@ async def generate_cos_pdf(request: CertificateRequest) -> FileResponse:
 
 
 class StagedPackage(BaseModel):
-    """Everything the filer needs to submit the filing themselves."""
+    """Everything the filer needs to submit the filing themselves.
+
+    `filing` is the canonical record: the exact ecfiler.filing.models.Filing
+    the CLI resumes from, built here so the hosted API and the local CLI can
+    never disagree about the package shape (the flat fields alongside it are
+    display projections for the web UI). Its `staged` provenance pins the
+    court; the CLI refuses to file in any other.
+    """
 
     stage_code: str
     staged_at: str
@@ -913,28 +921,87 @@ class StagedPackage(BaseModel):
     filing_party: str
     fee_text: str
     fee_status: str
+    filing: Filing
     exhibits: list[ExhibitInfo] = []
     checklist: list[dict] = []
     instructions: list[str] = []
 
 
+STAGE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+
+
+def new_stage_code(length: int = 11) -> str:
+    """A stage code the filer can paste into a shell without quoting.
+
+    `token_urlsafe` can produce a leading "-", which the CLI reads as an
+    option (`Error: No such option '-c'`) — caught by the QA-day round trip.
+    Letters and digits only, ambiguous glyphs (0/O, 1/l/I) dropped; 11 chars
+    of this 57-symbol alphabet is ~64 bits, the same as token_urlsafe(8).
+    """
+    from secrets import choice
+
+    return "".join(choice(STAGE_CODE_ALPHABET) for _ in range(length))
+
+
 def _build_staged_package(request: FilingSubmitRequest) -> StagedPackage:
     from datetime import datetime, timezone
-    from secrets import token_urlsafe
 
-    from ecfiler.courts.registry import CourtRegistry
+    from ecfiler.courts.registry import CourtEnvironmentError, CourtRegistry
     from ecfiler.filing.checklist import get_checklist
     from ecfiler.filing.fees import format_fee, get_fee
+    from ecfiler.filing.models import (
+        CaseInfo,
+        CourtType,
+        EventCode,
+        FilingParty,
+        FilingStatus,
+        RelatedEntry,
+        StagedProvenance,
+    )
 
     try:
         court = CourtRegistry().get(request.court_id)
         profile = court.profile
+    except CourtEnvironmentError as e:
+        raise HTTPException(422, str(e))
     except Exception:
         raise HTTPException(404, f"Court '{request.court_id}' not found")
 
     fee = get_fee(request.event_description, profile.court_type)
     checklist = get_checklist(request.event_description)
     docket_text = request.event_description
+
+    stage_code = new_stage_code()
+    staged_at = datetime.now(timezone.utc).isoformat()
+
+    # The canonical filing record — the exact object the CLI resumes from.
+    # Documents are attached on the filing machine, so the list starts empty.
+    canonical = Filing(
+        court_id=profile.court_id,
+        court_type=CourtType(profile.court_type),
+        case=CaseInfo(case_number=request.case_number),
+        event=EventCode(code=request.event_code, description=request.event_description),
+        filing_party=FilingParty(
+            party_name=request.filing_party_name,
+            party_role=request.filing_party_role,
+        ),
+        parties=[request.filing_party_name],
+        docket_text=docket_text,
+        is_response=request.is_response,
+        related_entry=(
+            RelatedEntry(docket_number=request.responds_to_docket)
+            if request.responds_to_docket
+            else None
+        ),
+        status=FilingStatus.EVENT_SELECTED,
+        staged=StagedProvenance(
+            stage_code=stage_code,
+            staged_at=staged_at,
+            court_id=profile.court_id,
+            ecf_url=profile.ecf_url,
+            environment=profile.environment,
+        ),
+    )
 
     instructions = [
         f"Log into CM/ECF for {profile.name} with your own credentials: {profile.login_url}",
@@ -958,9 +1025,9 @@ def _build_staged_package(request: FilingSubmitRequest) -> StagedPackage:
     ]
 
     return StagedPackage(
-        stage_code=token_urlsafe(8),
-        staged_at=datetime.now(timezone.utc).isoformat(),
-        court_id=request.court_id,
+        stage_code=stage_code,
+        staged_at=staged_at,
+        court_id=profile.court_id,
         court_name=profile.name,
         ecf_login_url=profile.login_url,
         ecf_filing_url=profile.filing_url,
@@ -971,6 +1038,7 @@ def _build_staged_package(request: FilingSubmitRequest) -> StagedPackage:
         filing_party=f"{request.filing_party_name} ({request.filing_party_role})",
         fee_text=format_fee(fee) if fee else "",
         fee_status=request.fee_status,
+        filing=canonical,
         exhibits=request.exhibits,
         checklist=(
             [{"text": i.text, "required": i.required} for i in checklist.items]
@@ -1063,7 +1131,14 @@ def get_staged_package(
     path = _staged_dir(user_id) / f"{safe_code}.json"
     if not path.exists():
         raise HTTPException(404, "Staged package not found")
-    return StagedPackage(**_json.loads(path.read_text()))
+    try:
+        return StagedPackage(**_json.loads(path.read_text()))
+    except Exception:
+        raise HTTPException(
+            409,
+            "This staged package predates the current package format "
+            "(no canonical filing record) — stage the filing again.",
+        )
 
 
 @app.post("/api/filing/submit", response_model=FilingSubmitResponse)

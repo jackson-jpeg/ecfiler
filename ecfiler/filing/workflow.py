@@ -29,12 +29,24 @@ from ecfiler.filing.models import (
     FilingStatus,
     PartyInfo,
     RelatedEntry,
+    VerificationRecord,
+    VerificationStatus,
 )
+from ecfiler.courts.base import NotAnEFilerError
 
 if TYPE_CHECKING:
     from ecfiler.config import AppConfig
 
 console = Console()
+
+# Verification stages, and the exact words that waive one.
+AI_VALIDATION = "ai_validation"
+REDACTION_SCAN = "redaction_scan"
+STAGE_LABELS = {
+    AI_VALIDATION: "AI validation",
+    REDACTION_SCAN: "Redaction scan",
+}
+WAIVER_PHRASE = "FILE UNVERIFIED"
 
 
 class FilingWorkflow:
@@ -123,6 +135,19 @@ class FilingWorkflow:
             console.print("\n[yellow]Filing cancelled by user.[/yellow]")
             self._offer_save_draft()
             return None
+        except NotAnEFilerError as e:
+            # A permissions answer, not a technical one. Say so plainly
+            # instead of reporting a missing selector.
+            console.print()
+            console.print(
+                Panel(
+                    str(e),
+                    title="[bold red]NOT REGISTERED TO E-FILE[/bold red]",
+                    border_style="red",
+                )
+            )
+            self._offer_save_draft()
+            return None
         except Exception as e:
             console.print(f"\n[red]Filing error: {e}[/red]")
             self._offer_save_draft()
@@ -132,7 +157,7 @@ class FilingWorkflow:
 
     def _step_select_court(self) -> tuple[str, str]:
         """Step 1: Select the court."""
-        from ecfiler.courts.registry import CourtRegistry
+        from ecfiler.courts.registry import CourtNotFoundError, CourtRegistry
 
         registry = CourtRegistry()
 
@@ -145,12 +170,18 @@ class FilingWorkflow:
                 )
                 if not Confirm.ask("  Use this court?", default=True):
                     default = ""
-            except (KeyError, ValueError) as e:
+            except (KeyError, ValueError, CourtNotFoundError) as e:
                 console.print(f"  [yellow]Default court '{default}' not found: {e}[/yellow]")
                 default = ""
 
         if not default:
-            console.print(f"\n  [dim]{registry.count} courts available[/dim]")
+            env_note = (
+                " [yellow](PACER QA environment — production courts are not "
+                "listed)[/yellow]"
+                if registry.environment == "qa"
+                else ""
+            )
+            console.print(f"\n  [dim]{registry.count} courts available[/dim]{env_note}")
             query = Prompt.ask("  Search courts (name or ID)")
             results = registry.search(query)
             if not results:
@@ -367,17 +398,32 @@ class FilingWorkflow:
         return documents
 
     def _run_redaction_check(self, documents: list[Document]) -> None:
-        """Run redaction scanning on documents."""
+        """Run redaction scanning on documents.
+
+        Reports what the scan actually was. Without a Claude client this is a
+        pattern scan, which is a real check but a narrower one — saying "no
+        redaction issues" for it claims more than was done.
+        """
         from ecfiler.pdf.redaction_check import scan_document
         from ecfiler.pdf.validator import extract_text
 
         console.print("\n  [dim]Scanning for redaction issues...[/dim]")
 
+        claude = self._get_claude_safe()
+        pattern_only = claude is None
+        if pattern_only:
+            console.print(
+                "  [yellow]⚠ AI redaction review unavailable — pattern scan "
+                "only.[/yellow]"
+            )
+        found_issues = False
+
         for doc in documents:
             try:
                 text = extract_text(doc.file_path)
-                report = scan_document(text, claude_client=self._get_claude_safe())
+                report = scan_document(text, claude_client=claude)
                 if report.has_issues:
+                    found_issues = True
                     console.print(
                         f"  [yellow]⚠ {doc.filename}: "
                         f"{len(report.issues)} potential redaction issue(s)[/yellow]"
@@ -388,17 +434,31 @@ class FilingWorkflow:
                             f"{issue.text[:50]} — {issue.suggestion}"
                         )
                 else:
-                    console.print(
-                        f"  [green]✓[/green] {doc.filename}: No redaction issues"
+                    scope = (
+                        "no pattern matches"
+                        if pattern_only
+                        else "no redaction issues"
                     )
-            except FileNotFoundError:
-                console.print(
-                    f"  [red]File not found: {doc.file_path}[/red]"
-                )
+                    console.print(f"  [green]✓[/green] {doc.filename}: {scope}")
             except Exception as e:
-                console.print(
-                    f"  [dim]Could not scan {doc.filename} for redaction ({type(e).__name__})[/dim]"
+                # A document that could not be scanned has not been checked.
+                self._verification_did_not_run(
+                    REDACTION_SCAN, e, subject=doc.filename
                 )
+                return
+
+        scope_note = "pattern-only: AI review unavailable" if pattern_only else ""
+        if found_issues:
+            detail = "potential redaction issues flagged"
+            if scope_note:
+                detail = f"{detail} ({scope_note})"
+            self._record_verification(
+                REDACTION_SCAN, VerificationStatus.ISSUES_FOUND, detail=detail
+            )
+        else:
+            self._record_verification(
+                REDACTION_SCAN, VerificationStatus.PASSED, detail=scope_note
+            )
 
     def _step_response_context(self, event: EventCode) -> tuple[bool, RelatedEntry | None]:
         """Step 3b: Determine if filing is a response to an existing docket entry.
@@ -708,20 +768,143 @@ class FilingWorkflow:
                 attachment_names=[d.filename for d in self.filing.attachments],
             )
 
-            if not result.get("parse_error"):
-                for warning in result.get("warnings", []):
-                    console.print(f"  [yellow]⚠ AI: {warning}[/yellow]")
-                for error in result.get("errors", []):
-                    console.print(f"  [red]✗ AI: {error}[/red]")
-                for suggestion in result.get("suggestions", []):
-                    console.print(f"  [dim]💡 {suggestion}[/dim]")
+            if result.get("parse_error"):
+                # A response we could not read is not a passed check.
+                raise RuntimeError(
+                    "the validator's response could not be parsed"
+                )
 
-                if result.get("valid"):
-                    console.print(
-                        "  [green]✓ AI validation passed[/green]"
-                    )
+            for warning in result.get("warnings", []):
+                console.print(f"  [yellow]⚠ AI: {warning}[/yellow]")
+            for error in result.get("errors", []):
+                console.print(f"  [red]✗ AI: {error}[/red]")
+            for suggestion in result.get("suggestions", []):
+                console.print(f"  [dim]💡 {suggestion}[/dim]")
+
+            if result.get("valid"):
+                console.print("  [green]✓ AI validation passed[/green]")
+                self._record_verification(
+                    AI_VALIDATION, VerificationStatus.PASSED
+                )
+            else:
+                # The check ran and objected. The attorney-review gate is the
+                # right place to decide, but the objection has to reach the
+                # panel and the attestation, not just scroll past.
+                self._record_verification(
+                    AI_VALIDATION,
+                    VerificationStatus.ISSUES_FOUND,
+                    detail="; ".join(result.get("errors", [])) or "not valid",
+                )
         except Exception as e:
-            console.print(f"  [dim]AI validation unavailable ({type(e).__name__}) — proceeding[/dim]")
+            self._verification_did_not_run(AI_VALIDATION, e)
+
+    def _record_verification(
+        self,
+        stage: str,
+        status: VerificationStatus,
+        detail: str = "",
+        waived_by: str = "",
+    ) -> None:
+        """Record what a check did. One record per stage, last write wins."""
+        if not self.filing:
+            return
+
+        from datetime import datetime, timezone
+
+        self.filing.verification = [
+            v for v in self.filing.verification if v.stage != stage
+        ]
+        self.filing.verification.append(
+            VerificationRecord(
+                stage=stage,
+                status=status,
+                detail=detail[:500],
+                waived_by=waived_by,
+                waived_at=(
+                    datetime.now(timezone.utc).isoformat() if waived_by else ""
+                ),
+            )
+        )
+
+    def _waiver_sentence(self) -> str:
+        """The plain-English waiver clause for the attestation text.
+
+        Empty when everything ran, so an ordinary filing's attestation reads
+        exactly as it always has.
+        """
+        if not self.filing:
+            return ""
+        waived = [v for v in self.filing.unverified_stages if v.is_waived]
+        if not waived:
+            return ""
+        names = ", ".join(STAGE_LABELS.get(v.stage, v.stage) for v in waived)
+        who = waived[0].waived_by
+        return (
+            f" Filed WITHOUT verification: {names} did not run and {who} "
+            f"typed {WAIVER_PHRASE} to proceed."
+        )
+
+    def _verification_did_not_run(
+        self, stage: str, exc: Exception, subject: str = ""
+    ) -> None:
+        """Stop, unless the attorney explicitly waives the missing check.
+
+        A verification stage that cannot run used to print one dim line and
+        proceed (ledger L20). ECFiler's claim is that a filing is checked
+        before it goes out; the one thing it must never do is imply a check
+        happened when it did not.
+        """
+        from ecfiler.config import ConfigError
+
+        label = STAGE_LABELS.get(stage, stage)
+        reason = str(exc).strip() or type(exc).__name__
+        if subject:
+            reason = f"{subject}: {reason}"
+        if isinstance(exc, ConfigError):
+            fix = (
+                "This is a configuration state, not a court problem: set "
+                "ANTHROPIC_API_KEY in this shell and run the filing again."
+            )
+        else:
+            fix = (
+                "Run the filing again when the validation service is "
+                "reachable."
+            )
+
+        console.print()
+        console.print(
+            Panel(
+                f"[bold]{label} did not run.[/bold]\n\n"
+                f"{reason}\n\n"
+                f"This is not a passed check. ECFiler cannot tell you whether "
+                f"the document matches the event code or whether anything is "
+                f"missing from the package.\n\n{fix}",
+                title="[bold red]VERIFICATION UNAVAILABLE[/bold red]",
+                border_style="red",
+            )
+        )
+
+        answer = Prompt.ask(
+            "  Type [bold]FILE UNVERIFIED[/bold] to file without this check, "
+            "or press Enter to stop",
+            default="",
+        )
+        if answer.strip().upper() != WAIVER_PHRASE:
+            self._record_verification(
+                stage, VerificationStatus.UNAVAILABLE, detail=reason
+            )
+            raise KeyboardInterrupt(f"Stopped: {label} did not run")
+
+        self._record_verification(
+            stage,
+            VerificationStatus.UNAVAILABLE,
+            detail=reason,
+            waived_by=self.config.attorney.name or "unnamed",
+        )
+        console.print(
+            "  [bold yellow]⚠ This filing will go out UNVERIFIED — the waiver "
+            "is recorded in the attestation.[/bold yellow]"
+        )
 
     def _step_attorney_review(self) -> bool:
         """Step 8: Attorney review and confirmation (Safety Gate 5).
@@ -778,6 +961,29 @@ class FilingWorkflow:
             size = f"{doc.validation.file_size_mb:.1f}MB" if doc.validation else "?"
             table.add_row(label, f"{status} {doc.filename} ({size})")
 
+        # Verification — what was checked, and what was not. A waived stage
+        # has to be in front of the attorney at the moment they type CONFIRM;
+        # an attestation is only honest if they saw this.
+        for record in self.filing.verification:
+            if record.status == VerificationStatus.PASSED:
+                # A narrower check than usual still says what it was.
+                note = f" [yellow]({record.detail})[/yellow]" if record.detail else ""
+                table.add_row(
+                    STAGE_LABELS.get(record.stage, record.stage),
+                    f"[green]✓ passed[/green]{note}",
+                )
+            elif record.status == VerificationStatus.ISSUES_FOUND:
+                table.add_row(
+                    f"[yellow]{STAGE_LABELS.get(record.stage, record.stage)}[/yellow]",
+                    f"[yellow]⚠ raised issues: {record.detail}[/yellow]",
+                )
+            elif record.is_waived:
+                table.add_row(
+                    f"[bold red]{STAGE_LABELS.get(record.stage, record.stage)}[/bold red]",
+                    f"[bold red]DID NOT RUN — waived by {record.waived_by}. "
+                    f"This filing is unverified.[/bold red]",
+                )
+
         # Case opening warning
         if self.filing.is_case_opening:
             table.add_row(
@@ -818,20 +1024,52 @@ class FilingWorkflow:
             raise RuntimeError("No filing to submit")
 
         from ecfiler.browser.session import BrowserSession
+        from ecfiler.config import filing_environment
         from ecfiler.courts.registry import CourtRegistry
 
         console.print("\n  [bold]Submitting filing...[/bold]")
 
+        env = filing_environment()
         registry = CourtRegistry()
         court = registry.get(self.filing.court_id)
 
-        with BrowserSession(headless=True) as browser:
+        # Hard invariant: the court we are about to file in must be exactly
+        # the court that was selected/staged — same ID, same environment,
+        # same ECF URL. ECFILER_ECF_URL is a confirmation of the target, not
+        # a retargeting mechanism; any mismatch aborts before the browser
+        # ever launches.
+        from ecfiler.filing.invariants import enforce_court_invariants
+
+        enforce_court_invariants(self.filing, court, env)
+
+        if env.ecf_url_override:
+            # Passed the invariant: either byte-equal to the court's own URL
+            # or a localhost mock court. Applying it is a no-op for real
+            # courts and points derived URLs at the mock for test runs.
+            court.profile.ecf_url = env.ecf_url_override
+            console.print(
+                f"  [yellow]Target confirmed:[/yellow] {env.ecf_url_override}"
+                + (" [dim](QA environment)[/dim]" if env.use_qa else "")
+            )
+        username = env.username_override or self.config.pacer.username
+
+        # In QA mode reuse the human-seeded persistent profile so the
+        # MFA-established session backs up the token path.
+        profile_dir = None
+        if env.use_qa:
+            from ecfiler.pacer_session import PROFILE_DIR
+
+            profile_dir = PROFILE_DIR
+
+        with BrowserSession(
+            headless=not env.headed, user_data_dir=profile_dir
+        ) as browser:
             # Authenticate
             console.print("  [dim]Authenticating with PACER...[/dim]")
             try:
                 from ecfiler.pacer_auth import PacerAuth
 
-                auth = PacerAuth(self.config.pacer.username)
+                auth = PacerAuth(username, use_qa=env.use_qa)
                 token = auth.get_token()
 
                 # Use token-based login (bypasses MFA, confirmed working)
@@ -846,7 +1084,7 @@ class FilingWorkflow:
                 from ecfiler.pacer_auth import PacerAuth as PacerAuthFallback
 
                 try:
-                    fallback_auth = PacerAuthFallback(self.config.pacer.username)
+                    fallback_auth = PacerAuthFallback(username, use_qa=env.use_qa)
                     password = fallback_auth.get_password()
                 except Exception:
                     raise RuntimeError(
@@ -855,7 +1093,7 @@ class FilingWorkflow:
                     )
                 if not browser.login_via_form(
                     court.profile.login_url,
-                    self.config.pacer.username,
+                    username,
                     password,
                 ):
                     raise RuntimeError("PACER login failed")
@@ -1033,6 +1271,7 @@ class FilingWorkflow:
                     attestation_text=(
                         "Typed CONFIRM at attorney review (Safety Gate 5) and YES "
                         "at the CM/ECF final confirmation screen (Safety Gate 6)."
+                        + self._waiver_sentence()
                     ),
                     payload={
                         "court_id": self.filing.court_id,
@@ -1048,6 +1287,12 @@ class FilingWorkflow:
                         ),
                         "documents": [d.file_path for d in self.filing.documents],
                         "sealing": [d.sealing.value for d in self.filing.documents],
+                        # What was checked before this went out, and what was
+                        # waived. Hashed into the chain with everything else.
+                        "verification": [
+                            v.model_dump(mode="json")
+                            for v in self.filing.verification
+                        ],
                     },
                     context_text=confirm_text,
                     nef_text=receipt_info.get("page_text", ""),

@@ -14,7 +14,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Callable, TypeVar
 
-from ecfiler.courts.base import ECFFormError
+from ecfiler.courts.base import ECFFormError, NotAnEFilerError
 from ecfiler.logging import get_logger
 
 if TYPE_CHECKING:
@@ -62,6 +62,8 @@ def retry_on_error(
             raise  # Don't retry session expiry — need re-auth
         except FilingLockedError:
             raise  # Don't retry locks — need to wait
+        except NotAnEFilerError:
+            raise  # Not a transient failure: the court has to grant access
         except ECFFormError as e:
             last_error = e
             if attempt <= max_retries:

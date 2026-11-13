@@ -1,0 +1,14 @@
+[
+  {
+    "court_id": "azttdc",
+    "name": "Az Test District Court (PACER QA)",
+    "court_type": "district",
+    "ecf_url": "https://ecf.tc1d.aztc.uscourts.gov",
+    "environment": "qa",
+    "quirks": [
+      "PACER QA-realm test court (roster code AZTTDC at qa-pacer.uscourts.gov)",
+      "Login federated with qa-login.uscourts.gov — production CSO tokens are invalid here",
+      "Only loaded when ECFILER_PACER_QA=1; never appears in the production directory"
+    ]
+  }
+]

@@ -118,8 +118,24 @@ def _resume_draft(cfg: AppConfig) -> None:
 
         # Show what we have so far and jump to review
         console.print(f"  Court: {filing.court_id}")
+        if filing.staged:
+            console.print(
+                f"         staged for [bold]{filing.staged.court_id}[/bold] "
+                f"({filing.staged.environment}) at {filing.staged.ecf_url} "
+                f"— code {filing.staged.stage_code}"
+            )
         console.print(f"  Case:  {filing.case.case_number}")
         console.print(f"  Event: {filing.event.description}")
+
+        # Staged packages carry no local file paths — the document lives on
+        # this machine. Select and validate it before review.
+        if not filing.documents:
+            console.print(
+                "\n  [yellow]No documents attached yet[/yellow] — a staged "
+                "package references documents on your machine."
+            )
+            documents = workflow._step_select_documents()
+            filing.documents = workflow._step_validate_documents(documents)
 
         if Prompt.ask("  Continue to review?", choices=["y", "n"], default="y") == "y":
             # Run from AI validation onward

@@ -137,20 +137,27 @@ whenever `session status` reports expired.
 
 Stated plainly, because "tests pass" is not "it filed":
 
-- **No end-to-end staged filing has round-tripped to an NEF.** The QA PACER
-  account does not exist. Registration is gated by a reCAPTCHA and is an account
-  registration made under Jackson's identity with terms assent, so it is his to
-  submit; the field-by-field answers are prepared in
-  `docs/outreach/c1-answer-sheet.md`. Activation is overnight. **Until that
-  account exists and activates, the QA filing round trip cannot be performed by
-  anyone, and this document should not be read as claiming otherwise.**
-- **Session lifetime is unknown** (§2c), and will stay unknown until there is an
-  account to measure against. The instrument is built and tested; it has no
-  subject.
+- **No end-to-end staged filing has round-tripped to an NEF.** Still true after
+  the first attended attempt (2026-07-29, ledger L16). The QA PACER account now
+  exists, authenticates, and seeded a live browser session; all twelve preflight
+  gates passed on the filing machine; the staged package pulled down as a draft.
+  The run then stopped at the hosted→local seam — the draft did not parse as a
+  `Filing` (R-013) — and a second bug in the same path had the draft naming the
+  wrong court (R-012). No browser reached the court, no receipt or trace exists,
+  and the attestation chain on the filing machine is still empty. Both bugs are
+  fixed and pinned; the run has not been repeated. **This document should not be
+  read as claiming a filing has happened.**
+- **Session lifetime is unknown** (§2c). Measurement has started — the QA
+  session store has two observations — but nothing has expired yet, so there is
+  no lower bound.
 - Production PACER filing is out of scope by policy this session, and the
   production credential is treated as compromised until rotated
   (`docs/risk-register.md` R-002).
 
 The honest summary: the topology is designed, the code is built and unit-tested,
-the browser mechanism is measured working, and the one thing standing between
-here and a proven filing is a QA account that takes about a minute to request.
+the browser mechanism is measured working, and the QA account is live. What the
+first attended run showed is that the parts nobody had driven end to end — the
+seam between the hosted package and the local CLI, and the court identity that
+crosses it — were the parts that were broken. Both are fixed with structural
+guarantees rather than care, and the next attended run is what turns any of
+this into a proven filing.

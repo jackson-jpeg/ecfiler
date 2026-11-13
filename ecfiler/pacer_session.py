@@ -43,7 +43,9 @@ PROFILE_DIR = CONFIG_DIR / "pacer-profile"
 OBSERVATION_LOG = CONFIG_DIR / "pacer-session.jsonl"
 
 PACER_CSO_LOGIN_URL = "https://pacer.login.uscourts.gov/csologin/login.jsf"
-PACER_QA_CSO_LOGIN_URL = "https://qa-pacer.login.uscourts.gov/csologin/login.jsf"
+# QA CSO mirrors production at qa-login.uscourts.gov ("qa-pacer.login"
+# does not resolve — measured 2026-07-29, ledger L15).
+PACER_QA_CSO_LOGIN_URL = "https://qa-login.uscourts.gov/csologin/login.jsf"
 PACER_ACCOUNT_URL = "https://pacer.uscourts.gov/my-account-billing/manage-my-account-login"
 
 # Markers that indicate an authenticated CSO session on the account page.

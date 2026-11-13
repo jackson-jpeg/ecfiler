@@ -18,9 +18,16 @@ class DistrictCourt(BaseCourt):
     """
 
     def navigate_to_filing(self, page: Page) -> None:
-        """District courts use the standard filing URL."""
-        url = f"{self.profile.ecf_url}/cgi-bin/iquery.pl"
-        page.goto(url)
+        """Enter through the case-lookup screen.
+
+        Known gap (R-014): this is the query CGI, and no verified route runs
+        from it to an event list — the real path is the Civil menu. It cannot
+        be built or tested until an account with filing privileges at some
+        court exists, so it is left as-is rather than guessed at. The
+        entitlement check below runs here because CM/ECF serves the same
+        menu bar on every page, including this one.
+        """
+        page.goto(self.profile.query_url)
         page.wait_for_load_state("networkidle")
 
         # Some district courts have an interstitial consent page
@@ -31,6 +38,8 @@ class DistrictCourt(BaseCourt):
             if consent_btn:
                 consent_btn.click()
                 page.wait_for_load_state("networkidle")
+
+        self.check_filing_entitlement(page)
 
     def get_docket_entries(self, page: Page, case_number: str) -> list[dict[str, str]]:
         """Fetch recent docket entries for the case (for related filing selection).

@@ -10,17 +10,23 @@
 #
 # Preconditions checked for live (each maps to a HUMAN-QUEUE row when red):
 #   1. running on macOS with the repo at ~/ecfiler
-#   2. PACER credential present in ecfiler.keychain-db and readable
+#   2. PACER credential present in ecfiler.keychain-db and readable, and it
+#      authenticates against the QA cso-auth endpoint
 #   3. headed Chromium profile exists with a live persisted session (--qa)
 #   4. sandbox allow-rules present in .claude/settings.json (VPS sessions
 #      drive these commands over the tunnel; without the rules the run
 #      stalls at `session login` — see docs/nef-roundtrip-runbook.md)
 #   5. receipts dir writable
 #   6. attestation chain verifies
+#
+# And after the pull, before the browser: the draft's staged provenance must
+# name the same court and ECF URL as TARGET, in the qa environment.
 set -u
 
 MODE="${1:-dry}"
-STAGE="${2:-}"
+STAGE="${2:-${QA_STAGE:-}}"
+TARGET="${QA_TARGET:-}"
+QA_USER="${QA_USER:-ecfilercom}"
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 ECFILER_MAC="$REPO/scripts/mac/ecfiler-mac"
 
@@ -52,7 +58,8 @@ KC="$HOME/Library/Keychains/ecfiler.keychain-db"
 check "ecfiler keychain exists" test -f "$KC"
 check "keychain password file present" test -f "$HOME/.ecfiler/keychain-pass"
 check "keychain unlocks" security unlock-keychain -p "$(cat "$HOME/.ecfiler/keychain-pass" 2>/dev/null)" "$KC"
-check "PACER credential stored" security find-generic-password -s ecfiler-pacer "$KC"
+check "QA credential stored ($QA_USER)" security find-generic-password -a "$QA_USER" -s ecfiler-pacer "$KC"
+check "QA credential authenticates (cso-auth)" "$ECFILER_MAC" session auth-test --qa --username "$QA_USER"
 
 check "Chromium profile exists" test -d "$HOME/.ecfiler/pacer-profile"
 if "$ECFILER_MAC" session status --qa 2>/dev/null | grep -qi "live"; then
@@ -88,14 +95,57 @@ echo
 echo "Preflight green."
 if [ -z "$STAGE" ]; then
   echo "No STAGE code given. Stage a filing at www.ecfiler.com/file, then:"
-  echo "  [MAC] make qa-day MODE=live STAGE=<code>"
+  echo "  [MAC] make qa-day MODE=live STAGE=<code> TARGET=<qa-ecf-base-url>"
   exit 0
 fi
+if [ -z "$TARGET" ]; then
+  echo "No TARGET given. A live QA run must name its training-court URL"
+  echo "(docs/nef-roundtrip-runbook.md records the established target):"
+  echo "  [MAC] make qa-day MODE=live STAGE=$STAGE TARGET=<qa-ecf-base-url>"
+  exit 1
+fi
+
+# The filing workflow reads these; ECFILER_PACER_QA without ECFILER_ECF_URL
+# refuses to run (ecfiler/config.py::filing_environment).
+export ECFILER_PACER_QA=1
+export ECFILER_ECF_URL="$TARGET"
+export ECFILER_PACER_USERNAME="$QA_USER"
+export ECFILER_HEADED=1
 
 echo "== Pulling staged package $STAGE =="
-"$ECFILER_MAC" stage-pull "$STAGE" || exit 1
+PULL_ARGS=("$STAGE")
+[ -n "${QA_SERVER:-}" ] && PULL_ARGS+=(--server "$QA_SERVER")
+[ -n "${QA_DEV_USER:-}" ] && PULL_ARGS+=(--dev-user "$QA_DEV_USER")
+"$ECFILER_MAC" stage-pull "${PULL_ARGS[@]}" || exit 1
+
+# The draft must name the court we are about to file in. Session 6 pulled a
+# draft naming `azd` — the real District of Arizona — for a QA run, and
+# nothing checked (ledger L16). The workflow enforces this too; checking it
+# here means the run stops before the browser rather than during it.
+echo "== Checking the pulled draft names $TARGET =="
+python3 - "$HOME/.ecfiler/drafts" "$TARGET" <<'PY' || exit 1
+import json, pathlib, sys
+
+drafts_dir, target = pathlib.Path(sys.argv[1]), sys.argv[2].rstrip("/")
+newest = max(drafts_dir.glob("staged_*.json"), key=lambda p: p.stat().st_mtime)
+filing = json.loads(newest.read_text())["filing"]
+staged = filing.get("staged")
+if not staged:
+    sys.exit(f"FAIL  {newest.name} has no staged provenance — re-stage it.")
+problems = []
+if staged["ecf_url"].rstrip("/") != target:
+    problems.append(f"staged ECF URL {staged['ecf_url']} != TARGET {target}")
+if staged["court_id"] != filing["court_id"]:
+    problems.append(f"staged court {staged['court_id']} != filing court {filing['court_id']}")
+if staged.get("environment") != "qa":
+    problems.append(f"staged environment is {staged.get('environment')!r}, not 'qa'")
+if problems:
+    sys.exit("FAIL  " + "; ".join(problems) + " — refusing to file.")
+print(f"PASS  draft {newest.name} → {filing['court_id']} @ {staged['ecf_url']} (qa)")
+PY
 
 echo "== Handing off to the attended filing workflow (CONFIRM + YES are yours) =="
+echo "   Target: $TARGET (QA) as $QA_USER, headed browser"
 "$ECFILER_MAC" || exit 1
 
 echo "== Proof =="
