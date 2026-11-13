@@ -3,7 +3,7 @@
 
 Source form has zero widgets; every insertion is positioned from measured
 label/rule geometry (see git history / packet checklist for the fact sheet).
-The applicant is Bertlegs LLC d/b/a ECFiler (decided 2026-11-13: a single-member
+The applicant is Unpossible Studio LLC d/b/a ECFiler (decided 2026-11-13: a single-member
 Florida LLC effective 01/01/2027, ECFiler a registered fictitious name of it;
 docs/fl/entity-recommendation.md). Signatures, dates, and titles are
 deliberately left blank.
@@ -47,7 +47,7 @@ p = doc[0]
 put(p, 395, 191.0, EMAIL)           # Contact Email
 put(p, 124.5, 210.2, "Jackson Sanger")                  # Contact Name
 put(p, 395, 210.2, "[phone]", color=GRAY)               # Contact Phone
-APPLICANT = "Bertlegs LLC d/b/a ECFiler"
+APPLICANT = "Unpossible Studio LLC d/b/a ECFiler"
 put(p, 124.5, 191.0, APPLICANT)                         # Applicant Name
 
 # ---------------- Page 3: callback table + Filing Paths grid ---------------

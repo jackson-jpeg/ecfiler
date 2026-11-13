@@ -24,7 +24,7 @@ the Florida Courts E-Filing Authority may contact them, and (3) confirms they ca
 speak to the Firm's financial standing if asked. Collect from each: **contact name,
 title, organization, phone, email** — that is what goes on the form.
 
-**Sequencing:** send these only after Bertlegs LLC is active (effective 01/01/2027),
+**Sequencing:** send these only after Unpossible Studio LLC is active (effective 01/01/2027),
 ECFiler is registered as its fictitious name, and the accounts below are in (or moved
 into) the LLC's name — see `docs/fl/entity-recommendation.md`. The form's
 wording is "financial stability of **the Firm**," so references tied to the entity are
@@ -38,16 +38,16 @@ this repo — if Jackson has one, swap them in for Email 3.
 
 ## Email 1 — Bank (strongest reference; the declaration names "bank depository" explicitly)
 
-**To:** `[Business banker or branch manager at the bank holding the Bertlegs LLC d/b/a ECFiler
+**To:** `[Business banker or branch manager at the bank holding the Unpossible Studio LLC d/b/a ECFiler
 account. If the account was opened online with no named banker, call or secure-message
 the bank first and ask who handles business-account verification requests; address this
 email to that person. A named human beats a department inbox on the form.]`
 
-**Subject:** Reference request — Bertlegs LLC d/b/a ECFiler vendor application, Florida Courts E-Filing Authority
+**Subject:** Reference request — Unpossible Studio LLC d/b/a ECFiler vendor application, Florida Courts E-Filing Authority
 
 Hello `[NAME]`,
 
-I hold the business account for Bertlegs LLC d/b/a ECFiler (account ending `[XXXX]`) at your
+I hold the business account for Unpossible Studio LLC d/b/a ECFiler (account ending `[XXXX]`) at your
 `[BRANCH/institution]`. I'm applying to the Florida Courts E-Filing Authority — the
 public body that operates Florida's court e-filing portal — to become a certified
 third-party filing vendor. The application asks me to list three references regarding
@@ -64,10 +64,10 @@ Happy to provide anything you need, and thank you.
 Best regards,
 
 Jackson Sanger
-`[TITLE]`, Bertlegs LLC d/b/a ECFiler
+`[TITLE]`, Unpossible Studio LLC d/b/a ECFiler
 `[PHONE]` · `[EMAIL]`
 
-> **What this reference needs to be able to state if contacted:** that Bertlegs LLC d/b/a ECFiler
+> **What this reference needs to be able to state if contacted:** that Unpossible Studio LLC d/b/a ECFiler
 > holds an account in good standing; how long the relationship has existed; that the
 > account has no adverse history (overdrafts/charge-offs); general reputation of the
 > accountholder.
@@ -83,11 +83,11 @@ account-standing confirmation you can attach or cite, plus the correct contact p
 to list on the form. If Stripe can't provide either, replace this reference with a
 CPA or an established client — see note above.]`
 
-**Subject:** Request: account-standing confirmation for a government vendor application — Bertlegs LLC d/b/a ECFiler
+**Subject:** Request: account-standing confirmation for a government vendor application — Unpossible Studio LLC d/b/a ECFiler
 
 Hello,
 
-I operate the Stripe account for Bertlegs LLC d/b/a ECFiler (account `[acct_XXXX / registered
+I operate the Stripe account for Unpossible Studio LLC d/b/a ECFiler (account `[acct_XXXX / registered
 email]`), open since `[MONTH YEAR]`. I'm applying to the Florida Courts E-Filing
 Authority, a Florida public body, to be certified as a third-party e-filing vendor.
 The application requires three references regarding the financial stability of the
@@ -108,10 +108,10 @@ Thank you — glad to verify account ownership through whatever process you need
 Best regards,
 
 Jackson Sanger
-`[TITLE]`, Bertlegs LLC d/b/a ECFiler
+`[TITLE]`, Unpossible Studio LLC d/b/a ECFiler
 `[PHONE]` · `[STRIPE ACCOUNT EMAIL]`
 
-> **What this reference needs to be able to state if contacted:** that the Bertlegs LLC d/b/a ECFiler
+> **What this reference needs to be able to state if contacted:** that the Unpossible Studio LLC d/b/a ECFiler
 > Stripe account is active and in good standing; how long it has processed payments;
 > no unresolved disputes, holds, reserves, or adverse actions on the account.
 
@@ -131,7 +131,7 @@ infrastructure. A CPA or established client remains the stronger substitute.*
 for a government vendor application; a billing/accounts person is ideal. Any
 infrastructure vendor with a comparable paid history works the same way.]`
 
-**Subject:** Vendor reference request — Bertlegs LLC d/b/a ECFiler application to the Florida Courts E-Filing Authority
+**Subject:** Vendor reference request — Unpossible Studio LLC d/b/a ECFiler application to the Florida Courts E-Filing Authority
 
 Hello,
 
@@ -152,7 +152,7 @@ Thank you.
 Best regards,
 
 Jackson Sanger
-`[TITLE]`, Bertlegs LLC d/b/a ECFiler
+`[TITLE]`, Unpossible Studio LLC d/b/a ECFiler
 `[PHONE]` · `[EMAIL]`
 
 > **What this reference needs to be able to state if contacted:** customer in good
@@ -167,5 +167,5 @@ Jackson Sanger
 - [ ] Three confirmed references, each with name, title, organization, phone, email
 - [ ] Each reference warned the Florida Courts E-Filing Authority may contact them
       (blocking item #1 in `docs/fl/drafts/application-draft.md`)
-- [ ] All referenced accounts are in Bertlegs LLC's name (not Jackson's personal name)
+- [ ] All referenced accounts are in Unpossible Studio LLC's name (not Jackson's personal name)
 - [ ] Written confirmations (e.g., Stripe letter) saved with the retained application copy

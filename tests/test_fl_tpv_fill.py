@@ -33,19 +33,19 @@ EMAIL = "jackson@sang3r.com"
 
 # Every word the overlay adds, page by page, in reading order.
 EXPECTED_ADDED = {
-    1: f"Bertlegs LLC d/b/a ECFiler {EMAIL} Jackson Sanger [phone]",
+    1: f"Unpossible Studio LLC d/b/a ECFiler {EMAIL} Jackson Sanger [phone]",
     3: "N/A N/A N/A N/A Not applicable: Applicant will use the "
     "FilingReviewCompleteResult polling service for status retrieval "
     "(see cover letter). X X",
     5: f"Jackson Sanger [street address] Tampa, FL [phone] {EMAIL} "
-    "Applicant: Bertlegs LLC d/b/a ECFiler, a single-member Florida limited liability "
+    "Applicant: Unpossible Studio LLC d/b/a ECFiler, a single-member Florida limited liability "
     "company, organized effective 01/01/2027. State of organization: Florida. "
     "[to complete at mailing] None. None. No. No. See attached reference sheet.",
 }
 
 # Text that must sit inside a given cell (page, x0, y0, x1, y1), measured on the form.
 PLACEMENTS = [
-    (1, (120, 180, 304, 195), "Bertlegs LLC d/b/a ECFiler"),  # Applicant Name value cell
+    (1, (120, 180, 304, 195), "Unpossible Studio LLC d/b/a ECFiler"),  # Applicant Name value cell
     (1, (391, 180, 570, 195), EMAIL),  # Contact Email value cell
     (1, (120, 199, 304, 214), "Jackson Sanger"),  # Contact Name value cell
     (1, (391, 199, 570, 214), "[phone]"),  # Contact Phone value cell

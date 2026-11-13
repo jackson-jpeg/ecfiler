@@ -76,7 +76,7 @@
   has a vendor-fee work group, which meets next on 2026-12-08.
 - The fill script re-ran on the current form, with a read-back test.
 - No Sunbiz entity named ECFiler or ECF Filer appears in the state's bulk data.
-- **Entity (Jackson, after the session):** the applicant is **Bertlegs LLC d/b/a
+- **Entity (Jackson, after the session):** the applicant is **Unpossible Studio LLC d/b/a
   ECFiler**, not ECFiler LLC. The entity doc, the filled PDF, its test and every
   draft were reworked to it (see "After Jackson's answers").
 - C2 and C5 are refreshed and lint-clean. C3 and C4 no longer show the
@@ -96,4 +96,4 @@ skips are the live web tests, run separately: 24 passed, L24).
 | Don't restore the API; trigger is the first NEF; draft a note to the 9 | Trigger recorded in `docs/hosting-topology.md` and the queue. Note drafted (`docs/outreach/c7-signup-prelaunch-note.md`), lint-clean, no em dashes, **not sent**; HUMAN-QUEUE #3. Neither law-firm domain is Hinshaw (`njlawflorida.com`, `ofjlaw.com`), so nobody is left out | — |
 | Install the EPA monitor, quiet | Alerts rewritten so each kind fires once (one page per run for feed items, once ever for the page keyword, once for 7 days of failed fetches, once at the end); default priority, ops-page only. Self-test passes, and fails 7 ways against a copy with the once-only rule removed. Installed as `ecfiler-epa-monitor.timer` (daily ~15:10 UTC, Nice 19, idle IO, 10% CPU). First run: 10 feed items recorded, no keyword, no page. Recorded in `/root/CLAUDE.md` as an approved exception, and in `/root/retired/RESTORE.md` | `deploy/systemd/` |
 | Approved deletions | `/root/ecfiler/web/.next` (241 MB), the session scratch files, `~/.ecfiler/qa-efile-recon` on the Mac: all gone | — |
-| Bertlegs LLC d/b/a ECFiler | `docs/fl/entity-recommendation.md` rewritten (decision, order of operations, the umbrella's trade-off stated plainly, s. 865.09 read from the statute); the filled PDF now names the applicant on p. 1 and in the §II note; fill test updated (7 passed); draft, checklist, cover letter, intro email, reference emails and C3 switched. Queue: #7 the $50 fictitious name after the LLC is active, #8 the application | — |
+| Unpossible Studio LLC d/b/a ECFiler | `docs/fl/entity-recommendation.md` rewritten (decision, order of operations, the umbrella's trade-off stated plainly, s. 865.09 read from the statute); the filled PDF now names the applicant on p. 1 and in the §II note; fill test updated (7 passed); draft, checklist, cover letter, intro email, reference emails and C3 switched. Queue: #7 the $50 fictitious name after the LLC is active, #8 the application | — |

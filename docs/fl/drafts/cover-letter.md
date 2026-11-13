@@ -1,6 +1,6 @@
 # DRAFT — Cover Letter to Accompany the Third Party Vendor Application
 
-*One page. To be printed on Bertlegs LLC d/b/a ECFiler letterhead and mailed with the application and
+*One page. To be printed on Unpossible Studio LLC d/b/a ECFiler letterhead and mailed with the application and
 the $500 fee to Florida Courts E-Filing Authority, P.O. Box 16428, Tallahassee, FL 32317
 (`docs/fl/vendor-application.md`). Items in `[BRACKETS]` are for Jackson to complete.*
 
@@ -12,14 +12,14 @@ Florida Courts E-Filing Authority
 P.O. Box 16428
 Tallahassee, FL 32317
 
-**Re: Third Party Vendor Application (Batch Filing), Bertlegs LLC d/b/a ECFiler**
+**Re: Third Party Vendor Application (Batch Filing), Unpossible Studio LLC d/b/a ECFiler**
 
 Dear Members of the Authority:
 
 Enclosed please find the completed Third Party Vendor Application and the $500.00
 non-refundable application fee. I am the author of ECFiler, an open-source
 filing-preparation tool for federal CM/ECF practice, and the sole principal of
-Bertlegs LLC d/b/a ECFiler. I work in litigation docketing by profession, and I am based in
+Unpossible Studio LLC d/b/a ECFiler. I work in litigation docketing by profession, and I am based in
 Tampa. ECFiler's document pipeline (PDF validation, PDF/A conversion,
 confidential-information redaction scanning, lead-document and exhibit handling, and
 a per-submission audit trail) is built and exercised by an extensive automated test
@@ -63,7 +63,7 @@ Respectfully,
 `[SIGNATURE]`
 
 Jackson Sanger
-`[TITLE]`, Bertlegs LLC d/b/a ECFiler
+`[TITLE]`, Unpossible Studio LLC d/b/a ECFiler
 `[ADDRESS, TAMPA, FL]`
 
 ---
@@ -84,7 +84,7 @@ Jackson Sanger
   the program itself prescribes (spec provided post-approval —
   `docs/fl/technical-specs.md` §9).*
 - *Voice is singular throughout — there is one person. The entity signs (`[TITLE]`,
-  Bertlegs LLC d/b/a ECFiler; applicant decided 2026-11-13, `docs/fl/entity-recommendation.md`), but no staff, no "we", and no employer: Jackson's day-job firm is
+  Unpossible Studio LLC d/b/a ECFiler; applicant decided 2026-11-13, `docs/fl/entity-recommendation.md`), but no staff, no "we", and no employer: Jackson's day-job firm is
   never named or alluded to in Authority correspondence.*
 - *2026-11-13: email filled in as jackson@sang3r.com (the ecfiler.com mailbox no
   longer exists; never a Gmail address), and the em dashes in the letter text

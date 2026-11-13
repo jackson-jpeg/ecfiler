@@ -1,7 +1,7 @@
 # Human queue
 
 *Rewritten 2026-11-13 (session 7); updated the same day after Jackson's answers
-(PR #4 merged, the EPA monitor installed, Bertlegs LLC d/b/a ECFiler). One list, ordered by what unblocks the
+(PR #4 merged, the EPA monitor installed, Unpossible Studio LLC d/b/a ECFiler). One list, ordered by what unblocks the
 most. A row is here only for money, a signature, Jackson's identity, a
 CAPTCHA that truly can't be passed, or a credential that exists nowhere.
 Each row says why it is his, the exact click path, and the time.*
@@ -19,7 +19,7 @@ post-reboot unit went with the retirement).
 | 4 | [Rotate the production PACER password](#4) | Credential | 2 min |
 | 5 | [Send C2 and C5](#5) | His name; C5 has a CAPTCHA and needs his phone | 6 min |
 | 6 | [Subscribe to GovDelivery](#6) | CAPTCHA | 30 s |
-| 7 | [Register ECFiler as Bertlegs LLC's fictitious name](#7) | Money + his certification | $50 + a newspaper notice, 20 min; **after Bertlegs LLC is active (01/01/2027)** |
+| 7 | [Register ECFiler as Unpossible Studio LLC's fictitious name](#7) | Money + his certification | $50 + a newspaper notice, 20 min; **after Unpossible Studio LLC is active (01/01/2027)** |
 | 8 | [File the Florida vendor application](#8) | Money + signature | $500, about 35 min; after #7 |
 | 9 | [Counsel review of Terms and Privacy](#9) | Money (a lawyer) | two questions |
 | 10 | [Put `ANTHROPIC_API_KEY` on the Mac](#10) | Credential that exists nowhere | 1 min |
@@ -109,21 +109,21 @@ your phone number, solve the CAPTCHA, submit.
 → email jackson@sang3r.com → solve the MTCaptcha → submit → click the
 confirmation link. Do it before C2, so nothing in C2 needs to change.
 
-## 7. Register ECFiler as Bertlegs LLC's fictitious name {#7}
+## 7. Register ECFiler as Unpossible Studio LLC's fictitious name {#7}
 
-ECFiler operates as a d/b/a of **Bertlegs LLC** (single-member Florida LLC,
+ECFiler operates as a d/b/a of **Unpossible Studio LLC** (single-member Florida LLC,
 effective 01/01/2027; forming it is yours and outside this repo). Florida
 requires the LLC to be **active** on Sunbiz first, and the name to be advertised
 once in a newspaper in the county of the principal place of business (s. 865.09,
 Fla. Stat.). Reasoning: `docs/fl/entity-recommendation.md`.
 
-1. **Newspaper notice:** one insertion of the name "ECFiler" and Bertlegs LLC
+1. **Newspaper notice:** one insertion of the name "ECFiler" and Unpossible Studio LLC
    as owner, in a newspaper in your county (Hillsborough, if the business address
    is Tampa). Most papers have a fictitious-name notice form.
 2. **Register, $50, 10 min:** Sunbiz → Fictitious Name → File or Renew →
-   Fictitious name "ECFiler", owner Bertlegs LLC (its document number), certify the
+   Fictitious name "ECFiler", owner Unpossible Studio LLC (its document number), certify the
    notice ran. Valid 5 years.
-3. Open the Bertlegs LLC business account with the d/b/a (the bank will ask for
+3. Open the Unpossible Studio LLC business account with the d/b/a (the bank will ask for
    the registration), then send the three emails in
    `docs/fl/drafts/reference-request-emails.md`.
 
@@ -131,9 +131,9 @@ Fla. Stat.). Reasoning: `docs/fl/entity-recommendation.md`.
 
 After #7. **$500, 30 min once the references are in:** print
 `docs/fl/Third_Party_Vendor_Application_FILLED.pdf` (form rev. 01-01-2021, still
-current; it already reads **Bertlegs LLC d/b/a ECFiler**). Write the company name and
+current; it already reads **Unpossible Studio LLC d/b/a ECFiler**). Write the company name and
 your title in both signature blocks, complete §III.A ("less than one year", with the
-dates), sign pages 4 and 5, check drawn on Bertlegs LLC's account to the payee
+dates), sign pages 4 and 5, check drawn on Unpossible Studio LLC's account to the payee
 confirmed with the Authority (support@myflcourtaccess.com / 850-577-4609), mail to
 P.O. Box 16428. Checklist: `docs/fl/application-packet-checklist.md`. The
 Authority's board has a work group reviewing vendor "processes and fees"; it meets

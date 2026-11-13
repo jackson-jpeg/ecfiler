@@ -1,5 +1,12 @@
 # ECFiler session 7 handoff (2026-11-13, updated after Jackson's answers)
 
+> **PARKED (Jackson, 2026-11-13).** Nothing moves until the court approves the
+> QA e-filing registration (HUMAN-QUEUE #1). No installs or caches on the Mac
+> until the NEF run. The run's prep reinstalls Playwright Chromium first
+> (`docs/qa-roundtrip/attended-run.md`). The Mac disk filled today; this
+> session removed its own 539 MB browser cache. The EPA monitor keeps running
+> on the VPS, which is not the Mac.
+
 ## Decisions made (no longer open)
 
 1. **API stays retired until the first NEF lands** (Jackson). Then restore per
@@ -18,8 +25,8 @@
    v2 and were left alone). After changing the script, re-run the `install`
    line in `deploy/systemd/README-epa-monitor.md`. It ends itself after
    2027-03-31 with one page; then remove the units.
-4. **Entity: Bertlegs LLC d/b/a ECFiler.** Bertlegs LLC (single-member Florida,
-   effective 01/01/2027) is Jackson's and outside this repo, as are bertlegs.com
+4. **Entity: Unpossible Studio LLC d/b/a ECFiler.** Unpossible Studio LLC (single-member Florida,
+   effective 01/01/2027) is Jackson's and outside this repo, as are the umbrella's website
    and its analytics. ECFiler's steps start once the LLC is active: fictitious
    name ($50, after a newspaper notice; queue #7), then the application ($500;
    queue #8).

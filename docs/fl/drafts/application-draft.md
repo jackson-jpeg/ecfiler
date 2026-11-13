@@ -20,7 +20,7 @@
 
 | Form field | Draft answer |
 |---|---|
-| Applicant Name | Bertlegs LLC d/b/a ECFiler (see note A) |
+| Applicant Name | Unpossible Studio LLC d/b/a ECFiler (see note A) |
 | Contact Name | Jackson Sanger |
 | Contact Email | `[BUSINESS EMAIL — see note B]` |
 | Contact Phone # | `[PHONE NUMBER]` |
@@ -30,7 +30,7 @@
 > individual. However, page 5's Status of Company section, the license agreement's
 > hold-harmless/liability structure (`docs/fl/batch-license-agreement.md` §2, §7), and the
 > penalty-of-perjury corporate disclosure all read much more cleanly against an entity.
-> **Decided 2026-11-13: the applicant is Bertlegs LLC d/b/a ECFiler**, Jackson's
+> **Decided 2026-11-13: the applicant is Unpossible Studio LLC d/b/a ECFiler**, Jackson's
 > single-member Florida LLC (effective 01/01/2027) with ECFiler registered as its
 > fictitious name (`docs/fl/entity-recommendation.md`), so the entity, not Jackson
 > personally, carries the license obligations and the hold-harmless. Because the LLC is newly formed, answer the "years in business"
@@ -137,11 +137,11 @@ as written. Consequences to understand before signing:
 
 | Field | Draft answer |
 |---|---|
-| [NAME OF COMPANY] | Bertlegs LLC d/b/a ECFiler |
+| [NAME OF COMPANY] | Unpossible Studio LLC d/b/a ECFiler |
 | Signature of Applicant | `[Jackson signs]` |
 | Date of Application | `[date mailed]` |
 | Printed Name of Applicant | Jackson Sanger |
-| Title | `[Jackson's title in Bertlegs LLC's Articles, e.g. "Authorized Member" or "Manager"]` |
+| Title | `[Jackson's title in Unpossible Studio LLC's Articles, e.g. "Authorized Member" or "Manager"]` |
 
 ---
 
@@ -157,7 +157,7 @@ as written. Consequences to understand before signing:
 
 | Field | Draft answer |
 |---|---|
-| Name | Bertlegs LLC d/b/a ECFiler (the filled PDF types Jackson Sanger as the contact here) |
+| Name | Unpossible Studio LLC d/b/a ECFiler (the filled PDF types Jackson Sanger as the contact here) |
 | Address | `[BUSINESS ADDRESS — Jackson's Tampa business address; a physical street address is preferable to a P.O. box for a verification-oriented form]` |
 | Phone | `[PHONE]` |
 | E-mail | `[BUSINESS EMAIL]` |
@@ -165,7 +165,7 @@ as written. Consequences to understand before signing:
 ### II. Status of Company
 
 The form offers Corporation / Partnership / Joint Venture and predates LLCs. The filled
-PDF answers with a margin note beside the heading: "Applicant: Bertlegs LLC d/b/a
+PDF answers with a margin note beside the heading: "Applicant: Unpossible Studio LLC d/b/a
 ECFiler, a single-member Florida limited liability company, organized effective
 01/01/2027. State of organization: Florida." The subsections stay blank.
 
@@ -177,8 +177,8 @@ ECFiler, a single-member Florida limited liability company, organized effective
 
 | Item | Draft answer |
 |---|---|
-| A. Number of years in business under present name? | `["Less than one year. Bertlegs LLC was organized effective January 1, 2027, and registered ECFiler as its fictitious name on [DATE]." Answer literally; do not inflate.]` |
-| B. List all Subsidiary or Affiliated Companies. | `[Presumably "None." Jackson's other projects are product lines of Bertlegs LLC itself, not separate companies. If any of them has its own entity by the mailing date, list it here.]` |
+| A. Number of years in business under present name? | `["Less than one year. Unpossible Studio LLC was organized effective January 1, 2027, and registered ECFiler as its fictitious name on [DATE]." Answer literally; do not inflate.]` |
+| B. List all Subsidiary or Affiliated Companies. | `[Presumably "None." Jackson's other projects are product lines of Unpossible Studio LLC itself, not separate companies. If any of them has its own entity by the mailing date, list it here.]` |
 | C. List any regulatory fine, proceeding, or litigation filed against the Firm in the past five (5) years. | `[Presumably "None." Confirm with Jackson — covers the entity AND, prudently read, its principal's business conduct. If the LLC is new, note the entity has existed only since [DATE] and answer for that period truthfully.]` |
 | D. Any principals of the Firm ever been convicted of a first-degree misdemeanor or felony? | `[Presumably "No." Jackson must confirm personally — this is a lifetime question ("ever"), penalty of perjury.]` |
 | E. Currently under investigation by any public or private, state or federal law enforcement or regulatory body? | `[Presumably "No." Jackson must confirm as of the mailing date.]` |
@@ -193,7 +193,7 @@ ECFiler, a single-member Florida limited liability company, organized effective
    firm's **accountant/CPA**; (c) a **commercial landlord, established client, or
    long-standing commercial counterparty** who can speak to payment history. Warn each
    reference that the Florida Courts E-Filing Authority may contact them.
-2. **Entity papers**: Bertlegs LLC active on Sunbiz, the ECFiler fictitious name
+2. **Entity papers**: Unpossible Studio LLC active on Sunbiz, the ECFiler fictitious name
    registered (newspaper notice, then $50), EIN, business bank account opened — the bank reference needs an account to
    reference.
 3. Jackson's personal confirmations on items C, D, E above.
@@ -204,7 +204,7 @@ Declaration text is accepted as written (verbatim in `docs/fl/vendor-application
 
 | Field | Draft answer |
 |---|---|
-| Company Name | Bertlegs LLC d/b/a ECFiler |
+| Company Name | Unpossible Studio LLC d/b/a ECFiler |
 | Dated this __ day of ____, 20__ | `[date signed]` |
 | Signature | `[Jackson signs]` |
 | Title | `[same title as page 4]` |
@@ -217,7 +217,7 @@ Declaration text is accepted as written (verbatim in `docs/fl/vendor-application
 - [ ] $500.00 check `[payable per the form's instruction — confirm payee wording on the
       actual PDF before writing the check; "Florida Courts E-Filing Authority" expected]`
 - [ ] Three financial references confirmed and warned
-- [ ] Bertlegs LLC active, ECFiler fictitious name registered, EIN + bank account in place
+- [ ] Unpossible Studio LLC active, ECFiler fictitious name registered, EIN + bank account in place
 - [ ] Copy of the full package retained
 - [ ] Mail (tracked) to: Florida Courts E-Filing Authority, P.O. Box 16428,
       Tallahassee, FL 32317

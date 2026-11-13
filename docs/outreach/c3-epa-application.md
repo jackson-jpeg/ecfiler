@@ -29,9 +29,9 @@ the PACER account of record so "account in good standing" verifies cleanly]`
 Applying in personal capacity. Litigation docketing specialist by profession
 (legal sector; no employer is named or represented in this application), and author
 and maintainer of ECFiler, an open-source court filing-preparation tool
-(github.com/jackson-jpeg/ecfiler). *(If Bertlegs LLC is active by submission (effective 01/01/2027; see
+(github.com/jackson-jpeg/ecfiler). *(If Unpossible Studio LLC is active by submission (effective 01/01/2027; see
 `docs/fl/entity-recommendation.md`), give the project affiliation as "ECFiler, a
-d/b/a of Bertlegs LLC (founder)" and keep the personal-capacity framing.)*
+d/b/a of Unpossible Studio LLC (founder)" and keep the personal-capacity framing.)*
 
 **PACER account holder:** Yes — individual PACER account in good standing, held since
 `[JACKSON — year account opened]`. Also registered on the QA-PACER test environment
