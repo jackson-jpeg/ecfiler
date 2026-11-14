@@ -1,7 +1,7 @@
 {/* LEGAL REVIEW REQUIRED before deploy — rewritten 2026-07-27 to match zero-custody architecture */}
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LEGAL_LAST_UPDATED, RETENTION_DAYS } from "@/lib/facts";
+import { PRIVACY_LAST_UPDATED, RETENTION_DAYS } from "@/lib/facts";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | ECFiler",
@@ -53,7 +53,7 @@ export default function PrivacyPolicy() {
         {/* Header */}
         <div className="mb-10">
           <p className="text-[12px] font-semibold text-[#8a8a8a] uppercase tracking-wide mb-2">
-            Last updated: {LEGAL_LAST_UPDATED}
+            Last updated: {PRIVACY_LAST_UPDATED}
           </p>
           <h1 className="text-[28px] sm:text-[36px] font-bold tracking-tight text-[#1a1a1a] mb-3">
             Privacy Policy
@@ -149,8 +149,10 @@ export default function PrivacyPolicy() {
             </h3>
             <ul className="list-disc pl-5 space-y-1">
               <li>
-                Anonymous page-view and performance metrics collected through
-                Vercel Analytics and Speed Insights (see Section 6).
+                Visit counts on the website through our own self-hosted Umami
+                analytics, and anonymous page-view and performance metrics
+                collected through Vercel Analytics and Speed Insights (see
+                Section 6).
               </li>
               <li>
                 Browser type, operating system, and screen resolution for
@@ -302,7 +304,19 @@ export default function PrivacyPolicy() {
               6. Analytics & Performance
             </h2>
             <p>
-              We use <strong>Vercel Analytics</strong> and{" "}
+              <strong>Visitor analytics.</strong> We count visits to this
+              website with Umami, running on our own server, so nothing goes
+              to an analytics company. It sets no cookies and does not follow
+              you to other sites. For each visit it records the page, the
+              referring site, your browser, operating system, device type,
+              screen size, language and an approximate location (country,
+              region and city, worked out from your IP address; the address
+              itself is not stored). Visit records are deleted after 24
+              months. It runs on the public pages only, never inside the
+              signed-in workspace.
+            </p>
+            <p className="mt-3">
+              We also use <strong>Vercel Analytics</strong> and{" "}
               <strong>Vercel Speed Insights</strong> to collect anonymous,
               aggregated usage metrics. These tools help us understand page
               performance, load times, and general usage patterns. Specifically:
@@ -318,8 +332,7 @@ export default function PrivacyPolicy() {
                 the application.
               </li>
               <li>
-                Neither tool collects personally identifiable information,
-                filing content, or case data.
+                None of these tools collects filing content or case data.
               </li>
             </ul>
             <p className="mt-3">

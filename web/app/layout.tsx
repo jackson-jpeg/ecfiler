@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { VisitorAnalytics } from "@/components/visitor-analytics";
 import "./globals.css";
 import { COURT_COUNT, PRO_PRICE } from "@/lib/facts";
 
@@ -50,6 +51,7 @@ export default function RootLayout({
           {children}
           <Analytics />
           <SpeedInsights />
+          <VisitorAnalytics />
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{

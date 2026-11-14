@@ -133,10 +133,14 @@ def test_federal_courts_page_counts_are_consistent(anon_page) -> None:
 
 @needs_server
 def test_legal_pages_carry_current_date(anon_page) -> None:
-    for path in ("/privacy", "/terms"):
+    expected = {
+        "/privacy": "last updated: november 14, 2026",
+        "/terms": "last updated: november 2026",
+    }
+    for path, line in expected.items():
         anon_page.goto(f"{WEB_URL}{path}", wait_until="networkidle")
         body = anon_page.inner_text("body").lower()  # CSS uppercases the header
-        assert "last updated: november 2026" in body
+        assert line in body
         assert "march 2026" not in body
 
 
@@ -284,6 +288,9 @@ def test_closed_workspace_says_so(anon_page) -> None:
     assert 'href="/sign-up"' not in anon_page.content(), "homepage still sends visitors to sign up"
 
 
+UMAMI_COLLECTOR = "https://a.unpossible.studio/a/api/sgj"
+
+
 def _encrypted_pdf(src: Path, dst: Path) -> Path:
     import pikepdf
 
@@ -296,7 +303,20 @@ def _encrypted_pdf(src: Path, dst: Path) -> Path:
 def test_validate_tool_checks_pdfs_without_uploading(anon_page, tmp_path) -> None:
     sample = REPO / "docs" / "qa-roundtrip" / "sample-motion.pdf"
     uploads: list[str] = []
-    anon_page.on("request", lambda req: uploads.append(req.url) if req.method == "POST" else None)
+    analytics_bodies: list[str] = []
+
+    def _on_request(req) -> None:
+        if req.method != "POST":
+            return
+        # The one POST a public page may make: the self-hosted Umami
+        # page-view hit (disclosed in /privacy section 6). It is held to
+        # carrying no file content below; every other POST is an upload.
+        if req.url == UMAMI_COLLECTOR:
+            analytics_bodies.append(req.post_data or "")
+        else:
+            uploads.append(req.url)
+
+    anon_page.on("request", _on_request)
 
     anon_page.goto(f"{WEB_URL}/validate", wait_until="networkidle")
     anon_page.set_input_files("input[type=file]", str(sample))
@@ -309,4 +329,21 @@ def test_validate_tool_checks_pdfs_without_uploading(anon_page, tmp_path) -> Non
     anon_page.set_input_files("input[type=file]", str(locked))
     anon_page.wait_for_selector("text=0/1 passed", timeout=20_000)
     assert "password-protected" in anon_page.inner_text("body")
-    assert not [u for u in uploads if "/api/" in u], f"validate posted to the server: {uploads}"
+    assert not uploads, f"validate posted to the server: {uploads}"
+    for body in analytics_bodies:
+        assert "sample-motion" not in body and "locked.pdf" not in body, body
+        assert "%PDF" not in body and '"type":"event"' in body, body
+
+
+@needs_server
+def test_visitor_analytics_on_public_pages_only(anon_page) -> None:
+    """The Umami tag counts public pages and never the signed-in workspace."""
+    seen: list[str] = []
+    anon_page.on("request", lambda req: seen.append(req.url) if "a.unpossible.studio" in req.url else None)
+
+    anon_page.goto(f"{WEB_URL}/file", wait_until="networkidle")
+    assert not seen, f"analytics loaded on the signed-in workspace: {seen}"
+
+    anon_page.goto(f"{WEB_URL}/privacy", wait_until="networkidle")
+    assert 'data-website-id="f08b9f66-5415-42c2-9049-c86fd32647ea"' in anon_page.content()
+    assert "Visitor analytics." in anon_page.inner_text("#analytics")

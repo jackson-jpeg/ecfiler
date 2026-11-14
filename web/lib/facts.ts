@@ -29,8 +29,11 @@ export const COURT_BREAKDOWN = {
   appellate: 16,
 } as const;
 
-/** "Last updated" line shown on the Privacy Policy and Terms of Service. */
+/** "Last updated" line shown on the Terms of Service. */
 export const LEGAL_LAST_UPDATED = "November 2026";
+
+/** "Last updated" line shown on the Privacy Policy. */
+export const PRIVACY_LAST_UPDATED = "November 14, 2026";
 
 /** Days uploaded public documents are kept in original form before compressed archival. */
 export const RETENTION_DAYS = 30;
