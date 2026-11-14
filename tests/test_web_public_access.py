@@ -339,7 +339,9 @@ def test_validate_tool_checks_pdfs_without_uploading(anon_page, tmp_path) -> Non
 def test_visitor_analytics_on_public_pages_only(anon_page) -> None:
     """The Umami tag counts public pages and never the signed-in workspace."""
     seen: list[str] = []
+    seen_all: list[str] = []
     anon_page.on("request", lambda req: seen.append(req.url) if "a.unpossible.studio" in req.url else None)
+    anon_page.on("request", lambda req: seen_all.append(req.url))
 
     anon_page.goto(f"{WEB_URL}/file", wait_until="networkidle")
     assert not seen, f"analytics loaded on the signed-in workspace: {seen}"
@@ -347,3 +349,9 @@ def test_visitor_analytics_on_public_pages_only(anon_page) -> None:
     anon_page.goto(f"{WEB_URL}/privacy", wait_until="networkidle")
     assert 'data-website-id="f08b9f66-5415-42c2-9049-c86fd32647ea"' in anon_page.content()
     assert "Visitor analytics." in anon_page.inner_text("#analytics")
+    # Vercel Web Analytics and Speed Insights were removed on 2026-11-14:
+    # Umami is the only visitor count, and the policy says so.
+    privacy = anon_page.inner_text("main") if anon_page.query_selector("main") else anon_page.inner_text("body")
+    assert "Vercel Analytics" not in privacy and "Speed Insights" not in privacy
+    vercel = [u for u in seen_all if "/_vercel/" in u or "vercel-scripts" in u]
+    assert not vercel, f"Vercel analytics still loads: {vercel}"

@@ -223,7 +223,7 @@ exist and read normally:
 **Privacy Policy**
 
 - **§5 Authentication** — accurate description of Clerk as auth processor with links to Clerk's policy; standard delegated-auth disclosure.
-- **§6 Analytics & Performance** — Vercel Analytics/Speed Insights, cookieless, no ad trackers; accurate and standard.
+- **§6 Analytics** — self-hosted Umami on public pages only, cookieless, no ad trackers (Vercel Analytics and Speed Insights removed 2026-11-14); accurate and standard.
 - **§7 Infrastructure & Data Storage** — Vercel + Railway, U.S. data centers, TLS ≥1.2; standard hosting disclosure (the "industry-standard encryption" at-rest phrasing was deliberately softened in 163e280 and matches what we can verify).
 - **§8 Third-Party Data Sharing** — no sale/rent/trade; processors under DPAs; legal-compliance disclosure with notice-where-permitted; standard.
 - **§10 CCPA** — right-to-know/delete/non-discrimination, no-sale statement, 45-day response; standard California section (deletion mechanics are Q3/Q4, the clause text is boilerplate).

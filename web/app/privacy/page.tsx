@@ -15,7 +15,7 @@ const TOC = [
   { id: "filing-documents", label: "3. Filing Document Retention" },
   { id: "sealed-documents", label: "4. Sealed Documents" },
   { id: "authentication", label: "5. Authentication" },
-  { id: "analytics", label: "6. Analytics & Performance" },
+  { id: "analytics", label: "6. Analytics" },
   { id: "infrastructure", label: "7. Infrastructure & Data Storage" },
   { id: "third-parties", label: "8. Third-Party Data Sharing" },
   { id: "data-rights", label: "9. Your Data Rights" },
@@ -150,9 +150,7 @@ export default function PrivacyPolicy() {
             <ul className="list-disc pl-5 space-y-1">
               <li>
                 Visit counts on the website through our own self-hosted Umami
-                analytics, and anonymous page-view and performance metrics
-                collected through Vercel Analytics and Speed Insights (see
-                Section 6).
+                analytics (see Section 6).
               </li>
               <li>
                 Browser type, operating system, and screen resolution for
@@ -301,7 +299,7 @@ export default function PrivacyPolicy() {
           {/* 6 */}
           <section id="analytics">
             <h2 className="text-[20px] font-bold text-[#1a1a1a] mb-3">
-              6. Analytics & Performance
+              6. Analytics
             </h2>
             <p>
               <strong>Visitor analytics.</strong> We count visits to this
@@ -316,25 +314,8 @@ export default function PrivacyPolicy() {
               signed-in workspace.
             </p>
             <p className="mt-3">
-              We also use <strong>Vercel Analytics</strong> and{" "}
-              <strong>Vercel Speed Insights</strong> to collect anonymous,
-              aggregated usage metrics. These tools help us understand page
-              performance, load times, and general usage patterns. Specifically:
+              Visit records never include filing content or case data.
             </p>
-            <ul className="list-disc pl-5 space-y-1 mt-3">
-              <li>
-                Vercel Analytics collects anonymous page-view data. It does not
-                use cookies and does not track individual users across sessions.
-              </li>
-              <li>
-                Vercel Speed Insights measures real-user performance metrics
-                (e.g., page load time, time to interactive) to help us optimize
-                the application.
-              </li>
-              <li>
-                None of these tools collects filing content or case data.
-              </li>
-            </ul>
             <p className="mt-3">
               We do not use Google Analytics, Facebook Pixel, or any
               advertising-related tracking on the Service.
